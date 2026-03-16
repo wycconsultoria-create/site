@@ -412,33 +412,57 @@ Estratégia e inteligência para vencer licitações públicas
 
 <script>
 
-/* REVEAL ANIMATION */
-const reveals=document.querySelectorAll('.reveal')
-window.addEventListener('scroll',()=>{
-reveals.forEach(el=>{
-const top=el.getBoundingClientRect().top
-if(top<window.innerHeight-80){el.classList.add('visible')}
-})
-})
+
+/* REVEAL ANIMATION CORRIGIDO */
+
+const reveals = document.querySelectorAll('.reveal');
+
+function revealSections(){
+  reveals.forEach(el=>{
+    const top = el.getBoundingClientRect().top;
+    if(top < window.innerHeight - 80){
+      el.classList.add('visible');
+    }
+  });
+}
+
+/* executa quando carregar */
+window.addEventListener('load', revealSections);
+
+/* executa ao rolar */
+window.addEventListener('scroll', revealSections);
+
 
 /* COUNTER */
-const counters=document.querySelectorAll('.counter')
 
-counters.forEach(counter=>{
-const update=()=>{
-const target=+counter.getAttribute('data-target')
-const count=+counter.innerText
-const inc=target/80
+const counters = document.querySelectorAll('.counter');
 
-if(count<target){
-counter.innerText=Math.ceil(count+inc)
-setTimeout(update,25)
-}else{
-counter.innerText=target
-}
-}
-update()
-})
+counters.forEach(counter => {
+
+  const update = () => {
+
+    const target = +counter.getAttribute('data-target');
+    const count = +counter.innerText;
+
+    const inc = target / 80;
+
+    if(count < target){
+
+      counter.innerText = Math.ceil(count + inc);
+
+      setTimeout(update,25);
+
+    }else{
+
+      counter.innerText = target;
+
+    }
+
+  };
+
+  update();
+
+});
 
 </script>
 
