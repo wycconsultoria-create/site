@@ -474,6 +474,32 @@ footer{
   }
 }
 
+
+/* ── SISTEMAS ── */
+#sistemas{background:linear-gradient(135deg,#001450,#0a2a7a);color:white;padding:70px 8%;}
+#sistemas h2{color:white;text-align:center;margin-bottom:10px;}
+#sistemas .sistemas-sub{text-align:center;color:rgba(255,255,255,.7);margin-bottom:40px;font-size:1rem;max-width:600px;margin-left:auto;margin-right:auto;}
+.sistemas-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;}
+.sistema-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:32px;transition:.3s;cursor:pointer;text-decoration:none;color:white;display:block;position:relative;overflow:hidden;}
+.sistema-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;transition:.3s;}
+.sistema-card.extrator::before{background:linear-gradient(90deg,#00c9a7,#14a0c8);}
+.sistema-card.connect::before{background:linear-gradient(90deg,#38b6e8,#00c9a7);}
+.sistema-card:hover{transform:translateY(-6px);background:rgba(255,255,255,.1);box-shadow:0 20px 50px rgba(0,0,0,.3);}
+.sistema-badge{font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:20px;display:inline-block;margin-bottom:16px;}
+.sistema-card.extrator .sistema-badge{background:rgba(0,201,167,.2);color:#00c9a7;border:1px solid rgba(0,201,167,.3);}
+.sistema-card.connect .sistema-badge{background:rgba(56,182,232,.2);color:#38b6e8;border:1px solid rgba(56,182,232,.3);}
+.sistema-card h3{font-family:'Syne';font-size:1.4rem;margin-bottom:10px;}
+.sistema-card p{font-size:0.9rem;color:rgba(255,255,255,.7);line-height:1.7;margin-bottom:20px;}
+.sistema-features{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:24px;}
+.sistema-features li{font-size:0.85rem;color:rgba(255,255,255,.65);display:flex;align-items:flex-start;gap:8px;}
+.sistema-features li::before{content:'→';flex-shrink:0;margin-top:1px;}
+.sistema-card.extrator .sistema-features li::before{color:#00c9a7;}
+.sistema-card.connect .sistema-features li::before{color:#38b6e8;}
+.sistema-link{font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:6px;transition:.2s;}
+.sistema-card.extrator .sistema-link{color:#00c9a7;}
+.sistema-card.connect .sistema-link{color:#38b6e8;}
+.sistema-card:hover .sistema-link{gap:10px;}
+@media(max-width:700px){.sistemas-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 
@@ -497,6 +523,7 @@ footer{
     <a href="#servicos"   onclick="closeMenu()">Serviços</a>
     <a href="#autoridade" onclick="closeMenu()">Especialidade</a>
     <a href="#resultados" onclick="closeMenu()">Resultados</a>
+    <a href="sistemas.html" style="color:#14c8a0;font-weight:700;" onclick="closeMenu()">⚡ Sistemas</a>
     <a href="#contato"    onclick="closeMenu()">Contato</a>
   </div>
 
@@ -566,11 +593,11 @@ footer{
           editais analisados
         </div>
         <div class="stat">
-          <strong class="counter" data-target="80">0</strong>
+          <strong class="counter" data-target="10">0</strong>
           empresas atendidas
         </div>
         <div class="stat">
-          <strong>R$ milhões</strong>
+          <strong>R$ 1 milhão</strong>
           em contratos
         </div>
       </div>
@@ -675,6 +702,42 @@ footer{
       <span onclick="scrollToSlide(1)"></span>
       <span onclick="scrollToSlide(2)"></span>
     </div>
+  </div>
+</section>
+
+<!-- SISTEMAS -->
+<section id="sistemas" class="reveal">
+  <h2>Soluções Tecnológicas WYC</h2>
+  <p class="sistemas-sub">Ferramentas desenvolvidas pela WYC para automatizar processos e ampliar sua presença digital.</p>
+
+  <div class="sistemas-grid">
+
+    <a href="sistemas.html#extrator" class="sistema-card extrator">
+      <span class="sistema-badge">Governo &amp; Licitações</span>
+      <h3>Extrator PNCP</h3>
+      <p>Coleta automatizada de todas as licitações publicadas no Portal Nacional de Contratações Públicas — exportação direta para Excel.</p>
+      <ul class="sistema-features">
+        <li>14 modalidades de licitação em uma extração</li>
+        <li>Exportação automática para planilha Excel</li>
+        <li>Filtro por período de datas configurável</li>
+        <li>Executável standalone, sem instalação de Python</li>
+      </ul>
+      <span class="sistema-link">Saiba mais &nbsp;→</span>
+    </a>
+
+    <a href="sistemas.html#connect" class="sistema-card connect">
+      <span class="sistema-badge">Presença Digital</span>
+      <h3>WYC Connect</h3>
+      <p>Cartão de visita digital via NFC ou QR Code. Um toque abre seus contatos e redes sociais — sem precisar de app.</p>
+      <ul class="sistema-features">
+        <li>Chip NFC ou QR Code para ambientes físicos</li>
+        <li>WhatsApp, Instagram, LinkedIn, TikTok e mais</li>
+        <li>Múltiplos contatos em um único card</li>
+        <li>Atualização remota sem reimprimir o código</li>
+      </ul>
+      <span class="sistema-link">Saiba mais &nbsp;→</span>
+    </a>
+
   </div>
 </section>
 

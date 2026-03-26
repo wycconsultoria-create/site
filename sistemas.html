@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistemas | WYC Consultoria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #071336;
+    --surface: #0a1a4a;
+    --card: #0d2060;
+    --border: #1a3070;
+    --green: #00c9a7;
+    --cyan: #38b6e8;
+    --gold: #ffd600;
+    --white: #f0f6ff;
+    --muted: #6a88b8;
+    --green-glow: rgba(0,201,167,0.15);
+    --cyan-glow: rgba(56,182,232,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--white);
+    overflow-x: hidden;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 60px;
+    background: rgba(7,19,54,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: var(--white);
+  }
+
+  .nav-logo span { color: var(--green); }
+
+  .nav-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+    background: var(--green-glow);
+    border: 1px solid rgba(0,201,167,0.3);
+    padding: 6px 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 120px 40px 80px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(160deg, #071336 0%, #0d2060 50%, #071336 100%);
+  }
+
+  .hero-bg-lines {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,201,167,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,201,167,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridMove 20s linear infinite;
+  }
+
+  @keyframes gridMove {
+    0% { transform: translate(0,0); }
+    100% { transform: translate(60px,60px); }
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,201,167,0.08) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    animation: pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: translate(-50%,-50%) scale(1); opacity: 0.6; }
+    50% { transform: translate(-50%,-50%) scale(1.1); opacity: 1; }
+  }
+
+  .hero-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 5px;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 12vw, 160px);
+    line-height: 0.9;
+    letter-spacing: 2px;
+    margin-bottom: 30px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.4s forwards;
+  }
+
+  .hero-title .accent { color: var(--green); }
+  .hero-title .line2 { 
+    -webkit-text-stroke: 1px rgba(255,255,255,0.3);
+    color: transparent;
+  }
+
+  .hero-desc {
+    font-size: 18px;
+    color: var(--muted);
+    max-width: 560px;
+    line-height: 1.7;
+    margin-bottom: 50px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.6s forwards;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.8s forwards;
+  }
+
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 16px 36px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-primary {
+    background: var(--green);
+    color: #000;
+    font-weight: 700;
+  }
+  .btn-primary:hover {
+    background: #00e8c0;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,201,167,0.4);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--white);
+    border: 1px solid var(--border);
+  }
+  .btn-outline:hover {
+    border-color: var(--green);
+    color: var(--green);
+    transform: translateY(-2px);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 60px;
+    display: flex;
+    justify-content: center;
+    gap: 80px;
+    flex-wrap: wrap;
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    color: var(--green);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  /* SECTION */
+  .section {
+    padding: 120px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::before {
+    content: '';
+    width: 30px;
+    height: 1px;
+    background: var(--green);
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 7vw, 88px);
+    line-height: 0.95;
+    margin-bottom: 60px;
+  }
+
+  /* PRODUCT CARDS */
+  .product-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    background: var(--border);
+  }
+
+  @media (max-width: 900px) {
+    .product-grid { grid-template-columns: 1fr; }
+    nav { padding: 20px 24px; }
+    .section { padding: 80px 24px; }
+    .stats-bar { gap: 40px; padding: 32px 24px; }
+  }
+
+  .product-card {
+    background: var(--card);
+    padding: 60px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    cursor: default;
+  }
+
+  .product-card:hover {
+    background: #141d26;
+  }
+
+  .product-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .product-card.green::before { background: var(--green); }
+  .product-card.cyan::before { background: var(--cyan); }
+
+  .product-card:hover::before { opacity: 1; }
+
+  .product-card .bg-number {
+    position: absolute;
+    bottom: -20px;
+    right: -10px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 180px;
+    color: rgba(255,255,255,0.02);
+    pointer-events: none;
+    line-height: 1;
+    transition: color 0.4s ease;
+  }
+
+  .product-card:hover .bg-number {
+    color: rgba(255,255,255,0.04);
+  }
+
+  .product-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    margin-bottom: 32px;
+    display: inline-block;
+  }
+
+  .product-card.green .product-badge {
+    color: var(--green);
+    background: var(--green-glow);
+    border: 1px solid rgba(0,201,167,0.25);
+  }
+
+  .product-card.cyan .product-badge {
+    color: var(--cyan);
+    background: var(--cyan-glow);
+    border: 1px solid rgba(56,182,232,0.25);
+  }
+
+  .product-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    line-height: 1;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+
+  .product-card.green .product-name { color: var(--green); }
+  .product-card.cyan .product-name { color: var(--cyan); }
+
+  .product-subtitle {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 40px;
+    max-width: 380px;
+  }
+
+  .feature-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 48px;
+  }
+
+  .feature-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    font-size: 14px;
+    color: #8fa0b0;
+    line-height: 1.5;
+  }
+
+  .feature-list li::before {
+    content: '→';
+    flex-shrink: 0;
+    font-size: 13px;
+    margin-top: 1px;
+  }
+
+  .product-card.green .feature-list li::before { color: var(--green); }
+  .product-card.cyan .feature-list li::before { color: var(--cyan); }
+
+  /* MOCKUP AREA — estilo Windows / app desktop original */
+  .mockup-area {
+    background: #d4d0c8;
+    border: 2px solid #a0a0a0;
+    border-top-color: #ffffff;
+    border-left-color: #ffffff;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mockup-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: linear-gradient(90deg, #0a246a 0%, #a6caf0 100%);
+    margin-bottom: 0;
+  }
+
+  .dot { width: 14px; height: 14px; border-radius: 2px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:900; cursor:default; }
+  .dot-r { background: #c0392b; color:#fff; }
+  .dot-r::after { content:'×'; }
+  .dot-y { background: #c8c8c8; color:#555; }
+  .dot-y::after { content:'_'; line-height:0.5; }
+  .dot-g { background: #c8c8c8; color:#555; }
+  .dot-g::after { content:'□'; font-size:7px; }
+
+  .mockup-title-bar {
+    font-family: 'Tahoma', 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+    flex: 1;
+    text-align: left;
+    letter-spacing: 0.3px;
+  }
+
+  /* PNCP MOCKUP */
+  .pncp-ui {
+    font-family: 'Tahoma', 'Arial', sans-serif;
+    background: #d4d0c8;
+    padding: 14px;
+  }
+
+  .pncp-section-box {
+    border: 1px solid #808080;
+    border-top: 2px solid #808080;
+    background: #d4d0c8;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+
+  .pncp-section-title {
+    position: absolute;
+    top: -8px;
+    left: 8px;
+    background: #d4d0c8;
+    padding: 0 4px;
+    font-size: 9px;
+    font-weight: 700;
+    color: #000;
+    letter-spacing: 0.3px;
+  }
+
+  .pncp-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px;
+  }
+
+  .pncp-label {
+    font-size: 10px;
+    color: #000;
+    width: 90px;
+    flex-shrink: 0;
+  }
+
+  .pncp-input {
+    background: #ffffff;
+    border: 2px inset #808080;
+    border-top-color: #606060;
+    border-left-color: #606060;
+    color: #000000;
+    font-family: 'Tahoma', sans-serif;
+    font-size: 10px;
+    padding: 3px 6px;
+    width: 150px;
+  }
+
+  .pncp-input-full {
+    background: #ffffff;
+    border: 2px inset #808080;
+    border-top-color: #606060;
+    border-left-color: #606060;
+    color: #000000;
+    font-family: 'Tahoma', sans-serif;
+    font-size: 9px;
+    padding: 3px 6px;
+    width: 100%;
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
+
+  .pncp-field-block { margin-bottom: 9px; }
+  .pncp-field-block .pncp-label { display: block; width: auto; margin-bottom: 2px; font-size:10px; color:#000; }
+
+  .pncp-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: #000;
+    margin: 5px 0;
+  }
+  .pncp-checkbox::before {
+    content: '✕';
+    font-size: 9px;
+    color: #000;
+    background: #ffffff;
+    border: 2px inset #808080;
+    border-top-color: #606060;
+    border-left-color: #606060;
+    width: 13px; height: 13px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+
+  .pncp-info-box {
+    background: #ffffff;
+    border: 2px inset #808080;
+    border-top-color: #606060;
+    border-left-color: #606060;
+    padding: 8px 10px;
+    margin: 8px 0;
+  }
+  .pncp-info-line {
+    font-size: 9px;
+    color: #333;
+    line-height: 1.9;
+  }
+  .pncp-info-line::before { content: '• '; color: #0a246a; }
+
+  .pncp-progress-wrap {
+    margin: 8px 0 6px;
+  }
+
+  .pncp-prog-label {
+    font-size: 10px;
+    color: #000;
+    margin-bottom: 5px;
+    font-weight: 700;
+  }
+
+  .pncp-prog-bar {
+    height: 16px;
+    background: #ffffff;
+    border: 2px inset #808080;
+    border-top-color: #606060;
+    border-left-color: #606060;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .pncp-prog-fill {
+    height: 100%;
+    background: repeating-linear-gradient(
+      90deg,
+      #0a246a 0px,
+      #0a246a 10px,
+      #4a7cc7 10px,
+      #4a7cc7 12px
+    );
+    width: 36%;
+    animation: progAnim 3s ease-in-out infinite alternate;
+    transition: width 0.3s;
+  }
+
+  .pncp-prog-percent {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: #000;
+    mix-blend-mode: difference;
+    filter: invert(1);
+  }
+
+  @keyframes progAnim {
+    from { width: 36%; }
+    to { width: 72%; }
+  }
+
+  .pncp-status {
+    font-size: 9px;
+    color: #333;
+    margin-top: 5px;
+    text-align: center;
+  }
+
+  .pncp-status-success {
+    font-size: 10px;
+    color: #000;
+    font-weight: 700;
+    text-align: center;
+    padding: 5px;
+    border: 2px inset #808080;
+    background: #ffffff;
+    margin-bottom: 5px;
+  }
+
+  .pncp-time {
+    font-size: 9px;
+    color: #333;
+    text-align: center;
+  }
+
+  .pncp-log {
+    background: #ffffff;
+    border: 2px inset #808080;
+    border-top-color: #606060;
+    border-left-color: #606060;
+    padding: 6px 8px;
+    margin-top: 8px;
+    max-height: 72px;
+    overflow: hidden;
+  }
+
+  .log-line {
+    font-size: 9px;
+    color: #333;
+    line-height: 1.7;
+    font-family: 'Courier New', monospace;
+  }
+
+  .log-line.active { color: #000; font-weight: 700; }
+
+  .pncp-buttons {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .pncp-btn {
+    font-family: 'Tahoma', sans-serif;
+    font-size: 10px;
+    padding: 4px 14px;
+    background: #d4d0c8;
+    border: 2px solid #ffffff;
+    border-bottom-color: #808080;
+    border-right-color: #808080;
+    color: #000;
+    cursor: pointer;
+    min-width: 70px;
+    text-align: center;
+    transition: all 0.1s;
+    font-weight: normal;
+  }
+  .pncp-btn:hover {
+    background: #e0ddd5;
+  }
+  .pncp-btn:active {
+    border-color: #808080;
+    border-bottom-color: #ffffff;
+    border-right-color: #ffffff;
+  }
+
+  .pncp-btn.primary-btn {
+    font-weight: 700;
+    border: 2px solid #ffffff;
+    border-bottom-color: #808080;
+    border-right-color: #808080;
+    outline: 1px solid #000;
+  }
+
+  /* DIALOG */
+  .pncp-dialog {
+    background: #d4d0c8;
+    border: 2px solid #ffffff;
+    border-bottom-color: #808080;
+    border-right-color: #808080;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  .pncp-dialog-title {
+    font-size: 10px;
+    color: #000;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Tahoma', sans-serif;
+  }
+  .pncp-dialog-icon {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: #0a7dc8;
+    color: #fff;
+    font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900;
+    flex-shrink: 0;
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+  }
+  .pncp-check-item {
+    font-size: 9px;
+    color: #000;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .pncp-check-item::before { content: '☑'; color: #000; font-size: 11px; }
+  .pncp-dialog-note {
+    font-size: 9px;
+    color: #000;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid #808080;
+    font-family: 'Tahoma', sans-serif;
+  }
+  .pncp-dialog-detail {
+    font-size: 9px;
+    color: #222;
+    line-height: 1.8;
+    margin-top: 2px;
+    font-family: 'Tahoma', sans-serif;
+  }
+
+  /* CAROUSEL */
+  .carousel-wrap {
+    position: relative;
+  }
+
+  .carousel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .carousel-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--green);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .carousel-counter {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .carousel-track-outer {
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .carousel-track {
+    display: flex;
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    will-change: transform;
+  }
+
+  .carousel-slide {
+    min-width: 100%;
+    width: 100%;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+
+  .carousel-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 16px;
+  }
+
+  .carousel-arrow {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 14px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-family: monospace;
+    border-radius: 2px;
+  }
+
+  .carousel-arrow:hover {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(0,201,167,0.08);
+  }
+
+  .carousel-arrow:disabled {
+    opacity: 0.25;
+    cursor: default;
+  }
+
+  .carousel-dots {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .carousel-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-block;
+  }
+
+  .carousel-dot.active {
+    background: var(--green);
+    box-shadow: 0 0 8px rgba(0,201,167,0.5);
+    transform: scale(1.2);
+  }
+
+  /* NFC MOCKUP */
+  .nfc-phone {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+  }
+
+  .phone-frame {
+    width: 160px;
+    background: #0d1e50;
+    border: 2px solid var(--border);
+    border-radius: 24px;
+    padding: 16px 12px;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .phone-notch {
+    width: 40px;
+    height: 6px;
+    background: #050e2a;
+    border-radius: 3px;
+    margin: 0 auto 14px;
+  }
+
+  .phone-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin: 0 auto 8px;
+    background: linear-gradient(135deg, #0d2a4a, #071a36);
+    border: 2px solid var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 0 20px rgba(0,201,167,0.3);
+    position: relative;
+  }
+
+  .phone-tag {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: var(--green);
+    color: #000;
+    font-size: 7px;
+    font-family: 'Space Mono', monospace;
+    padding: 2px 5px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .phone-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    text-align: center;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+    color: var(--white);
+  }
+
+  .phone-contact {
+    background: var(--green);
+    color: #000;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-align: center;
+    padding: 8px;
+    border-radius: 20px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-transform: uppercase;
+    animation: phoneItem 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes phoneItem {
+    from { box-shadow: 0 0 10px rgba(0,201,167,0.3); }
+    to { box-shadow: 0 0 20px rgba(0,201,167,0.6); }
+  }
+
+  .phone-contact:nth-child(2) { animation-delay: 0.3s; }
+  .phone-contact:nth-child(3) { animation-delay: 0.6s; }
+
+  .phone-verified {
+    font-family: 'Space Mono', monospace;
+    font-size: 7px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 12px;
+    letter-spacing: 1px;
+  }
+
+  /* HOW IT WORKS */
+  .how-section {
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 100px 60px;
+  }
+
+  .how-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin-top: 60px;
+  }
+
+  @media (max-width: 900px) {
+    .steps-grid { grid-template-columns: 1fr 1fr; }
+    .how-section { padding: 80px 24px; }
+  }
+
+  @media (max-width: 600px) {
+    .steps-grid { grid-template-columns: 1fr; }
+  }
+
+  .step-card {
+    background: var(--card);
+    padding: 40px 32px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s ease;
+  }
+
+  .step-card:hover { background: #141d26; }
+
+  .step-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    color: rgba(0,201,167,0.08);
+    line-height: 1;
+    margin-bottom: 20px;
+    transition: color 0.3s ease;
+  }
+
+  .step-card:hover .step-num { color: rgba(0,201,167,0.16); }
+
+  .step-icon {
+    font-size: 28px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .step-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: var(--white);
+  }
+
+  .step-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  /* CTA SECTION */
+  .cta-section {
+    padding: 140px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-section::before {
+    content: 'WYC';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 400px;
+    color: rgba(0,201,167,0.015);
+    pointer-events: none;
+    letter-spacing: -10px;
+  }
+
+  .cta-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 5px;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  .cta-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 8vw, 100px);
+    line-height: 0.95;
+    margin-bottom: 24px;
+  }
+
+  .cta-sub {
+    font-size: 16px;
+    color: var(--muted);
+    margin-bottom: 48px;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.7;
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 40px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: gap;
+  }
+
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 4px;
+    color: var(--white);
+  }
+
+  .footer-logo span { color: var(--green); }
+
+  .footer-copy {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* DIVIDER */
+  .divider-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);    opacity: 0.2;
+    margin: 0 60px;
+  }
+
+  /* Scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <a href="index.html" style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:#fff;text-decoration:none;letter-spacing:.5px;">WYC</a>
+    <span style="color:rgba(255,255,255,.3);font-size:14px;">/</span>
+    <span style="font-family:'Space Mono',monospace;font-size:11px;color:#00c9a7;letter-spacing:2px;text-transform:uppercase;">Sistemas</span>
+  </div>
+  <div style="display:flex;gap:20px;align-items:center;">
+    <a href="index.html" style="font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,255,255,.6);text-decoration:none;letter-spacing:1px;text-transform:uppercase;transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">← Início</a>
+    <a href="#extrator" style="font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,255,255,.6);text-decoration:none;letter-spacing:1px;text-transform:uppercase;transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Extrator</a>
+    <a href="#connect" style="font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,255,255,.6);text-decoration:none;letter-spacing:1px;text-transform:uppercase;transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Connect</a>
+    <a href="#como-funciona" style="font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,255,255,.6);text-decoration:none;letter-spacing:1px;text-transform:uppercase;transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Como Funciona</a>
+    <div class="nav-tag">Inovação 2026</div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-lines"></div>
+  <div class="hero-glow"></div>
+  <p class="hero-eyebrow">WYC Consultoria — Tecnologia & Inovação</p>
+  <h1 class="hero-title">
+    SOLUÇÕES<br>
+    <span class="accent">QUE</span><br>
+    <span class="line2">CONECTAM</span>
+  </h1>
+  <p class="hero-desc">Ferramentas desenvolvidas para transformar a forma como empresas capturam licitações públicas e se conectam com seus clientes.</p>
+  <div class="hero-cta">
+    <a href="#produtos" class="btn btn-primary">Ver Produtos</a>
+    <a href="#como-funciona" class="btn btn-outline">Como Funciona</a>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-number">14</div>
+    <div class="stat-label">Modalidades de Licitação</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">PNCP</div>
+    <div class="stat-label">Integração Direta</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">NFC</div>
+    <div class="stat-label">Tecnologia Sem Contato</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">QR</div>
+    <div class="stat-label">Código de Acesso Rápido</div>
+  </div>
+</div>
+
+<!-- PRODUCTS -->
+<section class="section reveal" id="produtos">
+  <p class="section-label">Nossos Produtos</p>
+  <h2 class="section-title">DUAS<br>INOVAÇÕES</h2>
+
+  <div class="product-grid">
+
+    <!-- PNCP EXTRACTOR -->
+    <div class="product-card green" id="extrator">
+      <div class="bg-number">01</div>
+      <span class="product-badge">Governo &amp; Licitações</span>
+      <h3 class="product-name">EXTRATOR<br>PNCP</h3>
+      <p class="product-subtitle">Coleta automatizada de licitações públicas direto para o Excel — todas as 14 modalidades do Portal Nacional de Contratações Públicas.</p>
+      <ul class="feature-list">
+        <li>Extração de <strong style="color:#fff">14 tipos de licitações</strong> em uma única execução</li>
+        <li>Exportação automática para <strong style="color:#fff">planilha Excel</strong> formatada</li>
+        <li>Filtro por <strong style="color:#fff">período de datas</strong> configurável</li>
+        <li>Executável standalone — sem necessidade de instalar Python</li>
+        <li>Limpeza automática de dados anteriores antes de nova coleta</li>
+        <li>Log de progresso em tempo real com indicador de conclusão</li>
+      </ul>
+
+      <!-- MOCKUP -->
+      <div class="mockup-area">
+        <div class="mockup-header">
+          <span style="font-size:12px;margin-right:4px;">🪶</span>
+          <div class="mockup-title-bar">Extrator Pncp | Wyc Consultoria v2.5 - Excel</div>
+          <div style="display:flex;gap:2px;margin-left:auto;">
+            <div class="dot dot-y"></div>
+            <div class="dot dot-g"></div>
+            <div class="dot dot-r"></div>
+          </div>
+        </div>
+        <div class="pncp-ui">
+
+          <!-- CARROSSEL WRAPPER -->
+          <div class="carousel-wrap">
+
+            <!-- SLIDE COUNTER + LABEL -->
+            <div class="carousel-header">
+              <span class="carousel-label" id="carousel-label">Tela 1 — Coleta de Dados</span>
+              <span class="carousel-counter"><span id="carousel-cur">1</span> / 3</span>
+            </div>
+
+            <!-- SLIDES TRACK -->
+            <div class="carousel-track-outer">
+              <div class="carousel-track" id="carousel-track">
+
+                <!-- SLIDE 1: COLETA -->
+                <div class="carousel-slide">
+                  <div style="font-size:10px;color:#000;letter-spacing:0px;text-align:center;margin-bottom:10px;font-weight:700;font-family:'Tahoma',sans-serif;">COLETOR DE DADOS API | PNCP - EXPORTAÇÃO EXCEL</div>
+                  <div class="pncp-section-box" style="margin-bottom:10px;">
+                    <span class="pncp-section-title">Configurações</span>
+                    <div class="pncp-field">
+                      <span class="pncp-label">Data Inicial:</span>
+                      <div class="pncp-input">24/03/2026</div>
+                    </div>
+                    <div class="pncp-field">
+                      <span class="pncp-label">Data Final:</span>
+                      <div class="pncp-input">25/03/2026</div>
+                    </div>
+                    <div class="pncp-field" style="margin-bottom:0;">
+                      <span class="pncp-label">Pasta Destino:</span>
+                      <div class="pncp-btn" style="font-size:9px;padding:3px 10px;">Selecionar Pasta</div>
+                    </div>
+                    <div class="pncp-checkbox" style="margin-top:6px;">Limpar dados anteriores antes da nova extração</div>
+                  </div>
+                  <div class="pncp-section-box">
+                    <span class="pncp-section-title">Progresso</span>
+                    <div class="pncp-prog-bar" style="margin-bottom:5px;">
+                      <div class="pncp-prog-fill"></div>
+                      <div class="pncp-prog-percent">36% concluído</div>
+                    </div>
+                    <div class="pncp-status">Processando Pregão Eletrônico...</div>
+                    <div class="pncp-time" style="margin-top:2px;text-align:left;">Tempo decorrido: 0:05:26</div>
+                    <div class="pncp-log" style="margin-top:8px;">
+                      <div class="log-line">Iniciando coleta de 24/03/2026 a 25/03/2026</div>
+                      <div class="log-line">Limpando dados anteriores...</div>
+                      <div class="log-line">Arquivos CSV anteriores removidos.</div>
+                      <div class="log-line active">Coletando modalidade 7 de 14...</div>
+                    </div>
+                  </div>
+                  <div class="pncp-buttons">
+                    <div class="pncp-btn primary-btn">Iniciar Coleta</div>
+                    <div class="pncp-btn">Exportar para Excel</div>
+                    <div class="pncp-btn">Parar</div>
+                    <div class="pncp-btn">Sair</div>
+                  </div>
+                </div>
+
+                <!-- SLIDE 2: EXPORTAR EXCEL -->
+                <div class="carousel-slide">
+                  <div style="font-size:10px;color:#000;text-align:center;margin-bottom:10px;font-weight:700;font-family:'Tahoma',sans-serif;">EXPORTAR PARA EXCEL</div>
+                  <div class="pncp-section-box">
+                    <span class="pncp-section-title">Configurações de Exportação</span>
+                    <div class="pncp-field-block">
+                      <span class="pncp-label">Pasta dos CSVs:</span>
+                      <div style="display:flex;gap:4px;align-items:center;">
+                        <div class="pncp-input-full" style="flex:1;">Dados\CSVs</div>
+                        <div class="pncp-btn" style="font-size:9px;padding:3px 8px;white-space:nowrap;flex-shrink:0;">Procurar</div>
+                      </div>
+                    </div>
+                    <div class="pncp-field-block">
+                      <span class="pncp-label">Pasta destino do Excel:</span>
+                      <div style="display:flex;gap:4px;align-items:center;">
+                        <div class="pncp-input-full" style="flex:1;">C:\Documentos\WYC\Extrator_pncp\...</div>
+                        <div class="pncp-btn" style="font-size:9px;padding:3px 8px;flex-shrink:0;">Procurar</div>
+                      </div>
+                    </div>
+                    <div class="pncp-field-block">
+                      <span class="pncp-label">Nome do arquivo Excel:</span>
+                      <div class="pncp-input-full">PNCP_Dados_20260325_1230.xlsx</div>
+                    </div>
+                    <div class="pncp-checkbox">Criar uma aba para cada dia de extração</div>
+                    <div class="pncp-checkbox">Abrir pasta destino após exportação</div>
+                  </div>
+                  <div class="pncp-section-box" style="margin-top:8px;">
+                    <span class="pncp-section-title">Informações</span>
+                    <div class="pncp-info-box" style="margin:0;">
+                      <div class="pncp-info-line">Pasta dos CSVs: local dos arquivos gerados pela coleta</div>
+                      <div class="pncp-info-line">Pasta destino: onde o arquivo Excel será salvo</div>
+                      <div class="pncp-info-line">Abas por dia: cada aba terá dados de um dia específico</div>
+                      <div class="pncp-info-line">Processo pode variar conforme sinal de internet</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:9px;color:#333;font-family:'Tahoma',sans-serif;">
+                    <span>0% concluído</span><span>Tempo decorrido: 00:00:00</span>
+                  </div>
+                  <div class="pncp-buttons">
+                    <div class="pncp-btn">Testar Configuração</div>
+                    <div class="pncp-btn primary-btn">Executar Exportação</div>
+                    <div class="pncp-btn">Parar</div>
+                    <div class="pncp-btn">Fechar</div>
+                  </div>
+                </div>
+
+                <!-- SLIDE 3: SUCESSO -->
+                <div class="carousel-slide">
+                  <div style="font-size:10px;color:#000;text-align:center;margin-bottom:10px;font-weight:700;font-family:'Tahoma',sans-serif;">RESULTADO DA EXPORTAÇÃO</div>
+                  <!-- Dialog: Teste de Configuração -->
+                  <div style="background:#d4d0c8;border:2px solid #fff;border-bottom-color:#808080;border-right-color:#808080;margin-bottom:10px;">
+                    <div style="background:linear-gradient(90deg,#0a246a,#a6caf0);padding:4px 8px;display:flex;align-items:center;gap:6px;">
+                      <span style="font-size:10px;color:#fff;font-weight:700;font-family:'Tahoma',sans-serif;">Teste de Configuração</span>
+                    </div>
+                    <div style="padding:10px;">
+                      <div class="pncp-dialog-title">
+                        <div class="pncp-dialog-icon">i</div>
+                        Configuração OK!
+                      </div>
+                      <div class="pncp-check-item">9 arquivos CSV encontrados</div>
+                      <div class="pncp-check-item">Pasta destino encontrada</div>
+                      <div class="pncp-check-item">Nome do arquivo válido</div>
+                      <div class="pncp-dialog-note">Clique em 'EXECUTAR EXPORTAÇÃO' para iniciar.</div>
+                      <div class="pncp-buttons" style="justify-content:flex-end;margin-top:8px;">
+                        <div class="pncp-btn primary-btn">OK</div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Dialog: Sucesso -->
+                  <div style="background:#d4d0c8;border:2px solid #fff;border-bottom-color:#808080;border-right-color:#808080;">
+                    <div style="background:linear-gradient(90deg,#0a246a,#a6caf0);padding:4px 8px;">
+                      <span style="font-size:10px;color:#fff;font-weight:700;font-family:'Tahoma',sans-serif;">Sucesso</span>
+                    </div>
+                    <div style="padding:10px;">
+                      <div class="pncp-dialog-title">
+                        <div class="pncp-dialog-icon" style="background:#1a8a1a;">✓</div>
+                        Exportação concluída com sucesso!
+                      </div>
+                      <div class="pncp-dialog-detail">Arquivo: PNCP_Dados_20260325_1230.xlsx</div>
+                      <div class="pncp-dialog-detail">Local: C:\Documentos\WYC\Extrator_pncp\...</div>
+                      <div class="pncp-dialog-detail">Tempo total: 0:00:06</div>
+                      <div class="pncp-buttons" style="justify-content:flex-end;margin-top:8px;">
+                        <div class="pncp-btn primary-btn">OK</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div><!-- end track -->
+            </div><!-- end outer -->
+
+            <!-- CONTROLS -->
+            <div class="carousel-controls">
+              <button class="carousel-arrow" id="carousel-prev" onclick="carouselMove(-1)">&#8592;</button>
+              <div class="carousel-dots">
+                <span class="carousel-dot active" onclick="carouselGo(0)"></span>
+                <span class="carousel-dot" onclick="carouselGo(1)"></span>
+                <span class="carousel-dot" onclick="carouselGo(2)"></span>
+              </div>
+              <button class="carousel-arrow" id="carousel-next" onclick="carouselMove(1)">&#8594;</button>
+            </div>
+
+          </div><!-- end carousel-wrap -->
+        </div>
+      </div>
+    </div>
+
+    <!-- WYC CONNECT -->
+    <div class="product-card cyan" id="connect">
+      <div class="bg-number">02</div>
+      <span class="product-badge">Presença Digital</span>
+      <h3 class="product-name">WYC<br>CONNECT</h3>
+      <p class="product-subtitle">Cartão de visita digital via NFC ou QR Code. Um toque ou scan abre seus contatos, redes sociais e informações — sem precisar de app.</p>
+      <ul class="feature-list">
+        <li>Chip NFC ou QR Code impresso para ambientes físicos</li>
+        <li>Suporte a <strong style="color:#fff">WhatsApp, Instagram, LinkedIn, TikTok</strong> e mais</li>
+        <li>Múltiplos contatos configuráveis em um único card</li>
+        <li>Perfil verificado com badge <strong style="color:#fff">WYC Connect</strong></li>
+        <li>Ideal para recepções, balcões, mesas e ambientes comerciais</li>
+        <li>Atualização remota sem necessidade de reimprimir o código</li>
+      </ul>
+
+      <!-- MOCKUP -->
+      <div class="mockup-area">
+        <div class="mockup-header">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+          <div class="mockup-title-bar">wyc.connect — cartão digital</div>
+        </div>
+        <div class="nfc-phone">
+          <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="phone-avatar">
+              🧑‍💼
+              <div class="phone-tag">PESSOAL</div>
+            </div>
+            <div class="phone-name">MARINA</div>
+            <div class="phone-contact">💬 COMERCIAL</div>
+            <div class="phone-contact">💬 SUPORTE</div>
+            <div class="phone-contact">💬 FINANCEIRO</div>
+            <div class="phone-verified">✓ Cartão verificado · WYC Connect</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider-line"></div>
+
+<!-- HOW IT WORKS -->
+<section class="how-section reveal" id="como-funciona">
+  <div class="how-inner">
+    <p class="section-label">Fluxo de Uso</p>
+    <h2 class="section-title">COMO<br>FUNCIONA</h2>
+
+    <div style="margin-bottom:20px;">
+      <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--green);background:var(--green-glow);border:1px solid rgba(0,201,167,0.25);padding:6px 14px;">Extrator PNCP</span>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <span class="step-icon">⚙️</span>
+        <div class="step-title">Configure o Período</div>
+        <p class="step-desc">Informe a data inicial e final para delimitar a janela de coleta de licitações no portal PNCP.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <span class="step-icon">▶️</span>
+        <div class="step-title">Inicie a Coleta</div>
+        <p class="step-desc">Clique em "Iniciar Coleta" e o extrator varre automaticamente todos os 14 tipos de licitação publicados.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <span class="step-icon">📊</span>
+        <div class="step-title">Exporte para Excel</div>
+        <p class="step-desc">Ao concluir, exporte diretamente para uma planilha Excel estruturada e pronta para análise.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <span class="step-icon">🎯</span>
+        <div class="step-title">Analise e Vença</div>
+        <p class="step-desc">Com os dados organizados, identifique oportunidades e participe das licitações mais relevantes para o seu negócio.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:60px;margin-bottom:20px;">
+      <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);background:var(--cyan-glow);border:1px solid rgba(56,182,232,0.25);padding:6px 14px;">WYC Connect</span>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <span class="step-icon">📱</span>
+        <div class="step-title">Escolha seu Suporte</div>
+        <p class="step-desc">Opte pelo chip NFC embutido em cartão ou placa, ou pelo QR Code impresso para fixar em qualquer superfície.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <span class="step-icon">🔗</span>
+        <div class="step-title">Configure seus Links</div>
+        <p class="step-desc">Adicione WhatsApp, Instagram, LinkedIn, TikTok, site e muito mais pelo painel de gestão WYC Connect.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <span class="step-icon">📍</span>
+        <div class="step-title">Posicione no Ambiente</div>
+        <p class="step-desc">Coloque o chip ou QR Code na recepção, balcão ou mesa. Qualquer pessoa com smartphone pode ler instantaneamente.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <span class="step-icon">🤝</span>
+        <div class="step-title">Conecte e Converta</div>
+        <p class="step-desc">O cliente lê o código e acessa diretamente os contatos desejados — sem baixar app, sem fricção.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section reveal">
+  <p class="cta-label">Adquira Agora</p>
+  <h2 class="cta-title">PRONTO PARA<br>INOVAR?</h2>
+  <p class="cta-sub">Entre em contato com a WYC Consultoria e descubra como nossas soluções podem transformar seu negócio hoje mesmo.</p>
+  <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+    <a href="https://wa.me/5519990143009?text=Olá%2C+gostaria+de+saber+mais+sobre+os+sistemas+WYC" class="btn btn-primary">Falar no WhatsApp</a>
+    <a href="#produtos" class="btn btn-outline">Conhecer Produtos</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer style="background:var(--card);border-top:1px solid var(--border);padding:40px 60px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+  <a href="index.html" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:var(--white);text-decoration:none;">WYC<span style="color:var(--green);">   </span>CONSULTORIA</a>
+  <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;">© 2026 WYC Consultoria · Todos os direitos reservados</div>
+  <a href="index.html" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--green);letter-spacing:1px;text-decoration:none;">← Voltar ao site principal</a>
+</footer>
+
+<script>
+  // Carousel
+  let carouselIndex = 0;
+  const carouselTotal = 3;
+  const labels = [
+    'Tela 1 — Coleta de Dados',
+    'Tela 2 — Exportar para Excel',
+    'Tela 3 — Resultado / Sucesso'
+  ];
+
+  function carouselGo(n) {
+    carouselIndex = Math.max(0, Math.min(carouselTotal - 1, n));
+    document.getElementById('carousel-track').style.transform = 'translateX(-' + (carouselIndex * 100) + '%)';
+    document.getElementById('carousel-cur').textContent = carouselIndex + 1;
+    document.getElementById('carousel-label').textContent = labels[carouselIndex];
+    document.querySelectorAll('.carousel-dot').forEach((d, i) => d.classList.toggle('active', i === carouselIndex));
+    document.getElementById('carousel-prev').disabled = carouselIndex === 0;
+    document.getElementById('carousel-next').disabled = carouselIndex === carouselTotal - 1;
+  }
+
+  function carouselMove(dir) { carouselGo(carouselIndex + dir); }
+
+  // Init
+  carouselGo(0);
+
+  // Swipe support
+  (function() {
+    var el = document.getElementById('carousel-track');
+    var startX = 0;
+    el.addEventListener('touchstart', function(e){ startX = e.touches[0].clientX; }, {passive:true});
+    el.addEventListener('touchend', function(e){
+      var diff = startX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 40) carouselMove(diff > 0 ? 1 : -1);
+    }, {passive:true});
+  })();
+
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
