@@ -505,6 +505,50 @@ footer{
 .sistema-card.connect .sistema-link{color:#38b6e8;}
 .sistema-card:hover .sistema-link{gap:10px;}
 @media(max-width:700px){.sistemas-grid{grid-template-columns:1fr;}}
+
+/* ── GLOSSÁRIO ── */
+.glossario{background:#fff;border-top:3px solid var(--cyan);padding:50px 8%;}
+.glossario h2{color:#001450;margin-bottom:8px;font-size:1.8rem;}
+.glossario-intro{color:#5a7a92;margin-bottom:30px;font-size:0.97rem;line-height:1.6;}
+.glossario-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;}
+.glossario-item{background:#f4f8fb;border-left:4px solid var(--cyan);border-radius:0 12px 12px 0;padding:16px 20px;}
+.glossario-item .termo{font-family:'Syne';font-weight:700;font-size:1rem;color:#001450;margin-bottom:4px;}
+.glossario-item .sigla{display:inline-block;font-size:0.72rem;background:var(--cyan);color:white;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle;letter-spacing:.5px;}
+.glossario-item p{font-size:0.88rem;color:#4b6a82;line-height:1.6;}
+
+/* ── TOOLTIP ── */
+.tip{
+  border-bottom:1px dashed var(--cyan);
+  cursor:help;
+  position:relative;
+  display:inline-block;
+}
+.tip::after{
+  content:attr(data-tip);
+  position:absolute;
+  top:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:#001450;
+  color:white;
+  font-size:0.78rem;
+  line-height:1.5;
+  padding:8px 12px;
+  border-radius:8px;
+  width:220px;
+  text-align:center;
+  pointer-events:none;
+  opacity:0;
+  transition:.2s;
+  z-index:9999;
+  box-shadow:0 6px 20px rgba(0,0,0,.35);
+}
+.tip:hover::after,.tip:focus::after{opacity:1;}
+
+@media(max-width:600px){
+  .glossario-grid{grid-template-columns:1fr;}
+  .tip::after{display:none;}
+}
 </style>
 </head>
 
@@ -526,9 +570,10 @@ footer{
   <div class="menu" id="navMenu">
     <a href="#sobre"      onclick="closeMenu()">Consultoria</a>
     <a href="#servicos"   onclick="closeMenu()">Serviços</a>
-    <a href="#autoridade" onclick="closeMenu()">Especialidade</a>
     <a href="#resultados" onclick="closeMenu()">Resultados</a>
-    <a href="sistemas.html" style="color:#14c8a0;font-weight:700;" onclick="closeMenu()">⚡ Sistemas</a>
+    <a href="#sistemas"   onclick="closeMenu()">⚡ Extrator</a>
+    <a href="#connect"    onclick="closeMenu()" style="color:#38b6e8;">📇 Connect</a>
+    <a href="#glossario"  onclick="closeMenu()">📖 Glossário</a>
     <a href="#contato"    onclick="closeMenu()">Contato</a>
   </div>
 
@@ -550,7 +595,7 @@ footer{
       </p>
 
       <div class="hero-benefits">
-        <span>✔ Descubra licitações abertas automaticamente</span>
+        <span>✔ Descubra <span class="tip" data-tip="Licitação = processo oficial onde o governo compra produtos ou serviços de empresas privadas, com regras públicas e transparentes.">licitações</span> abertas automaticamente</span>
         <span>✔ Evite perder prazos e oportunidades</span>
         <span>✔ Comece mesmo sem experiência</span>
       </div>
@@ -720,38 +765,136 @@ footer{
   </div>
 </section>
 
-<!-- SISTEMAS -->
-<section id="sistemas" class="reveal">
-  <h2>Tecnologia que trabalha por você</h2>
-  <p class="sistemas-sub">Pare de buscar manualmente. Nossas ferramentas automatizam a busca de licitações e modernizam sua presença profissional.</p>
+<!-- EXTRATOR DE LICITAÇÕES -->
+<section id="sistemas" class="reveal" style="background:linear-gradient(135deg,#001450,#0a2a7a);color:white;padding:70px 8%;">
+  <h2 style="color:white;text-align:center;margin-bottom:10px;">⚡ Tecnologia que encontra licitações por você</h2>
+  <p class="sistemas-sub">Pare de buscar manualmente. Nossa ferramenta acessa o <span class="tip" data-tip="PNCP = Portal Nacional de Contratações Públicas — site oficial do governo onde todas as licitações do Brasil são publicadas.">PNCP</span> automaticamente e entrega os editais organizados em minutos.</p>
 
-  <div class="sistemas-grid">
+  <div style="display:grid;grid-template-columns:1fr 1.1fr;gap:40px;align-items:center;margin-top:30px;">
 
-    <a href="sistemas.html#extrator" class="sistema-card extrator">
-      <span class="sistema-badge">Busca Automática</span>
-      <h3>Extrator de Licitações</h3>
-      <p>Encontre automaticamente licitações abertas em todo o Brasil, sem precisar acessar vários portais ou perder horas buscando editais.</p>
+    <div>
+      <span class="sistema-badge extrator-badge" style="background:rgba(0,201,167,.2);color:#00c9a7;border:1px solid rgba(0,201,167,.3);font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:20px;display:inline-block;margin-bottom:16px;">Busca Automática</span>
+      <h3 style="font-family:'Syne';font-size:1.6rem;margin-bottom:12px;color:white;">Extrator de Licitações</h3>
+      <p style="font-size:0.95rem;color:rgba(255,255,255,.75);line-height:1.75;margin-bottom:20px;">
+        Encontre automaticamente <span class="tip" data-tip="Licitações = processo oficial onde o governo compra de empresas privadas. Qualquer empresa pode participar e ganhar contratos públicos.">licitações</span> abertas em todo o Brasil. Sem acessar múltiplos portais, sem perder horas procurando <span class="tip" data-tip="Edital = documento oficial com todas as regras da licitação: o que o governo quer, quanto paga e quais documentos a empresa precisa.">editais</span>.
+      </p>
       <ul class="sistema-features">
-        <li>Busca automática de licitações atualizadas</li>
-        <li>Exportação pronta para análise</li>
+        <li>Busca automática de licitações atualizadas no PNCP</li>
+        <li>Exportação pronta para análise em Excel</li>
         <li>Evita perda de prazos importantes</li>
-        <li>Ideal para quem está começando</li>
+        <li>Ideal para quem está começando no mercado público</li>
       </ul>
-      <span class="sistema-link">Ver como funciona →</span>
-    </a>
+      <a href="sistemas.html#extrator" class="btn" style="margin-top:10px;display:inline-block;">Ver como funciona →</a>
+    </div>
 
-    <a href="sistemas.html#connect" class="sistema-card connect">
-      <span class="sistema-badge">Presença Digital</span>
-      <h3>Cartão Digital Inteligente</h3>
-      <p>Transforme seu cartão de visita em uma experiência digital. Compartilhe seu contato em segundos com QR Code ou NFC.</p>
-      <ul class="sistema-features">
-        <li>Compartilhamento em 1 clique</li>
-        <li>Imagem profissional moderna</li>
-        <li>Sem necessidade de cartão físico</li>
-        <li>Ideal para vendas e networking</li>
+    <div style="background:rgba(255,255,255,.05);border:1px solid rgba(0,201,167,.2);border-radius:16px;padding:28px;font-size:0.88rem;color:rgba(255,255,255,.7);line-height:1.8;">
+      <div style="font-family:'Syne';color:#00c9a7;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">Como funciona na prática</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="background:rgba(0,201,167,.2);color:#00c9a7;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:0.8rem;">1</span>
+          <span>Você abre o programa e escolhe o período de busca</span>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="background:rgba(0,201,167,.2);color:#00c9a7;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:0.8rem;">2</span>
+          <span>O sistema acessa o PNCP automaticamente e varre todos os editais</span>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="background:rgba(0,201,167,.2);color:#00c9a7;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:0.8rem;">3</span>
+          <span>Em minutos, você recebe tudo organizado em planilha Excel — pronto para analisar</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- GLOSSÁRIO -->
+<section class="glossario reveal" id="glossario">
+  <h2>📖 Entenda os Termos</h2>
+  <p class="glossario-intro">Nunca trabalhou com licitações ou tecnologia? Sem problema. Aqui explicamos, em linguagem simples, as palavras que você vai encontrar nas nossas páginas.</p>
+  <div class="glossario-grid">
+
+    <div class="glossario-item">
+      <div class="termo">PNCP <span class="sigla">Sigla</span></div>
+      <p><strong>Portal Nacional de Contratações Públicas.</strong> É o site oficial do governo federal onde todas as licitações do Brasil são publicadas. Pense nele como um "shopping de oportunidades" para empresas que querem vender para o governo.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">Licitação</div>
+      <p>Processo oficial pelo qual o governo compra produtos ou contrata serviços de empresas privadas. As regras são públicas e transparentes — qualquer empresa pode participar e ganhar contratos com prefeituras, estados e órgãos federais.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">Edital</div>
+      <p>O "manual de regras" de cada licitação. Nele o governo descreve o que quer comprar, quanto pode pagar, quais documentos a empresa precisa ter e como será feita a disputa. Nossa consultoria analisa esse documento por você.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">Pregão Eletrônico</div>
+      <p>A modalidade mais comum de licitação. É uma disputa de preços feita pela internet — as empresas fazem seus lances em um sistema online, como um leilão ao contrário: quem oferecer o menor preço (dentro das regras) vence.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">NFC <span class="sigla">Tecnologia</span></div>
+      <p><strong>Near Field Communication</strong> — comunicação por aproximação. É a mesma tecnologia do pagamento por aproximação do cartão de crédito. No Cartão Digital WYC Connect, basta encostar o celular no chip para abrir seu perfil de contatos instantaneamente.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">QR Code <span class="sigla">Tecnologia</span></div>
+      <p>Aquela imagem quadrada cheia de pontinhos que qualquer câmera de celular consegue ler. Ao escanear, o celular abre automaticamente um link — no caso do WYC Connect, abre seu cartão digital com todos os seus contatos.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">Habilitação</div>
+      <p>Etapa da licitação em que o governo verifica se a empresa está "apta" para participar — certidões, documentos fiscais, registros e certidões negativas de dívida. Nossa equipe organiza tudo isso para você não ser desclassificado.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">Lei 14.133 <span class="sigla">Lei</span></div>
+      <p><strong>Nova Lei de Licitações</strong>, publicada em 2021. Modernizou as regras para compras públicas no Brasil. Toda empresa que quer participar de licitações precisa se adaptar a ela — e nós ajudamos nesse processo.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- WYC CONNECT — seção separada no final -->
+<section id="connect" class="reveal" style="background:#edf5fa;padding:70px 8%;border-top:3px solid #38b6e8;">
+
+  <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:50px;align-items:center;">
+
+    <div>
+      <span style="background:rgba(56,182,232,.15);color:#0a7aa8;border:1px solid rgba(56,182,232,.35);font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;padding:4px 14px;border-radius:20px;display:inline-block;margin-bottom:16px;">Presença Digital</span>
+      <h2 style="font-size:2rem;margin-bottom:14px;color:#001450;">WYC Connect — Cartão Digital Inteligente</h2>
+      <p style="font-size:1rem;color:#4b6a82;line-height:1.75;margin-bottom:20px;">
+        Transforme seu cartão de visita em uma experiência digital moderna. Compartilhe todos os seus contatos em segundos — usando <span class="tip" data-tip="QR Code = imagem que qualquer câmera de celular lê automaticamente e abre um link, sem precisar digitar nada.">QR Code</span> ou aproximação <span class="tip" data-tip="NFC = tecnologia de aproximação. Basta encostar o celular no chip para abrir seu cartão digital, exatamente como o pagamento por aproximação do cartão de crédito.">NFC</span>.
+      </p>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:28px;">
+        <li style="display:flex;gap:10px;align-items:flex-start;color:#2c4a65;font-size:0.93rem;"><span style="color:#38b6e8;flex-shrink:0;">→</span> Compartilhe WhatsApp, Instagram, LinkedIn, site e muito mais em 1 clique</li>
+        <li style="display:flex;gap:10px;align-items:flex-start;color:#2c4a65;font-size:0.93rem;"><span style="color:#38b6e8;flex-shrink:0;">→</span> Imagem profissional moderna — sem cartão físico para perder</li>
+        <li style="display:flex;gap:10px;align-items:flex-start;color:#2c4a65;font-size:0.93rem;"><span style="color:#38b6e8;flex-shrink:0;">→</span> Atualize seus dados a qualquer momento, sem reimprimir nada</li>
+        <li style="display:flex;gap:10px;align-items:flex-start;color:#2c4a65;font-size:0.93rem;"><span style="color:#38b6e8;flex-shrink:0;">→</span> Ideal para vendas, networking, recepções e eventos</li>
       </ul>
-      <span class="sistema-link">Conhecer solução →</span>
-    </a>
+      <a href="sistemas.html#connect" class="btn">Conhecer o WYC Connect →</a>
+    </div>
+
+    <div style="background:white;border-radius:20px;box-shadow:0 15px 45px rgba(0,0,0,.1);padding:36px;text-align:center;border:1px solid #d9e7f2;">
+      <div style="font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:#38b6e8;margin-bottom:18px;">Como compartilhar</div>
+      <div style="display:flex;gap:20px;justify-content:center;margin-bottom:24px;">
+        <div style="flex:1;background:#f4f8fb;border-radius:12px;padding:20px 14px;text-align:center;">
+          <div style="font-size:2rem;margin-bottom:8px;">📷</div>
+          <div style="font-weight:700;color:#001450;font-size:0.9rem;margin-bottom:4px;">QR Code</div>
+          <div style="font-size:0.78rem;color:#5a7a92;line-height:1.5;">Aponte a câmera do celular e pronto — abre na hora</div>
+        </div>
+        <div style="flex:1;background:#f4f8fb;border-radius:12px;padding:20px 14px;text-align:center;">
+          <div style="font-size:2rem;margin-bottom:8px;">📡</div>
+          <div style="font-weight:700;color:#001450;font-size:0.9rem;margin-bottom:4px;">NFC</div>
+          <div style="font-size:0.78rem;color:#5a7a92;line-height:1.5;">Encoste o celular no chip e o cartão abre automaticamente</div>
+        </div>
+      </div>
+      <div style="font-size:0.8rem;color:#5a7a92;border-top:1px solid #e8f0f7;padding-top:16px;">
+        ✓ Sem baixar app &nbsp;·&nbsp; ✓ Funciona em qualquer celular &nbsp;·&nbsp; ✓ Atualização remota
+      </div>
+    </div>
 
   </div>
 </section>

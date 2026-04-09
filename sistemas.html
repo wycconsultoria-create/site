@@ -1108,6 +1108,126 @@
     opacity: 1;
     transform: translateY(0);
   }
+
+  /* ── GLOSSÁRIO ── */
+  .glossario-section {
+    background: #071336;
+    border-top: 1px solid rgba(0,201,167,0.25);
+    border-bottom: 1px solid rgba(0,201,167,0.1);
+    padding: 80px 60px;
+  }
+  .glossario-section .gl-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .glossario-section .gl-label::before {
+    content: '';
+    width: 30px;
+    height: 1px;
+    background: var(--green);
+  }
+  .glossario-section h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(36px, 5vw, 64px);
+    margin-bottom: 12px;
+    color: var(--white);
+  }
+  .glossario-section .gl-intro {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 48px;
+    max-width: 640px;
+  }
+  .gl-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .gl-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    padding: 20px 24px;
+    border-radius: 2px;
+    transition: border-color .2s;
+  }
+  .gl-card.cyan { border-left-color: var(--cyan); }
+  .gl-card:hover { border-left-width: 4px; }
+  .gl-card .gl-term {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--green);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .gl-card.cyan .gl-term { color: var(--cyan); }
+  .gl-card .gl-badge {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    background: var(--green-glow);
+    border: 1px solid rgba(0,201,167,0.25);
+    color: var(--green);
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .gl-card.cyan .gl-badge {
+    background: var(--cyan-glow);
+    border-color: rgba(56,182,232,0.25);
+    color: var(--cyan);
+  }
+  .gl-card p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  /* ── TOOLTIP ── */
+  .tip {
+    border-bottom: 1px dashed var(--green);
+    cursor: help;
+    position: relative;
+    display: inline-block;
+  }
+  .tip.cyan-tip { border-bottom-color: var(--cyan); }
+  .tip::after {
+    content: attr(data-tip);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0a1a4a;
+    color: var(--white);
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    width: 220px;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: .2s;
+    z-index: 9999;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  .tip:hover::after, .tip:focus::after { opacity: 1; }
+
+  @media (max-width: 768px) {
+    .glossario-section { padding: 60px 24px; }
+    .gl-grid { grid-template-columns: 1fr; }
+    .tip::after { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -1124,6 +1244,7 @@
     <a href="#extrator" style="font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,255,255,.6);text-decoration:none;letter-spacing:1px;text-transform:uppercase;transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Extrator</a>
     <a href="#connect" style="font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,255,255,.6);text-decoration:none;letter-spacing:1px;text-transform:uppercase;transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Connect</a>
     <a href="#como-funciona" style="font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,255,255,.6);text-decoration:none;letter-spacing:1px;text-transform:uppercase;transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Como Funciona</a>
+    <a href="#glossario" style="font-family:'Space Mono',monospace;font-size:11px;color:rgba(0,201,167,.8);text-decoration:none;letter-spacing:1px;text-transform:uppercase;transition:color .2s;" onmouseover="this.style.color='#00c9a7'" onmouseout="this.style.color='rgba(0,201,167,.8)'">📖 Glossário</a>
     <div class="nav-tag">Inovação 2026</div>
   </div>
 </nav>
@@ -1177,7 +1298,7 @@
       <div class="bg-number">01</div>
       <span class="product-badge">Busca Automática</span>
       <h3 class="product-name">EXTRATOR<br>DE LICITAÇÕES</h3>
-      <p class="product-subtitle">Você não precisa mais acessar vários portais ou perder horas procurando editais. O sistema encontra automaticamente licitações abertas e organiza tudo para você.</p>
+      <p class="product-subtitle">Você não precisa mais acessar vários portais ou perder horas procurando <span class="tip" data-tip="Edital = documento oficial que detalha o que o governo quer comprar e as regras da disputa.">editais</span>. O sistema encontra automaticamente <span class="tip" data-tip="Licitações = processo oficial pelo qual o governo compra de empresas privadas. Qualquer empresa pode participar.">licitações</span> abertas no <span class="tip" data-tip="PNCP = Portal Nacional de Contratações Públicas. Site oficial do governo onde todas as licitações do Brasil são publicadas.">PNCP</span> e organiza tudo para você.</p>
       <ul class="feature-list">
         <li>Busca automática de licitações atualizadas</li>
         <li>Evita perda de prazos importantes</li>
@@ -1367,7 +1488,7 @@
       <div class="bg-number">02</div>
       <span class="product-badge">Presença Digital</span>
       <h3 class="product-name">CARTÃO<br>DIGITAL</h3>
-      <p class="product-subtitle">Seu cartão de visita evoluiu. Compartilhe seu contato em segundos com QR Code ou aproximação NFC. Mais moderno, mais profissional e impossível de perder.</p>
+      <p class="product-subtitle">Seu cartão de visita evoluiu. Compartilhe seu contato em segundos com <span class="tip cyan-tip" data-tip="QR Code = imagem que qualquer câmera de celular lê e abre um link automaticamente — sem digitar nada.">QR Code</span> ou aproximação <span class="tip cyan-tip" data-tip="NFC = tecnologia de aproximação. Basta encostar o celular para abrir seu cartão digital, como no pagamento por aproximação.">NFC</span>. Mais moderno, mais profissional e impossível de perder.</p>
       <ul class="feature-list">
         <li>Compartilhamento em 1 clique — QR Code ou NFC</li>
         <li>Imagem profissional moderna para clientes e parceiros</li>
@@ -1477,8 +1598,58 @@
   </div>
 </section>
 
+<!-- GLOSSÁRIO -->
+<section class="glossario-section reveal" id="glossario">
+  <p class="gl-label">Dicionário de Termos</p>
+  <h2>ENTENDA<br>OS TERMOS</h2>
+  <p class="gl-intro">Nunca trabalhou com licitações ou com tecnologia NFC? Aqui explicamos cada palavra técnica desta página — em linguagem simples, sem enrolação.</p>
+
+  <div class="gl-grid">
+
+    <div class="gl-card">
+      <div class="gl-term">PNCP <span class="gl-badge">Sigla</span></div>
+      <p><strong style="color:#f0f6ff;">Portal Nacional de Contratações Públicas.</strong> É o site oficial do governo federal onde todas as licitações do Brasil são publicadas obrigatoriamente. Nosso Extrator acessa esse portal automaticamente para você, sem que precise entrar nele manualmente.</p>
+    </div>
+
+    <div class="gl-card">
+      <div class="gl-term">Licitação</div>
+      <p>Processo oficial pelo qual órgãos públicos (prefeituras, estados, governo federal) compram produtos e serviços de empresas privadas. As regras são públicas — qualquer empresa pode participar e ganhar contratos valiosos com o governo.</p>
+    </div>
+
+    <div class="gl-card">
+      <div class="gl-term">Edital</div>
+      <p>O "regulamento" de cada licitação. É o documento onde o governo descreve o que quer comprar, quanto pode pagar, quais documentos a empresa precisa apresentar e como será feita a disputa entre concorrentes.</p>
+    </div>
+
+    <div class="gl-card">
+      <div class="gl-term">Pregão Eletrônico</div>
+      <p>A modalidade de licitação mais usada no Brasil. É uma disputa de preços feita pela internet — as empresas fazem lances em sistema online. Quem oferecer o menor preço dentro das exigências técnicas vence o contrato.</p>
+    </div>
+
+    <div class="gl-card cyan">
+      <div class="gl-term">NFC <span class="gl-badge">Tecnologia</span></div>
+      <p><strong style="color:#f0f6ff;">Near Field Communication</strong> — a mesma tecnologia do pagamento por aproximação do cartão de crédito. No WYC Connect, ao encostar o celular em um chip NFC, ele abre automaticamente seu perfil de contatos — sem câmera, sem app, sem digitar nada.</p>
+    </div>
+
+    <div class="gl-card cyan">
+      <div class="gl-term">QR Code <span class="gl-badge">Tecnologia</span></div>
+      <p>Aquela imagem quadrada com pontinhos que qualquer câmera de celular consegue ler. Ao escanear, o celular abre automaticamente um link. No WYC Connect, esse link leva ao seu cartão digital com todos os seus contatos.</p>
+    </div>
+
+    <div class="gl-card">
+      <div class="gl-term">Extrator</div>
+      <p>Nosso programa que "extrai" (busca e organiza) automaticamente as licitações publicadas no PNCP. Você configura o período, clica em iniciar, e ele faz todo o trabalho — entregando os dados em planilha Excel já organizada.</p>
+    </div>
+
+    <div class="gl-card cyan">
+      <div class="gl-term">Cartão Digital</div>
+      <p>Versão moderna do cartão de visita físico. Em vez de papel, é uma página online com seus contatos, redes sociais e links — acessada instantaneamente via QR Code ou NFC. Sem limite de caracteres e sem precisar reimprimir quando muda o número.</p>
+    </div>
+
+  </div>
+</section>
+
 <!-- CTA -->
-<section class="cta-section reveal">
   <p class="cta-label">Comece Agora</p>
   <h2 class="cta-title">PARE DE PERDER<br>OPORTUNIDADES</h2>
   <p class="cta-sub">Teste nossas soluções e veja na prática como podemos acelerar seus resultados — sem gastar mais em tráfego.</p>
