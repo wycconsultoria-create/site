@@ -1,0 +1,27 @@
+wyc-connect/
+│
+├── index.html                        ← abre aqui no navegador - OK
+│
+├── src/
+│   ├── app.js                        ← entry point - OK
+│   ├── router.js                     ← controla admin vs cartão público - OK
+│   │
+│   ├── styles/
+│   │   └── main.css                  ← todo o design system - OK
+│   │
+│   ├── utils/
+│   │   ├── store.js                  ← salva dados no localStorage - OK
+│   │   ├── contacts.js               ← configuração dos tipos de contato - OK
+│   │   └── ui.js                     ← toast, modal, helpers - OK
+│   │
+│   ├── pages/
+│   │   ├── dashboard.js              ← tela de empresas - OK
+│   │   ├── cartoes.js                ← lista de cartões - OK
+│   │   └── public-card.js            ← cartão público (via QR/NFC) - OK
+│   │
+│   └── components/
+│       ├── cartao-editor.js          ← formulário criar/editar cartão - OK
+│       └── qr-modal.js               ← modal do QR Code - OK
+│
+├── README.md - OK
+└── .gitignore - OK
