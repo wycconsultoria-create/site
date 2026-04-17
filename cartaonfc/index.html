@@ -181,27 +181,88 @@ p{color:var(--text-secondary)}a{text-decoration:none;color:inherit}
 // =========================================================
 
 // ── STORE ─────────────────────────────────────────────────
+// Dados ficam no localStorage E num arquivo db.json no GitHub
+// O db.json é lido publicamente (cartões) e escrito via API token (admin)
 const STORE_KEY   = 'wyc_connect_data';
 const AUTH_KEY    = 'wyc_auth';
 const SESSION_KEY = 'wyc_session';
 const SESSION_TTL = 8 * 60 * 60 * 1000;
-
 const DEFAULT_DATA = { user:{ name:'Usuário WYC', email:'' }, empresas:[], cartoes:[] };
 
+// GitHub config — preenchido na primeira configuração
+function getGHConfig(){ try{ return JSON.parse(localStorage.getItem('wyc_gh')||'null'); }catch{ return null; } }
+function saveGHConfig(c){ localStorage.setItem('wyc_gh',JSON.stringify(c)); }
+
+// ── Leitura local (síncrona) ──────────────────────────────
 function loadData(){
   try{ const r=localStorage.getItem(STORE_KEY); return r?{...JSON.parse(JSON.stringify(DEFAULT_DATA)),...JSON.parse(r)}:JSON.parse(JSON.stringify(DEFAULT_DATA)); }
   catch{ return JSON.parse(JSON.stringify(DEFAULT_DATA)); }
 }
 function saveData(d){ localStorage.setItem(STORE_KEY,JSON.stringify(d)); }
+
+// ── Sincronização GitHub (async) ──────────────────────────
+async function ghGet(){
+  const gh=getGHConfig(); if(!gh) return null;
+  try{
+    const r=await fetch(`https://api.github.com/repos/${gh.owner}/${gh.repo}/contents/${gh.path}`,
+      {headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json'}});
+    if(!r.ok) return null;
+    const j=await r.json();
+    const text=atob(j.content.replace(/\n/g,''));
+    return {data:JSON.parse(text), sha:j.sha};
+  }catch(e){ console.warn('ghGet error',e); return null; }
+}
+
+async function ghPush(data){
+  const gh=getGHConfig(); if(!gh) return false;
+  try{
+    // Pega SHA atual primeiro
+    let sha='';
+    try{
+      const r=await fetch(`https://api.github.com/repos/${gh.owner}/${gh.repo}/contents/${gh.path}`,
+        {headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json'}});
+      if(r.ok){ const j=await r.json(); sha=j.sha; }
+    }catch{}
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
+    const body={message:'wyc: update data',content,...(sha?{sha}:{})};
+    const r=await fetch(`https://api.github.com/repos/${gh.owner}/${gh.repo}/contents/${gh.path}`,
+      {method:'PUT',headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+    return r.ok;
+  }catch(e){ console.warn('ghPush error',e); return false; }
+}
+
+// Carrega do GitHub e atualiza localStorage
+async function syncFromGitHub(){
+  const gh=getGHConfig(); if(!gh) return;
+  try{
+    // Leitura pública via raw (sem token necessário para leitura!)
+    const url=`https://raw.githubusercontent.com/${gh.owner}/${gh.repo}/main/${gh.path}?t=${Date.now()}`;
+    const r=await fetch(url);
+    if(r.ok){
+      const text=await r.text();
+      const data=JSON.parse(text);
+      saveData(data);
+    }
+  }catch(e){ console.warn('syncFromGitHub error',e); }
+}
+
+// Salva local + envia para GitHub
+async function saveAndSync(d){
+  saveData(d);
+  const ok=await ghPush(d);
+  if(!ok) console.warn('GitHub sync failed - saved locally only');
+  return ok;
+}
+
 function getEmpresas(){ return loadData().empresas; }
-function saveEmpresa(e){ const d=loadData(); const i=d.empresas.findIndex(x=>x.id===e.id); if(i>=0)d.empresas[i]=e; else d.empresas.push(e); saveData(d); }
-function deleteEmpresa(id){ const d=loadData(); d.empresas=d.empresas.filter(e=>e.id!==id); d.cartoes=d.cartoes.filter(c=>c.empresaId!==id); saveData(d); }
+function saveEmpresa(e){ const d=loadData(); const i=d.empresas.findIndex(x=>x.id===e.id); if(i>=0)d.empresas[i]=e; else d.empresas.push(e); saveAndSync(d); }
+function deleteEmpresa(id){ const d=loadData(); d.empresas=d.empresas.filter(e=>e.id!==id); d.cartoes=d.cartoes.filter(c=>c.empresaId!==id); saveAndSync(d); }
 function getCartoes(eid){ const d=loadData(); return eid?d.cartoes.filter(c=>c.empresaId===eid):d.cartoes; }
 function getCartao(id){ return loadData().cartoes.find(c=>c.id===id)||null; }
-function saveCartao(c){ const d=loadData(); const i=d.cartoes.findIndex(x=>x.id===c.id); if(i>=0)d.cartoes[i]=c; else d.cartoes.push(c); saveData(d); }
-function deleteCartao(id){ const d=loadData(); d.cartoes=d.cartoes.filter(c=>c.id!==id); saveData(d); }
+function saveCartao(c){ const d=loadData(); const i=d.cartoes.findIndex(x=>x.id===c.id); if(i>=0)d.cartoes[i]=c; else d.cartoes.push(c); saveAndSync(d); }
+function deleteCartao(id){ const d=loadData(); d.cartoes=d.cartoes.filter(c=>c.id!==id); saveAndSync(d); }
 function getUser(){ return loadData().user; }
-function saveUser(u){ const d=loadData(); d.user=u; saveData(d); }
+function saveUser(u){ const d=loadData(); d.user=u; saveAndSync(d); }
 function genId(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
 
 function cardUrl(id){
@@ -282,15 +343,35 @@ function initials(n=''){ return n.trim().split(' ').slice(0,2).map(w=>w[0]).join
 function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ── ROUTER ────────────────────────────────────────────────
-function init(){
-  // Lê ?card= da URL - funciona com /cartaonfc/?card=ID
+async function init(){
   const params = new URLSearchParams(window.location.search);
   const cardId = params.get('card');
-  if(cardId){ renderPublicCard(cardId); return; }
+  if(cardId){
+    // Cartão público: sincroniza do GitHub primeiro para pegar dados mais recentes
+    showLoading();
+    await syncFromGitHub();
+    hideLoading();
+    renderPublicCard(cardId);
+    return;
+  }
   isAuthenticated()?renderDashboard():renderLogin(renderDashboard);
 }
 
+function showLoading(){
+  const app=document.getElementById('app');
+  app.className='fullscreen';
+  app.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0a0f1e,#0f172a)"><div style="text-align:center;color:#f1f5f9"><div style="width:52px;height:52px;background:linear-gradient(135deg,#2563eb,#6366f1);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;color:#fff;margin-bottom:16px">WC</div><div style="font-size:1rem;opacity:.7">Carregando cartão...</div></div></div>`;
+}
+function hideLoading(){}
+
 function logout(){ clearSession(); init(); }
+async function syncNow(){
+  const btn=document.getElementById('btn-sync');
+  if(btn){ btn.textContent='☁️ ...'; btn.disabled=true; }
+  const ok=await ghPush(loadData());
+  if(btn){ btn.textContent='☁️ Sync'; btn.disabled=false; }
+  toast(ok?'Sincronizado! ✅':'Erro no sync — verifique ⚙️ GitHub Sync', ok?'success':'error');
+}
 
 // ── LOGIN ─────────────────────────────────────────────────
 function renderLogin(onSuccess){
@@ -356,7 +437,7 @@ function renderLogin(onSuccess){
         saveUser({name:nome,email});
         setSession();
         toast('Conta criada! Bem-vindo(a) 🎉');
-        setTimeout(()=>onSuccess(),600);
+        setTimeout(()=>{ if(!getGHConfig()) renderGHSetup(onSuccess); else onSuccess(); },600);
       } else {
         if(!senha){ toast('Digite sua senha','error'); btn.disabled=false;blt.textContent='Entrar';bli.textContent='🔐';return; }
         const hash=await hashPassword(senha);
@@ -389,6 +470,7 @@ function buildSidebar(active){
     <div class="nav-item" style="padding-left:20px;font-size:.8rem;color:var(--text-muted);cursor:default"><span class="nav-icon" style="font-size:.8rem">📇</span> Meus Cartões</div>
     ${cartoes.map(c=>`<div class="nav-item" style="padding:6px 20px 6px 32px;font-size:.78rem" onclick="renderCartoesPage(null,null,'${c.id}')"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;margin-right:4px"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.nome||'Sem nome')}</span></div>`).join('')}
     <div class="nav-item ${active==='perfil'?'active':''}" style="margin-top:8px" onclick="renderPerfilPage()"><span class="nav-icon">👤</span> Perfil</div>
+    <div class="nav-item" onclick="renderGHSetup(renderDashboard)"><span class="nav-icon">⚙️</span> GitHub Sync</div>
     <div class="nav-item" onclick="toast('Suporte: suporte@wycconsultoria.com.br','info')"><span class="nav-icon">🆘</span> Suporte</div>
     <div class="sidebar-bottom">
       <div class="user-card" onclick="renderPerfilPage()">
@@ -426,7 +508,10 @@ function renderDashboard(){
   <div class="main-content">
     <div class="topbar">
       <div><div class="topbar-title">🏢 Empresas & Agentes</div><div class="topbar-subtitle">Gerencie seus clientes e cartões digitais</div></div>
-      <div class="topbar-actions"><button class="btn btn-primary" onclick="openEmpresaModal()">➕ Nova Empresa</button></div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary btn-sm" onclick="syncNow()" title="Sincronizar com GitHub" id="btn-sync">☁️ Sync</button>
+        <button class="btn btn-primary" onclick="openEmpresaModal()">➕ Nova Empresa</button>
+      </div>
     </div>
     <div class="page-content"><div class="cards-grid">${rows}</div></div>
   </div>`;
@@ -727,6 +812,69 @@ async function changePassword(){
   saveAuthConfig({...cfg,hash});
   document.getElementById('p-nova').value=''; document.getElementById('p-conf').value='';
   toast('Senha alterada! 🔐');
+}
+
+// ── GITHUB SETUP ──────────────────────────────────────────
+function renderGHSetup(onDone){
+  const gh=getGHConfig()||{};
+  const app=document.getElementById('app'); app.className='fullscreen';
+  app.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e8f0fe,#f0f4ff);padding:20px">
+  <div style="background:#fff;border:1px solid rgba(37,99,235,.15);border-radius:24px;padding:36px;width:100%;max-width:480px;box-shadow:0 8px 40px rgba(37,99,235,.1)">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:2rem;margin-bottom:8px">⚙️</div>
+      <div style="font-family:var(--font-display);font-weight:700;font-size:1.3rem;color:#0f172a">GitHub Sync</div>
+      <p style="font-size:.82rem;color:#64748b;margin-top:6px">Configure para que os cartões fiquem disponíveis em qualquer dispositivo ao escanear o QR Code.</p>
+    </div>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:.8rem;color:#1d4ed8">
+      <strong>Como obter o Token:</strong><br>
+      1. Entre em <a href="https://github.com/settings/tokens/new" target="_blank" style="color:#2563eb">github.com/settings/tokens/new</a><br>
+      2. Note: <strong>wyc-connect</strong><br>
+      3. Expiration: <strong>No expiration</strong><br>
+      4. Marque: <strong>repo</strong> (acesso completo)<br>
+      5. Clique <strong>Generate token</strong> e copie
+    </div>
+    <div class="form-group"><label class="form-label">Seu usuário GitHub</label>
+      <input class="form-input" id="gh-owner" placeholder="wycconsultoria-create" value="${gh.owner||'wycconsultoria-create'}"></div>
+    <div class="form-group"><label class="form-label">Nome do repositório</label>
+      <input class="form-input" id="gh-repo" placeholder="site" value="${gh.repo||'site'}"></div>
+    <div class="form-group"><label class="form-label">Caminho do arquivo de dados</label>
+      <input class="form-input" id="gh-path" placeholder="cartaonfc/db.json" value="${gh.path||'cartaonfc/db.json'}"></div>
+    <div class="form-group"><label class="form-label">Token GitHub (Personal Access Token)</label>
+      <input class="form-input" id="gh-token" type="password" placeholder="ghp_xxxxxxxxxxxx" value="${gh.token||''}">
+      <div style="font-size:.72rem;color:#64748b;margin-top:4px">🔒 Salvo apenas neste navegador, nunca enviado a terceiros.</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-secondary w-full" onclick="if(typeof onDoneGH==='function')onDoneGH()">Pular por agora</button>
+      <button class="btn btn-primary w-full" id="gh-save">💾 Salvar e Sincronizar</button>
+    </div>
+    <div id="gh-status" style="margin-top:12px;text-align:center;font-size:.8rem"></div>
+  </div></div>`;
+
+  window.onDoneGH = onDone;
+
+  document.getElementById('gh-save').onclick = async () => {
+    const btn = document.getElementById('gh-save');
+    const st  = document.getElementById('gh-status');
+    const owner = document.getElementById('gh-owner').value.trim();
+    const repo  = document.getElementById('gh-repo').value.trim();
+    const path  = document.getElementById('gh-path').value.trim();
+    const token = document.getElementById('gh-token').value.trim();
+    if(!owner||!repo||!path||!token){ toast('Preencha todos os campos','error'); return; }
+    btn.disabled=true; btn.textContent='Testando...'; st.innerHTML='';
+    saveGHConfig({owner,repo,path,token});
+    // Test: push current data
+    const data = loadData();
+    st.innerHTML='<span style="color:#64748b">Enviando dados para o GitHub...</span>';
+    const ok = await ghPush(data);
+    if(ok){
+      st.innerHTML='<span style="color:#16a34a">✅ Sincronizado com sucesso! Aguarde ~60s para o GitHub Pages atualizar.</span>';
+      toast('GitHub configurado! ✅');
+      setTimeout(()=>{ if(typeof onDoneGH==='function') onDoneGH(); },2000);
+    } else {
+      st.innerHTML='<span style="color:#dc2626">❌ Erro ao conectar. Verifique o token e as permissões (repo).</span>';
+      btn.disabled=false; btn.textContent='💾 Salvar e Sincronizar';
+    }
+  };
 }
 
 // ── PUBLIC CARD ───────────────────────────────────────────
