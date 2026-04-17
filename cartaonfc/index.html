@@ -233,16 +233,9 @@ async function ghPush(data){
 
 // Carrega do GitHub e atualiza localStorage
 async function syncFromGitHub(){
-  const gh=getGHConfig(); if(!gh) return;
   try{
-    // Leitura pública via raw (sem token necessário para leitura!)
-    const url=`https://raw.githubusercontent.com/${gh.owner}/${gh.repo}/main/${gh.path}?t=${Date.now()}`;
-    const r=await fetch(url);
-    if(r.ok){
-      const text=await r.text();
-      const data=JSON.parse(text);
-      saveData(data);
-    }
+    const r=await fetch(DB_JSON_URL+'?t='+Date.now());
+    if(r.ok){ const data=await r.json(); saveData(data); }
   }catch(e){ console.warn('syncFromGitHub error',e); }
 }
 
@@ -343,24 +336,31 @@ function initials(n=''){ return n.trim().split(' ').slice(0,2).map(w=>w[0]).join
 function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ── ROUTER ────────────────────────────────────────────────
+// URL fixa do db.json público no GitHub
+const DB_JSON_URL = 'https://raw.githubusercontent.com/wycconsultoria-create/site/main/cartaonfc/db.json';
+
 async function init(){
   const params = new URLSearchParams(window.location.search);
   const cardId = params.get('card');
   if(cardId){
-    // Cartão público: sincroniza do GitHub primeiro para pegar dados mais recentes
-    showLoading();
-    await syncFromGitHub();
-    hideLoading();
+    showLoading('Carregando cartão...');
+    try{
+      const r = await fetch(DB_JSON_URL + '?t=' + Date.now());
+      if(r.ok){
+        const data = await r.json();
+        saveData(data);
+      }
+    }catch(e){ console.warn('db.json fetch failed:', e); }
     renderPublicCard(cardId);
     return;
   }
   isAuthenticated()?renderDashboard():renderLogin(renderDashboard);
 }
 
-function showLoading(){
+function showLoading(msg){
   const app=document.getElementById('app');
   app.className='fullscreen';
-  app.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0a0f1e,#0f172a)"><div style="text-align:center;color:#f1f5f9"><div style="width:52px;height:52px;background:linear-gradient(135deg,#2563eb,#6366f1);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;color:#fff;margin-bottom:16px">WC</div><div style="font-size:1rem;opacity:.7">Carregando cartão...</div></div></div>`;
+  app.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0a0f1e,#0f172a)"><div style="text-align:center;color:#f1f5f9"><div style="width:52px;height:52px;background:linear-gradient(135deg,#2563eb,#6366f1);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;color:#fff;margin-bottom:16px">WC</div><div id="loading-msg" style="font-size:.9rem;opacity:.7;margin-top:8px">${msg||'Carregando...'}</div></div></div>`;
 }
 function hideLoading(){}
 
@@ -882,7 +882,13 @@ function renderPublicCard(cardId){
   const app=document.getElementById('app'); app.className='fullscreen';
   document.body.style.margin='0'; document.body.style.padding='0';
   const c=getCartao(cardId);
-  if(!c){ app.innerHTML=`<div class="public-card-wrapper"><div class="public-card"><div class="public-card-header" style="padding:48px 28px"><div style="font-size:4rem;margin-bottom:16px">😕</div><div class="public-card-name">Cartão não encontrado</div><p class="public-card-bio">Este cartão pode ter sido removido ou o link está incorreto.</p></div><div class="public-card-footer"><span>Powered by</span><strong style="color:#60a5fa">Wyc Connect</strong></div></div></div>`; return; }
+  if(!c){
+    const all = loadData().cartoes||[];
+    const gh  = getGHConfig();
+    const debugInfo = `IDs disponíveis: ${all.map(x=>x.id).join(', ')||'nenhum'} | Buscando: ${cardId} | GitHub: ${gh?gh.owner+'/'+gh.repo+'/'+gh.path:'não configurado'}`;
+    app.innerHTML=`<div class="public-card-wrapper"><div class="public-card"><div class="public-card-header" style="padding:48px 28px"><div style="font-size:4rem;margin-bottom:16px">😕</div><div class="public-card-name">Cartão não encontrado</div><p class="public-card-bio">Este cartão pode ter sido removido ou o link está incorreto.</p><div style="margin-top:16px;padding:10px;background:rgba(255,255,255,.05);border-radius:8px;font-size:.65rem;color:#64748b;word-break:break-all;text-align:left">${debugInfo}</div></div><div class="public-card-footer"><span>Powered by</span><strong style="color:#60a5fa">Wyc Connect</strong></div></div></div>`;
+    return;
+  }
   const isIdoso=c.tipo==='idoso';
   const contatos=(c.contatos||[]).map(ct=>{
     const cfg=typeConfig(ct.tipo); const href=buildHref(ct.tipo,ct.valor);
