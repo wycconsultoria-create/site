@@ -205,10 +205,11 @@ function saveUser(u){ const d=loadData(); d.user=u; saveData(d); }
 function genId(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
 
 function cardUrl(id){
-  // Usa sempre a URL atual sem parâmetros + ?card=ID
-  const loc = window.location;
-  const base = loc.origin + loc.pathname.replace(/\/+$/,'');
-  return base + '?card=' + id;
+  // SEMPRE com barra no final antes do ? para evitar redirect do GitHub Pages
+  // GitHub Pages redireciona /cartaonfc -> /cartaonfc/ e PERDE o ?card=ID
+  const origin = window.location.origin;
+  const path   = window.location.pathname.replace(/\/+$/, '') + '/';
+  return origin + path + '?card=' + id;
 }
 
 async function hashPassword(p){
@@ -282,7 +283,9 @@ function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').
 
 // ── ROUTER ────────────────────────────────────────────────
 function init(){
-  const cardId=new URLSearchParams(window.location.search).get('card');
+  // Lê ?card= da URL - funciona com /cartaonfc/?card=ID
+  const params = new URLSearchParams(window.location.search);
+  const cardId = params.get('card');
   if(cardId){ renderPublicCard(cardId); return; }
   isAuthenticated()?renderDashboard():renderLogin(renderDashboard);
 }
