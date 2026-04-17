@@ -295,8 +295,24 @@ async function hashPassword(p){
   const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(p));
   return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
 }
-function getAuthConfig(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); }catch{ return null; } }
-function saveAuthConfig(c){ localStorage.setItem(AUTH_KEY,JSON.stringify(c)); }
+function getAuthConfig(){
+  // Primeiro tenta localStorage, depois tenta do db.json (syncado)
+  try{
+    const local = JSON.parse(localStorage.getItem(AUTH_KEY)||'null');
+    if(local) return local;
+    // Fallback: auth pode estar no campo auth do db.json
+    const d = loadData();
+    if(d.auth) return d.auth;
+    return null;
+  }catch{ return null; }
+}
+function saveAuthConfig(c){
+  localStorage.setItem(AUTH_KEY,JSON.stringify(c));
+  // Salva também dentro do db.json para outros dispositivos
+  const d = loadData();
+  d.auth = c;
+  saveAndSync(d);
+}
 function isAuthenticated(){
   try{
     const s=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');
@@ -394,6 +410,21 @@ async function init(){
     renderPublicCard(cardId);
     return;
   }
+  // Painel admin: busca db.json primeiro para pegar auth config de qualquer dispositivo
+  showLoading('Verificando acesso...');
+  try{
+    const r = await fetchWithTimeout(DB_JSON_URL + '?t=' + Date.now(), 5000);
+    if(r.ok){
+      const data = await r.json();
+      saveData(data);
+      // Se db.json tem auth config, salva no localStorage deste dispositivo
+      if(data.auth) localStorage.setItem(AUTH_KEY, JSON.stringify(data.auth));
+    }
+  }catch(e){ console.warn('auth sync failed, using local cache'); }
+
+  const app = document.getElementById('app');
+  app.className = '';
+  app.innerHTML = '';
   isAuthenticated()?renderDashboard():renderLogin(renderDashboard);
 }
 
