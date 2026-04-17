@@ -170,6 +170,15 @@ p{color:var(--text-secondary)}a{text-decoration:none;color:inherit}
   .form-grid{grid-template-columns:1fr}
   .cards-grid{grid-template-columns:1fr}
 }
+/* ── Public Card Actions ── */
+.public-card-actions{display:flex;gap:8px;padding:0 20px 20px}
+.public-action-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 8px;border-radius:var(--radius-md);border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#cbd5e1;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:var(--font-body);text-decoration:none}
+.public-action-btn:hover{background:rgba(255,255,255,.1);color:#f1f5f9;transform:translateY(-1px)}
+.public-action-btn:active{transform:scale(.97)}
+.scan-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:99px;padding:3px 10px;font-size:.68rem;color:#64748b;margin-bottom:10px}
+.install-banner{margin:0 20px 16px;padding:12px 14px;background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.25);border-radius:var(--radius-md);display:flex;align-items:flex-start;gap:10px}
+.install-banner-text{flex:1;font-size:.74rem;color:#93c5fd;line-height:1.5}
+.install-banner-close{background:none;border:none;color:#475569;cursor:pointer;font-size:.9rem;padding:2px;line-height:1;flex-shrink:0;margin-top:2px}
 </style>
 </head>
 <body>
@@ -918,13 +927,34 @@ function downloadVCard(cardId){
   a.click();
 }
 
+async function shortenUrl(url){
+  try{
+    const r=await fetchWithTimeout('https://tinyurl.com/api-create.php?url='+encodeURIComponent(url),4000);
+    if(r.ok){const t=await r.text();if(t.startsWith('http'))return t.trim();}
+  }catch{}
+  return url;
+}
+
 async function shareCard(cardId){
   const c=getCartao(cardId); if(!c) return;
-  const url=cardUrl(cardId);
+  const url=await shortenUrl(cardUrl(cardId));
+  const text=(c.nome||'')+(c.empresa?' — '+c.empresa:'');
   if(navigator.share){
-    try{ await navigator.share({title:c.nome,text:'Meu cartão digital',url}); return; }catch{}
+    try{await navigator.share({title:c.nome,text,url});return;}catch(e){if(e.name==='AbortError')return;}
   }
-  try{ await navigator.clipboard.writeText(url); toast('Link copiado! 📋'); }catch{ toast('Não foi possível compartilhar','error'); }
+  try{await navigator.clipboard.writeText(url);toast('Link copiado! 📋');}catch{toast('Não foi possível compartilhar','error');}
+}
+
+function maybeShowInstallBanner(){
+  if(sessionStorage.getItem('wyc_nb')) return '';
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid=/android/i.test(navigator.userAgent);
+  const isStandalone=window.matchMedia('(display-mode:standalone)').matches||navigator.standalone;
+  if(isStandalone||(!isIOS&&!isAndroid)) return '';
+  const tip=isIOS
+    ?'Toque em <strong>Compartilhar ↑</strong> → <strong>Adicionar à Tela de Início</strong> para abrir sem barra de endereço 📲'
+    :'Toque em <strong>⋮</strong> → <strong>Adicionar à tela inicial</strong> para abrir como app 📲';
+  return `<div class="install-banner"><div class="install-banner-text">${tip}</div><button class="install-banner-close" onclick="sessionStorage.setItem('wyc_nb','1');this.closest('.install-banner').remove()">✕</button></div>`;
 }
 
 function renderPublicCard(cardId){
@@ -979,6 +1009,7 @@ function renderPublicCard(cardId){
       <button class="public-action-btn" onclick="downloadVCard('${cardId}')">📲 Salvar Contato</button>
       <button class="public-action-btn" onclick="shareCard('${cardId}')">🔗 Compartilhar</button>
     </div>
+    ${maybeShowInstallBanner()}
     <div class="public-card-footer">🔐 Cartão verificado &nbsp;<strong style="color:#60a5fa">Wyc Connect</strong></div>
   </div></div>`;
 }
