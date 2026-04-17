@@ -950,10 +950,11 @@ function maybeShowInstallBanner(){
   const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
   const isAndroid=/android/i.test(navigator.userAgent);
   const isStandalone=window.matchMedia('(display-mode:standalone)').matches||navigator.standalone;
-  if(isStandalone||(!isIOS&&!isAndroid)) return '';
+  if(isStandalone) return ''; // já é app, não mostra
+  if(!isIOS&&!isAndroid) return ''; // desktop, não mostra
   const tip=isIOS
-    ?'Toque em <strong>Compartilhar ↑</strong> → <strong>Adicionar à Tela de Início</strong> para abrir sem barra de endereço 📲'
-    :'Toque em <strong>⋮</strong> → <strong>Adicionar à tela inicial</strong> para abrir como app 📲';
+    ?'<strong>💡 Dica:</strong> Toque em <strong>⬆️ Compartilhar</strong> (botão inferior do Safari) → <strong>"Adicionar à Tela de Início"</strong> para abrir sem barra de endereço'
+    :'<strong>💡 Dica:</strong> No Chrome, toque nos <strong>3 pontinhos (⋮)</strong> no canto superior direito → <strong>"Adicionar à tela inicial"</strong> para abrir como app';
   return `<div class="install-banner"><div class="install-banner-text">${tip}</div><button class="install-banner-close" onclick="sessionStorage.setItem('wyc_nb','1');this.closest('.install-banner').remove()">✕</button></div>`;
 }
 
@@ -1010,7 +1011,14 @@ function renderPublicCard(cardId){
       <button class="public-action-btn" onclick="shareCard('${cardId}')">🔗 Compartilhar</button>
     </div>
     ${maybeShowInstallBanner()}
-    <div class="public-card-footer">🔐 Cartão verificado &nbsp;<strong style="color:#60a5fa">Wyc Connect</strong></div>
+    <div class="public-card-footer" style="flex-direction:column;gap:8px">
+      <div>🔐 Cartão verificado &nbsp;<strong style="color:#60a5fa">Wyc Connect</strong></div>
+      <a href="https://wa.me/5519990143009" target="_blank" rel="noopener"
+         style="display:inline-flex;align-items:center;gap:6px;color:#4ade80;font-size:.7rem;font-weight:600;text-decoration:none;transition:opacity .2s"
+         onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">
+        💬 Desenvolvido por Wyc Consultoria
+      </a>
+    </div>
   </div></div>`;
 }
 
