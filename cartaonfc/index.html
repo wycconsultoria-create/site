@@ -554,7 +554,7 @@ function renderCartoesPage(empresaId, filterEmpresaId, highlightId){
         ${c.tipo==='idoso'?'<span class="urgency-badge">🧓</span>':''}
       </div>
       <div class="empresa-card-bottom">
-        <span style="font-size:.73rem;color:var(--text-muted)">${icons||'—'} ${(c.contatos||[]).length} contato(s)</span>
+        <span style="font-size:.73rem;color:var(--text-muted)">${icons||'—'} ${(c.contatos||[]).length} contato(s) &nbsp;·&nbsp; 👁️ ${c.scans||0} scan${(c.scans||0)!==1?'s':''}</span>
         <div class="empresa-actions">
           <button class="btn btn-secondary btn-sm" style="padding:5px 10px;font-size:.75rem" onclick="openQrModal('${c.id}')">📲 QR</button>
           <button class="btn btn-secondary btn-icon btn-sm" onclick="renderCartaoEditor('${c.id}','${eid||''}')" title="Editar">✏️</button>
@@ -622,7 +622,7 @@ function renderCartaoEditor(cartaoId, empresaId){
           <div class="form-group"><label class="form-label">Bio</label><textarea class="form-textarea" id="f-bio" placeholder="Uma breve descrição...">${esc(ex?.bio||'')}</textarea></div>
           <div class="form-group"><label class="form-label">Foto (URL)</label><input class="form-input" id="f-foto" placeholder="https://..." value="${esc(ex?.foto||'')}">
             <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin-top:8px;display:inline-flex">📷 Upload <input type="file" accept="image/*" onchange="handleFotoUpload(this)" style="display:none"></label>
-            <div id="foto-prev" style="display:inline-block;width:48px;height:48px;border-radius:50%;overflow:hidden;border:2px solid var(--border);margin-left:8px;vertical-align:middle">${ex?.foto?`<img src="${esc(ex.foto)}" style="width:100%;height:100%;object-fit:cover">`:''}</div>
+
           </div>
           <div class="form-group"><label class="form-label">Cor</label>
             <div class="color-picker">${colors.map(bg=>`<div class="color-swatch ${_selectedColor===bg?'selected':''}" style="background:${bg}" onclick="selectColor(this,'${bg}')"></div>`).join('')}</div>
@@ -878,30 +878,92 @@ function renderGHSetup(onDone){
 }
 
 // ── PUBLIC CARD ───────────────────────────────────────────
+function buildVCard(c){
+  const lines=['BEGIN:VCARD','VERSION:3.0'];
+  lines.push('FN:'+( c.nome||''));
+  if(c.cargo) lines.push('TITLE:'+c.cargo);
+  if(c.empresa) lines.push('ORG:'+c.empresa);
+  (c.contatos||[]).forEach(ct=>{
+    if(ct.tipo==='email')    lines.push('EMAIL:'+ct.valor);
+    if(ct.tipo==='telefone') lines.push('TEL:'+ct.valor);
+    if(ct.tipo==='whatsapp') lines.push('TEL;TYPE=CELL:'+ct.valor);
+    if(ct.tipo==='site')     lines.push('URL:'+ct.valor);
+  });
+  if(c.bio) lines.push('NOTE:'+c.bio);
+  lines.push('END:VCARD');
+  return lines.join('\n');
+}
+
+function downloadVCard(cardId){
+  const c=getCartao(cardId); if(!c) return;
+  const blob=new Blob([buildVCard(c)],{type:'text/vcard'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=(c.nome||'contato').replace(/\s+/g,'_')+'.vcf';
+  a.click();
+}
+
+async function shareCard(cardId){
+  const c=getCartao(cardId); if(!c) return;
+  const url=cardUrl(cardId);
+  if(navigator.share){
+    try{ await navigator.share({title:c.nome,text:'Meu cartão digital',url}); return; }catch{}
+  }
+  try{ await navigator.clipboard.writeText(url); toast('Link copiado! 📋'); }catch{ toast('Não foi possível compartilhar','error'); }
+}
+
 function renderPublicCard(cardId){
   const app=document.getElementById('app'); app.className='fullscreen';
   document.body.style.margin='0'; document.body.style.padding='0';
   const c=getCartao(cardId);
   if(!c){
-    const all = loadData().cartoes||[];
-    const gh  = getGHConfig();
-    const debugInfo = `IDs disponíveis: ${all.map(x=>x.id).join(', ')||'nenhum'} | Buscando: ${cardId} | GitHub: ${gh?gh.owner+'/'+gh.repo+'/'+gh.path:'não configurado'}`;
-    app.innerHTML=`<div class="public-card-wrapper"><div class="public-card"><div class="public-card-header" style="padding:48px 28px"><div style="font-size:4rem;margin-bottom:16px">😕</div><div class="public-card-name">Cartão não encontrado</div><p class="public-card-bio">Este cartão pode ter sido removido ou o link está incorreto.</p><div style="margin-top:16px;padding:10px;background:rgba(255,255,255,.05);border-radius:8px;font-size:.65rem;color:#64748b;word-break:break-all;text-align:left">${debugInfo}</div></div><div class="public-card-footer"><span>Powered by</span><strong style="color:#60a5fa">Wyc Connect</strong></div></div></div>`;
+    app.innerHTML=`<div class="public-card-wrapper"><div class="public-card"><div class="public-card-header" style="padding:48px 28px"><div style="font-size:4rem;margin-bottom:16px">😕</div><div class="public-card-name">Cartão não encontrado</div><p class="public-card-bio">Este cartão pode ter sido removido ou o link está incorreto.</p></div><div class="public-card-footer"><span>Powered by</span><strong style="color:#60a5fa">Wyc Connect</strong></div></div></div>`;
     return;
   }
+
+  // Register scan async (fire and forget)
+  registerScan(cardId);
+
   const isIdoso=c.tipo==='idoso';
+  const scans=c.scans||0;
+
   const contatos=(c.contatos||[]).map(ct=>{
     const cfg=typeConfig(ct.tipo); const href=buildHref(ct.tipo,ct.valor);
     return `<a href="${esc(href)}" target="_blank" rel="noopener" class="public-contact-btn" style="background:${cfg.bg};border:1px solid ${cfg.border};color:${cfg.color}"><span class="public-contact-icon">${cfg.icon}</span><span class="public-contact-label">${esc(ct.rotulo||cfg.label)}<span class="public-contact-sublabel">${esc(ct.valor||'')}</span></span><span style="opacity:.6;font-size:.9rem">→</span></a>`;
   }).join('');
+
   const urgencia=c.urgenciaContatos||[];
-  const urgHtml=isIdoso?`<div style="margin-top:8px;padding:0 20px 20px"><div style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f87171;margin-bottom:10px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#f87171;display:inline-block;animation:pulse 1.5s infinite"></span>EMERGÊNCIA</div>${(urgencia.length>0?urgencia:[{icone:'🚑',nome:'SAMU',numero:'192'},{icone:'🚒',nome:'Bombeiros',numero:'193'},{icone:'🚓',nome:'Polícia',numero:'190'}]).map(u=>`<a href="tel:${esc(u.numero)}" class="public-contact-btn" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171;margin-bottom:8px"><span class="public-contact-icon">${esc(u.icone||'📞')}</span><span class="public-contact-label">${esc(u.nome)}<span class="public-contact-sublabel">${esc(u.numero)}</span></span><span style="font-size:.72rem;background:rgba(239,68,68,.2);padding:2px 8px;border-radius:99px;font-weight:700">LIGAR</span></a>`).join('')}</div>`:'';
-  const avatarHtml=c.foto?`<img src="${esc(c.foto)}" class="public-card-avatar" alt="${esc(c.nome)}">`:`<div class="public-card-avatar-placeholder" style="background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'}">${initials(c.nome||'?')}</div>`;
-  const tag=isIdoso?`<div class="public-card-tag" style="background:rgba(239,68,68,.2);color:#fca5a5;border-color:rgba(239,68,68,.4)">🧓 IDOSO</div>`:`<div class="public-card-tag">✅ PROFISSIONAL</div>`;
+  const urgHtml=isIdoso?`<div style="padding:0 20px 20px"><div style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f87171;margin-bottom:10px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#f87171;display:inline-block;animation:pulse 1.5s infinite"></span>EMERGÊNCIA</div>${(urgencia.length>0?urgencia:[{icone:'🚑',nome:'SAMU',numero:'192'},{icone:'🚒',nome:'Bombeiros',numero:'193'},{icone:'🚓',nome:'Polícia',numero:'190'}]).map(u=>`<a href="tel:${esc(u.numero)}" class="public-contact-btn" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171;margin-bottom:8px"><span class="public-contact-icon">${esc(u.icone||'📞')}</span><span class="public-contact-label">${esc(u.nome)}<span class="public-contact-sublabel">${esc(u.numero)}</span></span><span style="font-size:.72rem;background:rgba(239,68,68,.2);padding:2px 8px;border-radius:99px;font-weight:700">LIGAR</span></a>`).join('')}</div>`:'';
+
+  const avatarHtml=c.foto
+    ?`<img src="${esc(c.foto)}" class="public-card-avatar" alt="${esc(c.nome)}">`
+    :`<div class="public-card-avatar-placeholder" style="background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'}">${initials(c.nome||'?')}</div>`;
+
+  const bannerHtml=c.banner
+    ?`<img src="${esc(c.banner)}" class="public-card-banner" alt="banner">`
+    :`<div class="public-card-banner-placeholder" style="background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'}"></div>`;
+
+  const tag=isIdoso
+    ?`<div class="public-card-tag" style="background:rgba(239,68,68,.2);color:#fca5a5;border-color:rgba(239,68,68,.4)">🧓 IDOSO</div>`
+    :`<div class="public-card-tag">✅ PROFISSIONAL</div>`;
+
   app.innerHTML=`<div class="public-card-wrapper"><div class="public-card">
-    <div class="public-card-header">${tag}${avatarHtml}<div class="public-card-name">${esc(c.nome||'Sem nome')}</div>${c.cargo?`<div class="public-card-company">${esc(c.cargo)}</div>`:''} ${c.empresa?`<div class="public-card-company" style="color:#60a5fa">${esc(c.empresa)}</div>`:''} ${c.bio?`<div class="public-card-bio">${esc(c.bio)}</div>`:''}</div>
+    ${bannerHtml}
+    <div class="public-card-header" style="padding-top:${c.banner?'16px':'36px'}">
+      ${tag}
+      ${scans>0?`<div class="scan-badge">👁️ ${scans} visualização${scans>1?'s':''}</div>`:''}
+      ${avatarHtml}
+      <div class="public-card-name">${esc(c.nome||'Sem nome')}</div>
+      ${c.cargo?`<div class="public-card-company">${esc(c.cargo)}</div>`:''}
+      ${c.empresa?`<div class="public-card-company" style="color:#60a5fa">${esc(c.empresa)}</div>`:''}
+      ${c.bio?`<div class="public-card-bio">${esc(c.bio)}</div>`:''}
+    </div>
     <div class="public-card-contacts">${contatos||'<p style="text-align:center;color:#475569;font-size:.82rem">Nenhum contato cadastrado</p>'}</div>
     ${urgHtml}
+    <div class="public-card-actions">
+      <button class="public-action-btn" onclick="downloadVCard('${cardId}')">📲 Salvar Contato</button>
+      <button class="public-action-btn" onclick="shareCard('${cardId}')">🔗 Compartilhar</button>
+    </div>
     <div class="public-card-footer">🔐 Cartão verificado &nbsp;<strong style="color:#60a5fa">Wyc Connect</strong></div>
   </div></div>`;
 }
