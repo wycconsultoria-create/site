@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
@@ -56,6 +56,7 @@ p{color:var(--text-secondary)}a{text-decoration:none;color:inherit}
 .topbar-title{font-family:var(--font-display);font-size:1.2rem;font-weight:700}
 .topbar-subtitle{font-size:.8rem;color:var(--text-muted)}
 .topbar-actions{margin-left:auto;display:flex;gap:10px}
+.menu-btn{display:none;background:none;border:none;cursor:pointer;font-size:1.4rem;padding:4px;color:var(--text-primary);flex-shrink:0}
 .page-content{padding:28px;flex:1}
 
 /* CARDS GRID */
@@ -163,12 +164,31 @@ p{color:var(--text-secondary)}a{text-decoration:none;color:inherit}
 .mt-4{margin-top:16px}.mb-4{margin-bottom:16px}.w-full{width:100%}.text-center{text-align:center}
 .text-sm{font-size:.82rem}.text-xs{font-size:.72rem}.text-muted{color:var(--text-muted)}.font-bold{font-weight:700}
 
+/* ── Mobile ── */
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%)}
-  .main-content{margin-left:0}
-  .contact-item{grid-template-columns:1fr 1fr;grid-template-rows:auto auto}
+  /* Sidebar vira drawer — oculta por padrão */
+  .sidebar{transform:translateX(-100%);transition:transform .25s ease;box-shadow:none}
+  .sidebar.open{transform:translateX(0);box-shadow:4px 0 24px rgba(0,0,0,.18)}
+  /* Overlay escuro quando sidebar aberta */
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
+  .sidebar-overlay.open{display:block}
+  /* Conteúdo ocupa tela toda */
+  .main-content{margin-left:0!important}
+  /* Topbar mobile */
+  .topbar{padding:0 16px;gap:10px}
+  .topbar-title{font-size:1rem}
+  .topbar-subtitle{display:none}
+  /* Botão hamburguer */
+  .menu-btn{display:flex!important}
+  /* Cards em coluna única */
+  .contact-item{grid-template-columns:1fr;grid-template-rows:auto}
   .form-grid{grid-template-columns:1fr}
   .cards-grid{grid-template-columns:1fr}
+  /* Editor em coluna única */
+  .page-content [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+  /* Topbar actions wrap */
+  .topbar-actions{gap:6px}
+  .topbar-actions .btn{font-size:.72rem;padding:7px 10px}
 }
 /* ── Public Card Actions ── */
 .public-card-actions{display:flex;gap:8px;padding:0 20px 20px}
@@ -250,6 +270,11 @@ async function syncFromGitHub(){
 
 // Salva local + envia para GitHub
 async function saveAndSync(d){
+  // Sempre inclui o auth no db.json para funcionar em qualquer dispositivo
+  try{
+    const authLocal = JSON.parse(localStorage.getItem(AUTH_KEY)||'null');
+    if(authLocal) d.auth = authLocal;
+  }catch{}
   saveData(d);
   const ok=await ghPush(d);
   if(!ok) console.warn('GitHub sync failed - saved locally only');
@@ -376,6 +401,27 @@ function openModal(html,wide=false){
 function initials(n=''){ return n.trim().split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()||'?'; }
 function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+// ── SIDEBAR MOBILE ────────────────────────────────────────
+function openSidebar(){
+  const s=document.getElementById('main-sidebar');
+  const o=document.getElementById('sidebar-overlay');
+  if(s) s.classList.add('open');
+  if(o) o.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeSidebar(){
+  const s=document.getElementById('main-sidebar');
+  const o=document.getElementById('sidebar-overlay');
+  if(s) s.classList.remove('open');
+  if(o) o.classList.remove('open');
+  document.body.style.overflow='';
+}
+// Auto-close sidebar when a nav item is clicked on mobile
+document.addEventListener('click', e=>{
+  const navItem = e.target.closest('.nav-item');
+  if(navItem && window.innerWidth<=768) closeSidebar();
+});
+
 // ── ROUTER ────────────────────────────────────────────────
 // URL fixa do db.json público no GitHub
 const DB_JSON_URL = 'https://raw.githubusercontent.com/wycconsultoria-create/site/main/cartaonfc/db.json';
@@ -439,7 +485,10 @@ function logout(){ clearSession(); init(); }
 async function syncNow(){
   const btn=document.getElementById('btn-sync');
   if(btn){ btn.textContent='☁️ ...'; btn.disabled=true; }
-  const ok=await ghPush(loadData());
+  const d = loadData();
+  // Garante que auth está no payload
+  try{ const a=JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); if(a) d.auth=a; }catch{}
+  const ok=await ghPush(d);
   if(btn){ btn.textContent='☁️ Sync'; btn.disabled=false; }
   toast(ok?'Sincronizado! ✅':'Erro no sync — verifique ⚙️ GitHub Sync', ok?'success':'error');
 }
@@ -534,8 +583,13 @@ function buildSidebar(active){
   const u=getUser(); const name=u.name||'Usuário WYC'; const email=u.email||'';
   const cartoes=getCartoes().slice(0,8);
   return `
-  <aside class="sidebar">
-    <div class="sidebar-logo"><div class="logo-icon">WC</div><div class="logo-text">Wyc <span>Connect</span></div></div>
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <aside class="sidebar" id="main-sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">WC</div>
+      <div class="logo-text">Wyc <span>Connect</span></div>
+      <button class="menu-btn" style="display:flex;margin-left:auto" onclick="closeSidebar()">✕</button>
+    </div>
     <div class="sidebar-section-label">Menu</div>
     <div class="nav-item ${active==='empresas'?'active':''}" onclick="renderDashboard()"><span class="nav-icon">🏢</span> Empresas</div>
     <div class="nav-item" style="padding-left:20px;font-size:.8rem;color:var(--text-muted);cursor:default"><span class="nav-icon" style="font-size:.8rem">📇</span> Meus Cartões</div>
@@ -579,6 +633,7 @@ function renderDashboard(){
   app.innerHTML=`${buildSidebar('empresas')}
   <div class="main-content">
     <div class="topbar">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
       <div><div class="topbar-title">🏢 Empresas & Agentes</div><div class="topbar-subtitle">Gerencie seus clientes e cartões digitais</div></div>
       <div class="topbar-actions">
         <button class="btn btn-secondary btn-sm" onclick="syncNow()" title="Sincronizar com GitHub" id="btn-sync">☁️ Sync</button>
@@ -638,6 +693,7 @@ function renderCartoesPage(empresaId, filterEmpresaId, highlightId){
   app.innerHTML=`${buildSidebar('')}
   <div class="main-content">
     <div class="topbar">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
       <div><div class="topbar-title">📇 ${emp?esc(emp.name):'Meus Cartões'}</div><div class="topbar-subtitle">${cartoes.length} cartão(ões)</div></div>
       <div class="topbar-actions">
         <button class="btn btn-secondary" onclick="renderDashboard()">← Empresas</button>
@@ -665,6 +721,7 @@ function renderCartaoEditor(cartaoId, empresaId){
   app.innerHTML=`${buildSidebar('')}
   <div class="main-content">
     <div class="topbar">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
       <div><div class="topbar-title">📝 ${ex?'Editar':'Novo'} Cartão</div><div class="topbar-subtitle">Configure nome, contatos e QR Code</div></div>
       <div class="topbar-actions">
         <button class="btn btn-secondary" onclick="renderCartoesPage('${_editEmpId||''}')">← Voltar</button>
@@ -830,6 +887,7 @@ function renderPerfilPage(){
   app.innerHTML=`${buildSidebar('perfil')}
   <div class="main-content">
     <div class="topbar">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
       <div><div class="topbar-title">👤 Perfil Master</div><div class="topbar-subtitle">Dados do administrador</div></div>
       <div class="topbar-actions">
         <button class="btn btn-secondary" onclick="renderDashboard()">← Empresas</button>
@@ -961,6 +1019,7 @@ function renderAnalytics(){
   app.innerHTML=`${buildSidebar('analytics')}
   <div class="main-content">
     <div class="topbar">
+      <button class="menu-btn" onclick="openSidebar()">☰</button>
       <div><div class="topbar-title">📊 Analytics</div><div class="topbar-subtitle">Scans de QR Code por empresa e cartão</div></div>
       <div class="topbar-actions">
         <button class="btn btn-secondary" onclick="exportCSV()">⬇️ Exportar CSV</button>
