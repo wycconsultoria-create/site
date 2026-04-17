@@ -35,6 +35,12 @@
           "tipo": "whatsapp",
           "rotulo": "Teste",
           "valor": "11972699775"
+        },
+        {
+          "id": "rbizo825vyjmo34ybbj",
+          "tipo": "outro",
+          "rotulo": "blabla ",
+          "valor": "9696969696"
         }
       ],
       "urgenciaContatos": [],
