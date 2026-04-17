@@ -44,7 +44,15 @@
         }
       ],
       "urgenciaContatos": [],
-      "createdAt": 1776434654062
+      "createdAt": 1776434654062,
+      "scans": 1,
+      "lastScan": 1776452342371,
+      "scanLog": [
+        {
+          "ts": 1776452342371,
+          "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+      ]
     }
   ]
 }
