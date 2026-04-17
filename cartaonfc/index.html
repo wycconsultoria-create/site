@@ -339,18 +339,33 @@ function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').
 // URL fixa do db.json público no GitHub
 const DB_JSON_URL = 'https://raw.githubusercontent.com/wycconsultoria-create/site/main/cartaonfc/db.json';
 
+async function fetchWithTimeout(url, ms=5000){
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), ms);
+  try{
+    const r = await fetch(url, {signal: ctrl.signal});
+    clearTimeout(timer);
+    return r;
+  }catch(e){
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
 async function init(){
   const params = new URLSearchParams(window.location.search);
   const cardId = params.get('card');
   if(cardId){
     showLoading('Carregando cartão...');
+    // Tenta buscar db.json com timeout de 5s — se falhar usa localStorage
     try{
-      const r = await fetch(DB_JSON_URL + '?t=' + Date.now());
+      const r = await fetchWithTimeout(DB_JSON_URL + '?t=' + Date.now(), 5000);
       if(r.ok){
         const data = await r.json();
         saveData(data);
       }
-    }catch(e){ console.warn('db.json fetch failed:', e); }
+    }catch(e){ console.warn('db.json fetch failed (usando cache local):', e.message); }
+    // SEMPRE renderiza, mesmo se fetch falhou
     renderPublicCard(cardId);
     return;
   }
@@ -921,8 +936,8 @@ function renderPublicCard(cardId){
     return;
   }
 
-  // Register scan async (fire and forget)
-  registerScan(cardId);
+  // Register scan — fire and forget, nunca bloqueia o render
+  setTimeout(()=>registerScan(cardId), 100);
 
   const isIdoso=c.tipo==='idoso';
   const scans=c.scans||0;
