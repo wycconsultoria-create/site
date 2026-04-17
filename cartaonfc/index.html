@@ -1,18 +1,756 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wyc Connect</title>
-  <link rel="stylesheet" href="src/styles/main.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Wyc Connect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<style>
+:root{
+  --bg-primary:#f0f4fb;--bg-secondary:#ffffff;--bg-card:#f8faff;--bg-card-hover:#eef2fc;
+  --border:rgba(59,130,246,.18);--border-focus:rgba(59,130,246,.55);
+  --accent:#2563eb;--accent-glow:rgba(37,99,235,.25);--accent-2:#6366f1;
+  --text-primary:#0f172a;--text-secondary:#334155;--text-muted:#64748b;
+  --success:#16a34a;--danger:#dc2626;--warning:#d97706;
+  --radius-sm:6px;--radius-md:12px;--radius-lg:20px;--radius-xl:28px;
+  --shadow-card:0 2px 12px rgba(37,99,235,.07);
+  --font-display:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
+  --sidebar-w:240px;--topbar-h:64px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg-primary);color:var(--text-primary);font-family:var(--font-body);font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg-secondary)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:700}
+h2{font-size:1.5rem}h3{font-size:1.15rem}
+p{color:var(--text-secondary)}a{text-decoration:none;color:inherit}
+#app{display:flex;min-height:100vh}
+#app.fullscreen{display:block}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--bg-secondary);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0;position:fixed;left:0;top:0;bottom:0;z-index:100}
+.sidebar-logo{display:flex;align-items:center;gap:10px;padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent-2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:.85rem;color:#fff}
+.logo-text{font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--text-primary)}
+.logo-text span{color:var(--accent)}
+.sidebar-section-label{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);padding:0 20px 8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:var(--text-secondary);transition:all .2s;font-weight:500}
+.nav-item:hover{background:var(--bg-card);color:var(--text-primary)}
+.nav-item.active{background:rgba(37,99,235,.1);color:var(--accent);border-right:3px solid var(--accent)}
+.nav-icon{font-size:1.1rem;min-width:20px;text-align:center}
+.sidebar-bottom{margin-top:auto;padding:16px 20px 0;border-top:1px solid var(--border)}
+.user-card{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-card);border-radius:var(--radius-md);cursor:pointer;transition:background .2s;margin-bottom:8px}
+.user-card:hover{background:var(--bg-card-hover)}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;color:#fff;flex-shrink:0}
+.user-info{flex:1;overflow:hidden}
+.user-name{font-weight:600;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-email{font-size:.7rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn-logout{width:100%;display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;border:1px solid rgba(220,38,38,.2);background:rgba(220,38,38,.06);color:#dc2626;font-family:var(--font-body);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-logout:hover{background:rgba(220,38,38,.12)}
+
+/* MAIN */
+.main-content{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:var(--topbar-h);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);z-index:50}
+.topbar-title{font-family:var(--font-display);font-size:1.2rem;font-weight:700}
+.topbar-subtitle{font-size:.8rem;color:var(--text-muted)}
+.topbar-actions{margin-left:auto;display:flex;gap:10px}
+.page-content{padding:28px;flex:1}
+
+/* CARDS GRID */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-card)}
+.empresa-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;display:flex;flex-direction:column;gap:12px;transition:all .2s;box-shadow:var(--shadow-card)}
+.empresa-card:hover{border-color:var(--border-focus);box-shadow:0 6px 20px rgba(37,99,235,.12);transform:translateY(-2px)}
+.empresa-card-top{display:flex;align-items:center;gap:12px}
+.empresa-card-bottom{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border)}
+.empresa-avatar{width:40px;height:40px;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;color:#fff;flex-shrink:0;overflow:hidden}
+.empresa-info{flex:1;overflow:hidden}
+.empresa-name{font-weight:700;font-size:.92rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empresa-email{font-size:.72rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empresa-badge{font-size:.68rem;font-weight:600;background:rgba(22,163,74,.12);color:var(--success);border:1px solid rgba(22,163,74,.25);padding:2px 8px;border-radius:99px}
+.empresa-actions{display:flex;gap:6px;align-items:center}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 18px;border-radius:var(--radius-sm);font-family:var(--font-body);font-weight:600;font-size:.82rem;cursor:pointer;border:none;transition:all .2s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(37,99,235,.3)}
+.btn-primary:hover{background:#1d4ed8;transform:translateY(-1px)}
+.btn-secondary{background:transparent;color:var(--text-secondary);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--border-focus);color:var(--text-primary)}
+.btn-danger{background:rgba(220,38,38,.1);color:var(--danger);border:1px solid rgba(220,38,38,.25)}
+.btn-danger:hover{background:rgba(220,38,38,.2)}
+.btn-icon{width:32px;height:32px;padding:0;border-radius:var(--radius-sm)}
+.btn-sm{padding:6px 12px;font-size:.78rem}
+
+/* FORMS */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-weight:600;font-size:.75rem;letter-spacing:.05em;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text-primary);font-family:var(--font-body);font-size:.88rem;transition:border-color .2s;outline:none}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.form-select{appearance:none;cursor:pointer}
+.form-textarea{resize:vertical;min-height:80px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease}
+.modal{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-xl);padding:28px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.2);animation:slideUp .25s ease}
+.modal-wide{max-width:720px}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.modal-title{font-family:var(--font-display);font-size:1.2rem;font-weight:700}
+.modal-close{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.3rem;line-height:1;padding:4px;transition:color .2s}
+.modal-close:hover{color:var(--text-primary)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+
+/* CONTACT ITEM */
+.contact-item{display:grid;grid-template-columns:160px 1fr 1fr auto;gap:10px;align-items:center;padding:12px 16px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:8px}
+.contact-item:hover{border-color:var(--border-focus)}
+.contact-type-badge{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--radius-sm);font-weight:600;font-size:.75rem;border:1px solid}
+.contact-remove{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1rem;transition:color .2s;padding:4px}
+.contact-remove:hover{color:var(--danger)}
+
+/* PUBLIC CARD */
+.public-card-wrapper{display:flex;align-items:center;justify-content:center;min-height:100vh;width:100%;padding:24px;background:linear-gradient(135deg,#0a0f1e 0%,#0f172a 50%,#0a0f1e 100%)}
+.public-card{width:100%;max-width:360px;background:#1e293b;border-radius:var(--radius-xl);overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08);animation:cardAppear .5s ease forwards}
+.public-card-header{padding:36px 28px 24px;text-align:center;background:linear-gradient(180deg,rgba(37,99,235,.1) 0%,transparent 100%)}
+.public-card-avatar{width:88px;height:88px;border-radius:50%;margin:0 auto 16px;border:3px solid var(--accent);object-fit:cover;box-shadow:0 0 0 4px rgba(37,99,235,.2);display:block}
+.public-card-avatar-placeholder{width:88px;height:88px;border-radius:50%;margin:0 auto 16px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:2rem;color:#fff;border:3px solid var(--accent);box-shadow:0 0 0 4px rgba(37,99,235,.2)}
+.public-card-name{font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:#f1f5f9;line-height:1.2;margin-bottom:4px}
+.public-card-company{font-size:.85rem;color:#94a3b8;margin-bottom:4px}
+.public-card-bio{font-size:.82rem;color:#94a3b8;line-height:1.5;margin-top:8px}
+.public-card-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(37,99,235,.2);color:#93c5fd;border:1px solid rgba(37,99,235,.4);font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:99px;margin-bottom:12px}
+.public-card-contacts{padding:0 20px 28px;display:flex;flex-direction:column;gap:10px}
+.public-contact-btn{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:var(--radius-md);cursor:pointer;border:none;font-family:var(--font-body);font-weight:600;font-size:.88rem;transition:all .2s;text-align:left;width:100%}
+.public-contact-btn:hover{opacity:.88;transform:translateY(-1px)}
+.public-contact-btn:active{transform:scale(.98)}
+.public-contact-icon{font-size:1.2rem;min-width:24px;text-align:center}
+.public-contact-label{flex:1}
+.public-contact-sublabel{font-size:.72rem;opacity:.75;font-weight:400;display:block}
+.public-card-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.08);text-align:center;font-size:.7rem;color:#475569;display:flex;align-items:center;justify-content:center;gap:6px}
+
+/* QR */
+.qr-canvas-wrapper{background:#fff;border-radius:var(--radius-md);padding:20px;display:inline-block;margin:16px 0;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.qr-url{font-size:.72rem;color:var(--text-muted);background:var(--bg-primary);padding:8px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);word-break:break-all;font-family:monospace;margin-bottom:16px}
+
+/* TOAST */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{display:flex;align-items:center;gap:10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 18px;font-size:.84rem;font-weight:500;box-shadow:var(--shadow-card);animation:slideInRight .3s ease;min-width:240px}
+.toast.success{border-color:rgba(22,163,74,.4)}.toast.error{border-color:rgba(220,38,38,.4)}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:60px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;grid-column:1/-1}
+.empty-state-icon{font-size:3rem;opacity:.3}
+.empty-state-title{font-family:var(--font-display);font-size:1.2rem}
+.empty-state-text{color:var(--text-muted);max-width:320px;font-size:.88rem}
+
+/* SECTION HEADER */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.urgency-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(220,38,38,.12);color:var(--danger);border:1px solid rgba(220,38,38,.3);border-radius:var(--radius-sm);padding:3px 8px;font-size:.68rem;font-weight:700}
+.color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s;flex-shrink:0}
+.color-swatch:hover,.color-swatch.selected{border-color:#fff;transform:scale(1.15);box-shadow:0 0 0 2px var(--accent)}
+.color-picker{display:flex;gap:8px;flex-wrap:wrap}
+.tabs{display:flex;gap:4px;background:var(--bg-primary);border-radius:var(--radius-md);padding:4px;margin-bottom:24px}
+.tab{flex:1;padding:8px 14px;border-radius:var(--radius-sm);border:none;background:none;color:var(--text-secondary);font-family:var(--font-body);font-weight:600;font-size:.82rem;cursor:pointer;transition:all .2s}
+.tab.active{background:var(--bg-secondary);color:var(--text-primary);box-shadow:var(--shadow-card)}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes cardAppear{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:none}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes shake{0%,100%{transform:translateX(0)}15%{transform:translateX(-8px)}30%{transform:translateX(8px)}45%{transform:translateX(-6px)}60%{transform:translateX(6px)}75%{transform:translateX(-3px)}90%{transform:translateX(3px)}}
+
+.mt-4{margin-top:16px}.mb-4{margin-bottom:16px}.w-full{width:100%}.text-center{text-align:center}
+.text-sm{font-size:.82rem}.text-xs{font-size:.72rem}.text-muted{color:var(--text-muted)}.font-bold{font-weight:700}
+
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .main-content{margin-left:0}
+  .contact-item{grid-template-columns:1fr 1fr;grid-template-rows:auto auto}
+  .form-grid{grid-template-columns:1fr}
+  .cards-grid{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
-  <div id="app">
-    <!-- Router renders here -->
-  </div>
-  <script type="module" src="src/app.js"></script>
+<div id="app"></div>
+
+<script>
+// =========================================================
+//  WYC CONNECT – Single File Bundle
+// =========================================================
+
+// ── STORE ─────────────────────────────────────────────────
+const STORE_KEY   = 'wyc_connect_data';
+const AUTH_KEY    = 'wyc_auth';
+const SESSION_KEY = 'wyc_session';
+const SESSION_TTL = 8 * 60 * 60 * 1000;
+
+const DEFAULT_DATA = { user:{ name:'Usuário WYC', email:'' }, empresas:[], cartoes:[] };
+
+function loadData(){
+  try{ const r=localStorage.getItem(STORE_KEY); return r?{...JSON.parse(JSON.stringify(DEFAULT_DATA)),...JSON.parse(r)}:JSON.parse(JSON.stringify(DEFAULT_DATA)); }
+  catch{ return JSON.parse(JSON.stringify(DEFAULT_DATA)); }
+}
+function saveData(d){ localStorage.setItem(STORE_KEY,JSON.stringify(d)); }
+function getEmpresas(){ return loadData().empresas; }
+function saveEmpresa(e){ const d=loadData(); const i=d.empresas.findIndex(x=>x.id===e.id); if(i>=0)d.empresas[i]=e; else d.empresas.push(e); saveData(d); }
+function deleteEmpresa(id){ const d=loadData(); d.empresas=d.empresas.filter(e=>e.id!==id); d.cartoes=d.cartoes.filter(c=>c.empresaId!==id); saveData(d); }
+function getCartoes(eid){ const d=loadData(); return eid?d.cartoes.filter(c=>c.empresaId===eid):d.cartoes; }
+function getCartao(id){ return loadData().cartoes.find(c=>c.id===id)||null; }
+function saveCartao(c){ const d=loadData(); const i=d.cartoes.findIndex(x=>x.id===c.id); if(i>=0)d.cartoes[i]=c; else d.cartoes.push(c); saveData(d); }
+function deleteCartao(id){ const d=loadData(); d.cartoes=d.cartoes.filter(c=>c.id!==id); saveData(d); }
+function getUser(){ return loadData().user; }
+function saveUser(u){ const d=loadData(); d.user=u; saveData(d); }
+function genId(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
+
+function cardUrl(id){
+  // Usa sempre a URL atual sem parâmetros + ?card=ID
+  const loc = window.location;
+  const base = loc.origin + loc.pathname.replace(/\/+$/,'');
+  return base + '?card=' + id;
+}
+
+async function hashPassword(p){
+  const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(p));
+  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function getAuthConfig(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); }catch{ return null; } }
+function saveAuthConfig(c){ localStorage.setItem(AUTH_KEY,JSON.stringify(c)); }
+function isAuthenticated(){
+  try{
+    const s=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');
+    if(!s) return false;
+    if(Date.now()-s.ts>SESSION_TTL){ sessionStorage.removeItem(SESSION_KEY); return false; }
+    return true;
+  }catch{ return false; }
+}
+function setSession(){ sessionStorage.setItem(SESSION_KEY,JSON.stringify({ts:Date.now()})); }
+function clearSession(){ sessionStorage.removeItem(SESSION_KEY); }
+
+// ── CONTACTS ──────────────────────────────────────────────
+const CONTACT_TYPES={
+  whatsapp: {label:'WhatsApp', icon:'💬', color:'#16a34a', bg:'rgba(22,163,74,.12)', border:'rgba(22,163,74,.3)'},
+  email:    {label:'E-mail',   icon:'✉️',  color:'#b45309', bg:'rgba(180,83,9,.12)',  border:'rgba(180,83,9,.3)'},
+  site:     {label:'Site',     icon:'🌐', color:'#0369a1', bg:'rgba(3,105,161,.12)', border:'rgba(3,105,161,.3)'},
+  instagram:{label:'Instagram',icon:'📸', color:'#be185d', bg:'rgba(190,24,93,.12)', border:'rgba(190,24,93,.3)'},
+  telefone: {label:'Telefone', icon:'📞', color:'#7c3aed', bg:'rgba(124,58,237,.12)',border:'rgba(124,58,237,.3)'},
+  linkedin: {label:'LinkedIn', icon:'💼', color:'#0056a0', bg:'rgba(0,86,160,.12)',  border:'rgba(0,86,160,.3)'},
+  facebook: {label:'Facebook', icon:'👥', color:'#1558c0', bg:'rgba(21,88,192,.12)', border:'rgba(21,88,192,.3)'},
+  tiktok:   {label:'TikTok',   icon:'🎵', color:'#c8003e', bg:'rgba(200,0,62,.12)',  border:'rgba(200,0,62,.3)'},
+  outro:    {label:'Outro',    icon:'🔗', color:'#475569', bg:'rgba(71,85,105,.1)',  border:'rgba(71,85,105,.25)'},
+};
+function typeConfig(t){ return CONTACT_TYPES[t]||CONTACT_TYPES.outro; }
+function buildHref(t,v){
+  if(!v) return '#';
+  if(t==='whatsapp'){ const c=v.replace(/\D/g,''); return 'https://wa.me/'+(c.startsWith('55')?c:'55'+c); }
+  if(t==='email') return 'mailto:'+v;
+  if(t==='telefone') return 'tel:'+v.replace(/\s/g,'');
+  const cfg=typeConfig(t);
+  if(cfg.prefix&&!v.startsWith('http')&&!v.startsWith(cfg.prefix)) return cfg.prefix+v;
+  return v.startsWith('http')?v:'https://'+v;
+}
+
+// ── UI HELPERS ────────────────────────────────────────────
+function toast(msg,type='success'){
+  let c=document.getElementById('toast-container');
+  if(!c){ c=document.createElement('div'); c.id='toast-container'; c.className='toast-container'; document.body.appendChild(c); }
+  const icons={success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'};
+  const el=document.createElement('div'); el.className='toast '+type;
+  el.innerHTML=`<span>${icons[type]||'✅'}</span><span>${msg}</span>`;
+  c.appendChild(el);
+  setTimeout(()=>{ el.style.cssText='opacity:0;transform:translateX(20px);transition:all .3s'; setTimeout(()=>el.remove(),300); },3000);
+}
+function showConfirm(msg,cb){
+  const ov=document.createElement('div'); ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal" style="max-width:380px;text-align:center"><div style="font-size:2.5rem;margin-bottom:12px">⚠️</div><h3 class="modal-title" style="margin-bottom:10px">Confirmar</h3><p style="margin-bottom:24px">${msg}</p><div style="display:flex;gap:10px;justify-content:center"><button class="btn btn-secondary" id="cc">Cancelar</button><button class="btn btn-danger" id="co">Confirmar</button></div></div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#cc').onclick=()=>ov.remove();
+  ov.querySelector('#co').onclick=()=>{ ov.remove(); cb(); };
+  ov.onclick=e=>{ if(e.target===ov)ov.remove(); };
+}
+function openModal(html,wide=false){
+  const ov=document.createElement('div'); ov.className='modal-overlay';
+  ov.innerHTML=`<div class="modal${wide?' modal-wide':''}">${html}</div>`;
+  document.body.appendChild(ov);
+  ov.onclick=e=>{ if(e.target===ov)ov.remove(); };
+  ov.querySelector('.modal-close')?.addEventListener('click',()=>ov.remove());
+  return ov;
+}
+function initials(n=''){ return n.trim().split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()||'?'; }
+function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── ROUTER ────────────────────────────────────────────────
+function init(){
+  const cardId=new URLSearchParams(window.location.search).get('card');
+  if(cardId){ renderPublicCard(cardId); return; }
+  isAuthenticated()?renderDashboard():renderLogin(renderDashboard);
+}
+
+function logout(){ clearSession(); init(); }
+
+// ── LOGIN ─────────────────────────────────────────────────
+function renderLogin(onSuccess){
+  const app=document.getElementById('app');
+  app.className='fullscreen';
+  const cfg=getAuthConfig(); const isSetup=!cfg;
+  app.innerHTML=`
+  <div id="login-root" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e8f0fe 0%,#f0f4ff 50%,#e8f0fe 100%);padding:20px">
+    <div style="position:fixed;top:-80px;left:-80px;width:320px;height:320px;border-radius:50%;background:rgba(37,99,235,.08);pointer-events:none"></div>
+    <div style="position:fixed;bottom:-60px;right:-60px;width:280px;height:280px;border-radius:50%;background:rgba(99,102,241,.07);pointer-events:none"></div>
+    <div style="background:#fff;border:1px solid rgba(37,99,235,.15);border-radius:24px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(37,99,235,.1);position:relative;z-index:1;animation:slideUp .3s ease">
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,#2563eb,#6366f1);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:1rem;color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.35);margin-bottom:14px">WC</div>
+        <div style="font-family:var(--font-display);font-weight:700;font-size:1.4rem;color:#0f172a">Wyc <span style="color:#2563eb">Connect</span></div>
+        <div style="font-size:.82rem;color:#64748b;margin-top:4px">${isSetup?'🔧 Primeira vez? Configure seu acesso abaixo':'🔐 Acesso restrito · Entre com suas credenciais'}</div>
+      </div>
+      <div id="lf">
+        ${isSetup?`
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:.8rem;color:#1d4ed8">👋 <strong>Bem-vindo!</strong> Configure seu usuário e senha para proteger o painel.</div>
+        <div style="margin-bottom:14px"><label style="display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;color:#475569;margin-bottom:6px">Seu Nome</label>
+        <input id="l-nome" class="form-input" placeholder="Nome do administrador" style="background:#f8faff;border-color:#e2e8f0;color:#0f172a"></div>
+        <div style="margin-bottom:14px"><label style="display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;color:#475569;margin-bottom:6px">E-mail</label>
+        <input id="l-email" class="form-input" type="email" placeholder="seu@email.com" style="background:#f8faff;border-color:#e2e8f0;color:#0f172a"></div>`:''}
+        <div style="margin-bottom:14px">
+          <label style="display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;color:#475569;margin-bottom:6px">${isSetup?'Criar Senha':'Senha'}</label>
+          <div style="position:relative">
+            <input id="l-senha" class="form-input" type="password" placeholder="${isSetup?'Mínimo 6 caracteres':'Digite sua senha'}" style="background:#f8faff;border-color:#e2e8f0;color:#0f172a;padding-right:44px" autocomplete="${isSetup?'new-password':'current-password'}">
+            <button id="tpwd" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#64748b;padding:4px">👁️</button>
+          </div>
+        </div>
+        ${isSetup?`<div style="margin-bottom:20px">
+          <label style="display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;color:#475569;margin-bottom:6px">Confirmar Senha</label>
+          <div style="position:relative">
+            <input id="l-confirm" class="form-input" type="password" placeholder="Repita a senha" style="background:#f8faff;border-color:#e2e8f0;color:#0f172a;padding-right:44px" autocomplete="new-password">
+            <button id="tpwd2" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#64748b;padding:4px">👁️</button>
+          </div></div>`:`<div style="margin-bottom:20px"><label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:.82rem;color:#475569"><input type="checkbox" id="l-rem" style="accent-color:#2563eb"> Manter conectado</label></div>`}
+        <button id="btn-login" style="width:100%;padding:12px;background:linear-gradient(135deg,#2563eb,#6366f1);color:#fff;border:none;border-radius:10px;font-family:var(--font-body);font-weight:700;font-size:.92rem;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,.35);display:flex;align-items:center;justify-content:center;gap:8px">
+          <span id="bli">${isSetup?'🔧':'🔐'}</span><span id="blt">${isSetup?'Criar Conta & Entrar':'Entrar'}</span>
+        </button>
+      </div>
+      <div style="margin-top:20px;text-align:center;font-size:.72rem;color:#94a3b8">🔒 Dados armazenados localmente · Wyc Connect v1.0</div>
+    </div>
+  </div>`;
+
+  document.getElementById('tpwd')?.addEventListener('click',()=>{ const i=document.getElementById('l-senha'); i.type=i.type==='password'?'text':'password'; });
+  document.getElementById('tpwd2')?.addEventListener('click',()=>{ const i=document.getElementById('l-confirm'); i.type=i.type==='password'?'text':'password'; });
+  document.getElementById('login-root').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('btn-login').click(); });
+
+  document.getElementById('btn-login').addEventListener('click',async()=>{
+    const btn=document.getElementById('btn-login'),blt=document.getElementById('blt'),bli=document.getElementById('bli');
+    const senha=document.getElementById('l-senha').value;
+    btn.disabled=true; blt.textContent='Aguarde...'; bli.textContent='⏳';
+    try{
+      if(isSetup){
+        const nome=document.getElementById('l-nome').value.trim();
+        const email=document.getElementById('l-email').value.trim();
+        const confirm=document.getElementById('l-confirm').value;
+        if(!nome){ toast('Informe seu nome','error'); btn.disabled=false;blt.textContent='Criar Conta & Entrar';bli.textContent='🔧';return; }
+        if(!senha||senha.length<6){ toast('Senha: mínimo 6 caracteres','error'); btn.disabled=false;blt.textContent='Criar Conta & Entrar';bli.textContent='🔧';return; }
+        if(senha!==confirm){ toast('As senhas não conferem','error'); btn.disabled=false;blt.textContent='Criar Conta & Entrar';bli.textContent='🔧';return; }
+        const hash=await hashPassword(senha);
+        saveAuthConfig({hash,nome,email,createdAt:Date.now()});
+        saveUser({name:nome,email});
+        setSession();
+        toast('Conta criada! Bem-vindo(a) 🎉');
+        setTimeout(()=>onSuccess(),600);
+      } else {
+        if(!senha){ toast('Digite sua senha','error'); btn.disabled=false;blt.textContent='Entrar';bli.textContent='🔐';return; }
+        const hash=await hashPassword(senha);
+        if(hash!==cfg.hash){
+          const lf=document.getElementById('lf');
+          lf.style.animation='none'; setTimeout(()=>{ lf.style.animation='shake .4s ease'; },10);
+          setTimeout(()=>{ lf.style.animation=''; },420);
+          toast('Senha incorreta ❌','error');
+          btn.disabled=false;blt.textContent='Entrar';bli.textContent='🔐';
+          document.getElementById('l-senha').value=''; document.getElementById('l-senha').focus();
+          return;
+        }
+        setSession();
+        toast('Bem-vindo(a), '+(cfg.nome||'Admin')+'! 👋');
+        setTimeout(()=>onSuccess(),500);
+      }
+    }catch(err){ console.error(err); toast('Erro inesperado. Tente novamente.','error'); btn.disabled=false;blt.textContent=isSetup?'Criar Conta & Entrar':'Entrar';bli.textContent=isSetup?'🔧':'🔐'; }
+  });
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────
+function buildSidebar(active){
+  const u=getUser(); const name=u.name||'Usuário WYC'; const email=u.email||'';
+  const cartoes=getCartoes().slice(0,8);
+  return `
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">WC</div><div class="logo-text">Wyc <span>Connect</span></div></div>
+    <div class="sidebar-section-label">Menu</div>
+    <div class="nav-item ${active==='empresas'?'active':''}" onclick="renderDashboard()"><span class="nav-icon">🏢</span> Empresas</div>
+    <div class="nav-item" style="padding-left:20px;font-size:.8rem;color:var(--text-muted);cursor:default"><span class="nav-icon" style="font-size:.8rem">📇</span> Meus Cartões</div>
+    ${cartoes.map(c=>`<div class="nav-item" style="padding:6px 20px 6px 32px;font-size:.78rem" onclick="renderCartoesPage(null,null,'${c.id}')"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;margin-right:4px"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.nome||'Sem nome')}</span></div>`).join('')}
+    <div class="nav-item ${active==='perfil'?'active':''}" style="margin-top:8px" onclick="renderPerfilPage()"><span class="nav-icon">👤</span> Perfil</div>
+    <div class="nav-item" onclick="toast('Suporte: suporte@wycconsultoria.com.br','info')"><span class="nav-icon">🆘</span> Suporte</div>
+    <div class="sidebar-bottom">
+      <div class="user-card" onclick="renderPerfilPage()">
+        <div class="user-avatar">${initials(name)}</div>
+        <div class="user-info"><div class="user-name">${esc(name)}</div><div class="user-email">${esc(email||'Clique para editar')}</div></div>
+        <span style="font-size:.75rem;color:var(--text-muted)">✏️</span>
+      </div>
+      <button class="btn-logout" onclick="logout()">🚪 Sair da conta</button>
+    </div>
+  </aside>`;
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────
+function renderDashboard(){
+  const app=document.getElementById('app'); app.className='';
+  const empresas=getEmpresas(); const cartoes=getCartoes();
+  const rows=empresas.length===0?`<div class="empty-state"><div class="empty-state-icon">🏢</div><div class="empty-state-title">Nenhuma empresa ainda</div><p class="empty-state-text">Crie sua primeira empresa para começar</p><button class="btn btn-primary mt-4" onclick="openEmpresaModal()">➕ Criar Empresa</button></div>`:
+    empresas.map(e=>{ const cnt=cartoes.filter(c=>c.empresaId===e.id).length; return `
+    <div class="empresa-card">
+      <div class="empresa-card-top">
+        <div class="empresa-avatar">${initials(e.name)}</div>
+        <div class="empresa-info"><div class="empresa-name">${esc(e.name)}</div><div class="empresa-email">${esc(e.cnpj||e.email||'—')}</div></div>
+        <span class="empresa-badge">● Ativo</span>
+      </div>
+      <div class="empresa-card-bottom">
+        <span style="font-size:.73rem;color:var(--text-muted)">📇 <strong style="color:var(--accent)">${cnt}</strong> cartão(ões)${e.email?` · ✉️ ${esc(e.email)}`:''}</span>
+        <div class="empresa-actions">
+          <button class="btn btn-secondary btn-icon btn-sm" onclick="openEmpresaModal('${e.id}')" title="Editar">✏️</button>
+          <button class="btn btn-secondary btn-icon btn-sm" onclick="renderCartoesPage('${e.id}')" title="Cartões">📇</button>
+          <button class="btn btn-danger btn-icon btn-sm" onclick="showConfirm('Excluir empresa e todos os cartões?',()=>{ deleteEmpresa('${e.id}'); toast('Empresa excluída'); renderDashboard(); })" title="Excluir">🗑️</button>
+        </div>
+      </div>
+    </div>`; }).join('');
+  app.innerHTML=`${buildSidebar('empresas')}
+  <div class="main-content">
+    <div class="topbar">
+      <div><div class="topbar-title">🏢 Empresas & Agentes</div><div class="topbar-subtitle">Gerencie seus clientes e cartões digitais</div></div>
+      <div class="topbar-actions"><button class="btn btn-primary" onclick="openEmpresaModal()">➕ Nova Empresa</button></div>
+    </div>
+    <div class="page-content"><div class="cards-grid">${rows}</div></div>
+  </div>`;
+}
+
+function openEmpresaModal(id){
+  const e=id?getEmpresas().find(x=>x.id===id):null;
+  const ov=openModal(`
+    <div class="modal-header"><h3 class="modal-title">${e?'✏️ Editar':'🏢 Nova'} Empresa</h3><button class="modal-close">×</button></div>
+    <div class="form-group"><label class="form-label">Nome *</label><input class="form-input" id="en" placeholder="Ex: Pastelaria da Vovozinha" value="${esc(e?.name||'')}"></div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">CNPJ</label><input class="form-input" id="ec" placeholder="00.000.000/0001-00" value="${esc(e?.cnpj||'')}"></div>
+      <div class="form-group"><label class="form-label">E-mail</label><input class="form-input" id="ee" type="email" placeholder="email@empresa.com" value="${esc(e?.email||'')}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" id="et" placeholder="(11) 9 0000-0000" value="${esc(e?.telefone||'')}"></div>
+    <div class="modal-footer"><button class="btn btn-secondary modal-close">Cancelar</button><button class="btn btn-primary" id="es-save">${e?'💾 Salvar':'➕ Criar'}</button></div>`);
+  ov.querySelector('#ec').addEventListener('input',ev=>{ let v=ev.target.value.replace(/\D/g,'').slice(0,14); v=v.replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d)/,'$1-$2'); ev.target.value=v; });
+  ov.querySelector('#es-save').onclick=()=>{
+    const nome=ov.querySelector('#en').value.trim();
+    if(!nome){ toast('Informe o nome','error'); return; }
+    saveEmpresa({id:e?.id||genId(),name:nome,cnpj:ov.querySelector('#ec').value.trim(),email:ov.querySelector('#ee').value.trim(),telefone:ov.querySelector('#et').value.trim(),createdAt:e?.createdAt||Date.now()});
+    toast(e?'Empresa atualizada!':'Empresa criada! 🎉'); ov.remove(); renderDashboard();
+  };
+}
+
+// ── CARTOES PAGE ──────────────────────────────────────────
+function renderCartoesPage(empresaId, filterEmpresaId, highlightId){
+  const eid=empresaId||filterEmpresaId;
+  const app=document.getElementById('app'); app.className='';
+  const cartoes=getCartoes(eid); const emp=eid?getEmpresas().find(e=>e.id===eid):null;
+  const rows=cartoes.length===0?`<div class="empty-state"><div class="empty-state-icon">📇</div><div class="empty-state-title">Nenhum cartão ainda</div><p class="empty-state-text">Crie seu primeiro cartão digital</p><button class="btn btn-primary mt-4" onclick="renderCartaoEditor(null,'${eid||''}')">➕ Criar Cartão</button></div>`:
+    cartoes.map(c=>{ const ce=getEmpresas().find(e=>e.id===c.empresaId); const tipos=[...new Set((c.contatos||[]).map(x=>x.tipo))]; const icons=tipos.slice(0,5).map(t=>typeConfig(t).icon).join(' ');
+    return `<div class="empresa-card">
+      <div class="empresa-card-top">
+        <div class="empresa-avatar" style="background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'}">
+          ${c.foto?`<img src="${esc(c.foto)}" style="width:100%;height:100%;object-fit:cover">`:initials(c.nome||'?')}
+        </div>
+        <div class="empresa-info"><div class="empresa-name">${esc(c.nome||'Sem nome')}</div>
+        <div class="empresa-email">${c.cargo?esc(c.cargo):''}${c.cargo&&ce?' · ':''}${ce?esc(ce.name):''}</div></div>
+        ${c.tipo==='idoso'?'<span class="urgency-badge">🧓</span>':''}
+      </div>
+      <div class="empresa-card-bottom">
+        <span style="font-size:.73rem;color:var(--text-muted)">${icons||'—'} ${(c.contatos||[]).length} contato(s)</span>
+        <div class="empresa-actions">
+          <button class="btn btn-secondary btn-sm" style="padding:5px 10px;font-size:.75rem" onclick="openQrModal('${c.id}')">📲 QR</button>
+          <button class="btn btn-secondary btn-icon btn-sm" onclick="renderCartaoEditor('${c.id}','${eid||''}')" title="Editar">✏️</button>
+          <button class="btn btn-secondary btn-icon btn-sm" onclick="window.open('${cardUrl(c.id)}','_blank')" title="Ver">👁️</button>
+          <button class="btn btn-danger btn-icon btn-sm" onclick="showConfirm('Excluir este cartão?',()=>{ deleteCartao('${c.id}'); toast('Cartão excluído'); renderCartoesPage('${eid||''}'); })" title="Excluir">🗑️</button>
+        </div>
+      </div>
+    </div>`; }).join('');
+  app.innerHTML=`${buildSidebar('')}
+  <div class="main-content">
+    <div class="topbar">
+      <div><div class="topbar-title">📇 ${emp?esc(emp.name):'Meus Cartões'}</div><div class="topbar-subtitle">${cartoes.length} cartão(ões)</div></div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary" onclick="renderDashboard()">← Empresas</button>
+        <button class="btn btn-primary" onclick="renderCartaoEditor(null,'${eid||''}')">➕ Novo Cartão</button>
+      </div>
+    </div>
+    <div class="page-content"><div class="cards-grid">${rows}</div></div>
+  </div>`;
+}
+
+// ── CARTAO EDITOR ─────────────────────────────────────────
+let _contatos=[], _urgencia=[], _selectedColor='linear-gradient(135deg,#2563eb,#6366f1)', _editId=null, _editEmpId=null;
+
+function renderCartaoEditor(cartaoId, empresaId){
+  _editId=cartaoId; _editEmpId=empresaId;
+  const ex=cartaoId?getCartao(cartaoId):null;
+  _contatos=ex?(ex.contatos||[]).map(c=>({...c})):[];
+  _urgencia=ex?(ex.urgenciaContatos||[]).map(u=>({...u})):[];
+  _selectedColor=ex?.cor||'linear-gradient(135deg,#2563eb,#6366f1)';
+  const isIdoso=ex?.tipo==='idoso';
+  const empresas=getEmpresas();
+  const empOpts=empresas.map(e=>`<option value="${e.id}" ${ex?.empresaId===e.id?'selected':''}>${esc(e.name)}</option>`).join('');
+  const colors=['linear-gradient(135deg,#2563eb,#6366f1)','linear-gradient(135deg,#16a34a,#15803d)','linear-gradient(135deg,#d97706,#b45309)','linear-gradient(135deg,#dc2626,#b91c1c)','linear-gradient(135deg,#7c3aed,#6d28d9)','linear-gradient(135deg,#0369a1,#0284c7)','linear-gradient(135deg,#db2777,#be185d)','linear-gradient(135deg,#475569,#334155)'];
+  const app=document.getElementById('app'); app.className='';
+  app.innerHTML=`${buildSidebar('')}
+  <div class="main-content">
+    <div class="topbar">
+      <div><div class="topbar-title">📝 ${ex?'Editar':'Novo'} Cartão</div><div class="topbar-subtitle">Configure nome, contatos e QR Code</div></div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary" onclick="renderCartoesPage('${_editEmpId||''}')">← Voltar</button>
+        <button class="btn btn-primary" onclick="saveCartaoForm()">💾 Salvar Cartão</button>
+      </div>
+    </div>
+    <div class="page-content" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+      <div>
+        <div class="card mb-4">
+          <h3 style="margin-bottom:18px">👤 Dados do Cartão</h3>
+          <div class="form-group">
+            <label class="form-label">Tipo</label>
+            <div style="display:flex;gap:10px">
+              <button id="btn-prof" onclick="setTipo('profissional')" class="btn w-full" style="${!isIdoso?'background:rgba(37,99,235,.1);border:1px solid var(--accent);color:var(--accent)':'background:transparent;border:1px solid var(--border);color:var(--text-secondary)'}">💼 Profissional</button>
+              <button id="btn-idoso" onclick="setTipo('idoso')" class="btn w-full" style="${isIdoso?'background:rgba(220,38,38,.1);border:1px solid var(--danger);color:var(--danger)':'background:transparent;border:1px solid var(--border);color:var(--text-secondary)'}">🧓 Idoso / Emergência</button>
+            </div>
+          </div>
+          <input type="hidden" id="f-tipo" value="${isIdoso?'idoso':'profissional'}">
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Nome *</label><input class="form-input" id="f-nome" placeholder="João da Silva" value="${esc(ex?.nome||'')}"></div>
+            <div class="form-group"><label class="form-label">Cargo</label><input class="form-input" id="f-cargo" placeholder="Gerente de Vendas" value="${esc(ex?.cargo||'')}"></div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Empresa vinculada</label><select class="form-select" id="f-eid" onchange="autoFillEmpresa(this)"><option value="">— Nenhuma —</option>${empOpts}</select></div>
+            <div class="form-group"><label class="form-label">Nome (exibição)</label><input class="form-input" id="f-empresa" placeholder="Pastelaria da Vovozinha" value="${esc(ex?.empresa||'')}"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Bio</label><textarea class="form-textarea" id="f-bio" placeholder="Uma breve descrição...">${esc(ex?.bio||'')}</textarea></div>
+          <div class="form-group"><label class="form-label">Foto (URL)</label><input class="form-input" id="f-foto" placeholder="https://..." value="${esc(ex?.foto||'')}">
+            <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin-top:8px;display:inline-flex">📷 Upload <input type="file" accept="image/*" onchange="handleFotoUpload(this)" style="display:none"></label>
+            <div id="foto-prev" style="display:inline-block;width:48px;height:48px;border-radius:50%;overflow:hidden;border:2px solid var(--border);margin-left:8px;vertical-align:middle">${ex?.foto?`<img src="${esc(ex.foto)}" style="width:100%;height:100%;object-fit:cover">`:''}</div>
+          </div>
+          <div class="form-group"><label class="form-label">Cor</label>
+            <div class="color-picker">${colors.map(bg=>`<div class="color-swatch ${_selectedColor===bg?'selected':''}" style="background:${bg}" onclick="selectColor(this,'${bg}')"></div>`).join('')}</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card mb-4">
+          <div class="section-header" style="margin-bottom:14px">
+            <h3>📱 Contatos</h3>
+            <button class="btn btn-primary btn-sm" onclick="addContato()">➕ Adicionar</button>
+          </div>
+          <p class="text-sm text-muted" style="margin-bottom:14px">Múltiplos do mesmo tipo são permitidos. Use o Rótulo para identificar.</p>
+          <div id="contatos-list"></div>
+        </div>
+        <div class="card" id="urgencia-section" style="${isIdoso?'':'display:none'}">
+          <div class="section-header" style="margin-bottom:14px">
+            <h3 style="color:var(--danger)">🚨 Emergência</h3>
+            <button class="btn btn-sm" style="background:rgba(220,38,38,.1);color:var(--danger);border:1px solid rgba(220,38,38,.25)" onclick="addUrgencia()">➕ Adicionar</button>
+          </div>
+          <div id="urgencia-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  renderContatosList(); renderUrgenciaList();
+}
+
+function setTipo(t){
+  document.getElementById('f-tipo').value=t;
+  const isI=t==='idoso';
+  document.getElementById('btn-prof').style.cssText=`background:${isI?'transparent':'rgba(37,99,235,.1)'};border:1px solid ${isI?'var(--border)':'var(--accent)'};color:${isI?'var(--text-secondary)':'var(--accent)'}`;
+  document.getElementById('btn-idoso').style.cssText=`background:${isI?'rgba(220,38,38,.1)':'transparent'};border:1px solid ${isI?'var(--danger)':'var(--border)'};color:${isI?'var(--danger)':'var(--text-secondary)'}`;
+  document.getElementById('urgencia-section').style.display=isI?'':'none';
+}
+function autoFillEmpresa(sel){ const e=getEmpresas().find(x=>x.id===sel.value); if(e) document.getElementById('f-empresa').value=e.name; }
+function selectColor(el,color){ document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected')); el.classList.add('selected'); _selectedColor=color; }
+function handleFotoUpload(input){ const file=input.files[0]; if(!file)return; const r=new FileReader(); r.onload=ev=>{ document.getElementById('f-foto').value=ev.target.result; document.getElementById('foto-prev').innerHTML=`<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover">`; }; r.readAsDataURL(file); }
+
+function renderContatosList(){
+  const el=document.getElementById('contatos-list'); if(!el)return;
+  if(_contatos.length===0){ el.innerHTML='<p class="text-sm text-muted" style="padding:12px">Nenhum contato adicionado.</p>'; return; }
+  el.innerHTML=_contatos.map((c,i)=>{
+    const cfg=typeConfig(c.tipo);
+    const opts=Object.entries(CONTACT_TYPES).map(([k,v])=>`<option value="${k}" ${k===c.tipo?'selected':''}>${v.icon} ${v.label}</option>`).join('');
+    return `<div class="contact-item" id="ci-${c.id}">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="contact-type-badge" id="ctb-${c.id}" style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.color};padding:6px 10px"><span id="cti-${c.id}">${cfg.icon}</span></div>
+        <select class="form-select" style="flex:1;padding:7px 8px;font-size:.78rem" onchange="updateContato('${c.id}','tipo',this.value)">${opts}</select>
+      </div>
+      <input class="form-input" placeholder="Rótulo" value="${esc(c.rotulo||cfg.label)}" onchange="updateContato('${c.id}','rotulo',this.value)" style="font-size:.8rem;padding:8px 10px">
+      <input class="form-input" placeholder="Valor" value="${esc(c.valor||'')}" onchange="updateContato('${c.id}','valor',this.value)" style="font-size:.8rem;padding:8px 10px">
+      <button class="contact-remove" onclick="removeContato('${c.id}')">🗑️</button>
+    </div>`;
+  }).join('');
+}
+function updateContato(id,field,val){
+  const c=_contatos.find(x=>x.id===id); if(!c)return; c[field]=val;
+  if(field==='tipo'){ const cfg=typeConfig(val); const el=document.getElementById('cti-'+id); if(el)el.textContent=cfg.icon;
+    const badge=document.getElementById('ctb-'+id); if(badge){ badge.style.background=cfg.bg; badge.style.borderColor=cfg.border; badge.style.color=cfg.color; } }
+}
+function addContato(){ _contatos.push({id:genId(),tipo:'whatsapp',rotulo:'WhatsApp',valor:''}); renderContatosList(); }
+function removeContato(id){ _contatos=_contatos.filter(x=>x.id!==id); renderContatosList(); }
+
+function renderUrgenciaList(){
+  const el=document.getElementById('urgencia-list'); if(!el)return;
+  if(_urgencia.length===0){ el.innerHTML='<p class="text-sm text-muted" style="padding:12px">Nenhum contato de emergência.</p>'; return; }
+  el.innerHTML=_urgencia.map(u=>`<div class="contact-item" style="grid-template-columns:60px 1fr 1fr auto" id="ui-${u.id}">
+    <input class="form-input" placeholder="🚑" value="${esc(u.icone||'')}" onchange="updateUrgencia('${u.id}','icone',this.value)" style="font-size:.82rem;padding:8px;text-align:center">
+    <input class="form-input" placeholder="Nome (ex: Filho João)" value="${esc(u.nome||'')}" onchange="updateUrgencia('${u.id}','nome',this.value)" style="font-size:.82rem;padding:8px 10px">
+    <input class="form-input" placeholder="Número (11999990000)" value="${esc(u.numero||'')}" onchange="updateUrgencia('${u.id}','numero',this.value)" style="font-size:.82rem;padding:8px 10px">
+    <button class="contact-remove" onclick="removeUrgencia('${u.id}')">🗑️</button>
+  </div>`).join('');
+}
+function updateUrgencia(id,f,v){ const u=_urgencia.find(x=>x.id===id); if(u)u[f]=v; }
+function addUrgencia(){ _urgencia.push({id:genId(),icone:'📞',nome:'',numero:''}); renderUrgenciaList(); }
+function removeUrgencia(id){ _urgencia=_urgencia.filter(x=>x.id!==id); renderUrgenciaList(); }
+
+function saveCartaoForm(){
+  const nome=document.getElementById('f-nome').value.trim();
+  if(!nome){ toast('Informe o nome!','error'); return; }
+  const cartao={
+    id:_editId||genId(),
+    empresaId:document.getElementById('f-eid').value||_editEmpId||null,
+    nome, cargo:document.getElementById('f-cargo').value.trim(),
+    empresa:document.getElementById('f-empresa').value.trim(),
+    bio:document.getElementById('f-bio').value.trim(),
+    foto:document.getElementById('f-foto').value.trim(),
+    cor:_selectedColor,
+    tipo:document.getElementById('f-tipo').value,
+    contatos:_contatos.filter(c=>c.valor||c.tipo==='site'),
+    urgenciaContatos:_urgencia.filter(u=>u.nome||u.numero),
+    createdAt:_editId?getCartao(_editId)?.createdAt:Date.now()
+  };
+  saveCartao(cartao);
+  toast('Cartão salvo com sucesso! 🎉');
+  renderCartoesPage(_editEmpId||cartao.empresaId||null);
+}
+
+// ── QR MODAL ──────────────────────────────────────────────
+async function openQrModal(cartaoId){
+  const c=getCartao(cartaoId); if(!c){ toast('Cartão não encontrado','error'); return; }
+  const url=cardUrl(cartaoId);
+  const ov=openModal(`
+    <div class="modal-header"><h3 class="modal-title">📲 QR Code</h3><button class="modal-close">×</button></div>
+    <div style="text-align:center">
+      <p style="color:var(--text-secondary);margin-bottom:4px">Cartão de <strong style="color:var(--text-primary)">${esc(c.nome)}</strong></p>
+      <div class="qr-canvas-wrapper"><canvas id="qr-cv"></canvas></div>
+      <div class="qr-url">${esc(url)}</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="copyLink('${esc(url)}')">📋 Copiar Link</button>
+        <button class="btn btn-secondary" onclick="printQr('${esc(c.nome)}','${esc(c.cargo||'')}','${esc(c.empresa||'')}','${esc(url)}')">🖨️ Imprimir</button>
+        <a href="${esc(url)}" target="_blank" class="btn btn-primary">🌐 Abrir</a>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px;font-size:.72rem;color:var(--text-muted)">Escaneie para abrir no celular</div>`);
+  if(typeof QRCode!=='undefined'){
+    await QRCode.toCanvas(document.getElementById('qr-cv'),url,{width:220,margin:2,color:{dark:'#000000',light:'#ffffff'}});
+  }
+}
+async function copyLink(url){ try{ await navigator.clipboard.writeText(url); toast('Link copiado! 📋'); }catch{ toast('Não foi possível copiar','error'); } }
+function printQr(nome,cargo,empresa,url){
+  const cv=document.getElementById('qr-cv'); const img=cv?cv.toDataURL():'';
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>QR - ${nome}</title><style>body{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;background:#fff}img{width:240px;height:240px}h2{margin:16px 0 4px}p{color:#555;font-size:.85rem;margin:2px 0}.url{font-size:.7rem;color:#888;margin-top:12px;word-break:break-all;max-width:280px;text-align:center}@media print{body{-webkit-print-color-adjust:exact}}</style></head><body><img src="${img}"><h2>${nome}</h2>${cargo?`<p>${cargo}</p>`:''} ${empresa?`<p style="color:#2563eb">${empresa}</p>`:''}<div class="url">${url}</div><script>window.onload=()=>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+
+// ── PERFIL PAGE ───────────────────────────────────────────
+function renderPerfilPage(){
+  const app=document.getElementById('app'); app.className='';
+  const u=getUser();
+  app.innerHTML=`${buildSidebar('perfil')}
+  <div class="main-content">
+    <div class="topbar">
+      <div><div class="topbar-title">👤 Perfil Master</div><div class="topbar-subtitle">Dados do administrador</div></div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary" onclick="renderDashboard()">← Empresas</button>
+        <button class="btn btn-primary" onclick="savePerfilForm()">💾 Salvar Perfil</button>
+      </div>
+    </div>
+    <div class="page-content" style="max-width:640px">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+          <div id="p-avatar" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#fff;flex-shrink:0">${initials(u.name||'U')}</div>
+          <div><div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700">${esc(u.name||'Usuário WYC')}</div><div style="font-size:.8rem;color:var(--text-muted)">Administrador · Wyc Connect</div></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Nome *</label><input class="form-input" id="p-nome" value="${esc(u.name||'')}"></div>
+          <div class="form-group"><label class="form-label">E-mail</label><input class="form-input" id="p-email" type="email" value="${esc(u.email||'')}"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">CPF / Documento</label><input class="form-input" id="p-doc" value="${esc(u.documento||'')}"></div>
+          <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" id="p-tel" value="${esc(u.telefone||'')}"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Empresa</label><input class="form-input" id="p-emp" value="${esc(u.empresa||'')}"></div>
+          <div class="form-group"><label class="form-label">CNPJ</label><input class="form-input" id="p-cnpj" value="${esc(u.cnpj||'')}"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Observações</label><textarea class="form-textarea" id="p-obs">${esc(u.obs||'')}</textarea></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3 style="margin-bottom:16px">🔐 Alterar Senha</h3>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Nova Senha</label><input class="form-input" id="p-nova" type="password" placeholder="Mínimo 6 caracteres"></div>
+          <div class="form-group"><label class="form-label">Confirmar</label><input class="form-input" id="p-conf" type="password" placeholder="Repita a senha"></div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="changePassword()">🔑 Alterar Senha</button>
+      </div>
+    </div>
+  </div>`;
+}
+function savePerfilForm(){
+  const nome=document.getElementById('p-nome').value.trim();
+  if(!nome){ toast('Informe seu nome','error'); return; }
+  saveUser({name:nome,email:document.getElementById('p-email').value.trim(),documento:document.getElementById('p-doc').value.trim(),telefone:document.getElementById('p-tel').value.trim(),empresa:document.getElementById('p-emp').value.trim(),cnpj:document.getElementById('p-cnpj').value.trim(),obs:document.getElementById('p-obs').value.trim()});
+  toast('Perfil salvo! ✅');
+  document.getElementById('p-avatar').textContent=initials(nome);
+}
+async function changePassword(){
+  const nova=document.getElementById('p-nova').value;
+  const conf=document.getElementById('p-conf').value;
+  if(!nova||nova.length<6){ toast('Mínimo 6 caracteres','error'); return; }
+  if(nova!==conf){ toast('Senhas não conferem','error'); return; }
+  const hash=await hashPassword(nova);
+  const cfg=getAuthConfig()||{};
+  saveAuthConfig({...cfg,hash});
+  document.getElementById('p-nova').value=''; document.getElementById('p-conf').value='';
+  toast('Senha alterada! 🔐');
+}
+
+// ── PUBLIC CARD ───────────────────────────────────────────
+function renderPublicCard(cardId){
+  const app=document.getElementById('app'); app.className='fullscreen';
+  document.body.style.margin='0'; document.body.style.padding='0';
+  const c=getCartao(cardId);
+  if(!c){ app.innerHTML=`<div class="public-card-wrapper"><div class="public-card"><div class="public-card-header" style="padding:48px 28px"><div style="font-size:4rem;margin-bottom:16px">😕</div><div class="public-card-name">Cartão não encontrado</div><p class="public-card-bio">Este cartão pode ter sido removido ou o link está incorreto.</p></div><div class="public-card-footer"><span>Powered by</span><strong style="color:#60a5fa">Wyc Connect</strong></div></div></div>`; return; }
+  const isIdoso=c.tipo==='idoso';
+  const contatos=(c.contatos||[]).map(ct=>{
+    const cfg=typeConfig(ct.tipo); const href=buildHref(ct.tipo,ct.valor);
+    return `<a href="${esc(href)}" target="_blank" rel="noopener" class="public-contact-btn" style="background:${cfg.bg};border:1px solid ${cfg.border};color:${cfg.color}"><span class="public-contact-icon">${cfg.icon}</span><span class="public-contact-label">${esc(ct.rotulo||cfg.label)}<span class="public-contact-sublabel">${esc(ct.valor||'')}</span></span><span style="opacity:.6;font-size:.9rem">→</span></a>`;
+  }).join('');
+  const urgencia=c.urgenciaContatos||[];
+  const urgHtml=isIdoso?`<div style="margin-top:8px;padding:0 20px 20px"><div style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f87171;margin-bottom:10px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#f87171;display:inline-block;animation:pulse 1.5s infinite"></span>EMERGÊNCIA</div>${(urgencia.length>0?urgencia:[{icone:'🚑',nome:'SAMU',numero:'192'},{icone:'🚒',nome:'Bombeiros',numero:'193'},{icone:'🚓',nome:'Polícia',numero:'190'}]).map(u=>`<a href="tel:${esc(u.numero)}" class="public-contact-btn" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171;margin-bottom:8px"><span class="public-contact-icon">${esc(u.icone||'📞')}</span><span class="public-contact-label">${esc(u.nome)}<span class="public-contact-sublabel">${esc(u.numero)}</span></span><span style="font-size:.72rem;background:rgba(239,68,68,.2);padding:2px 8px;border-radius:99px;font-weight:700">LIGAR</span></a>`).join('')}</div>`:'';
+  const avatarHtml=c.foto?`<img src="${esc(c.foto)}" class="public-card-avatar" alt="${esc(c.nome)}">`:`<div class="public-card-avatar-placeholder" style="background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'}">${initials(c.nome||'?')}</div>`;
+  const tag=isIdoso?`<div class="public-card-tag" style="background:rgba(239,68,68,.2);color:#fca5a5;border-color:rgba(239,68,68,.4)">🧓 IDOSO</div>`:`<div class="public-card-tag">✅ PROFISSIONAL</div>`;
+  app.innerHTML=`<div class="public-card-wrapper"><div class="public-card">
+    <div class="public-card-header">${tag}${avatarHtml}<div class="public-card-name">${esc(c.nome||'Sem nome')}</div>${c.cargo?`<div class="public-card-company">${esc(c.cargo)}</div>`:''} ${c.empresa?`<div class="public-card-company" style="color:#60a5fa">${esc(c.empresa)}</div>`:''} ${c.bio?`<div class="public-card-bio">${esc(c.bio)}</div>`:''}</div>
+    <div class="public-card-contacts">${contatos||'<p style="text-align:center;color:#475569;font-size:.82rem">Nenhum contato cadastrado</p>'}</div>
+    ${urgHtml}
+    <div class="public-card-footer">🔐 Cartão verificado &nbsp;<strong style="color:#60a5fa">Wyc Connect</strong></div>
+  </div></div>`;
+}
+
+// ── START ─────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>
