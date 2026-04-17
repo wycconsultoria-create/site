@@ -1,0 +1,44 @@
+{
+  "user": {
+    "name": "Wilson Caversan Jr",
+    "email": "wycconsultoria@gmail.com",
+    "documento": "26111455800",
+    "telefone": "(19) 99014-3009",
+    "empresa": "Wyc Consultoria",
+    "cnpj": "33.089.276/0001-47",
+    "obs": "Master da Empresa"
+  },
+  "empresas": [
+    {
+      "id": "atxuy8dcnq4mo2zb1yu",
+      "name": "Vovozinha",
+      "cnpj": "",
+      "email": "",
+      "telefone": "",
+      "createdAt": 1776434620854
+    }
+  ],
+  "cartoes": [
+    {
+      "id": "pm91f6atj3mmo2zbrla",
+      "empresaId": "atxuy8dcnq4mo2zb1yu",
+      "nome": "Teste",
+      "cargo": "",
+      "empresa": "Vovozinha",
+      "bio": "",
+      "foto": "",
+      "cor": "linear-gradient(135deg,#2563eb,#6366f1)",
+      "tipo": "profissional",
+      "contatos": [
+        {
+          "id": "b9r2420f6f9mo2zbgym",
+          "tipo": "whatsapp",
+          "rotulo": "Teste",
+          "valor": "11972699775"
+        }
+      ],
+      "urgenciaContatos": [],
+      "createdAt": 1776434654062
+    }
+  ]
+}
