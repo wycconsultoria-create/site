@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
@@ -190,6 +190,10 @@ p{color:var(--text-secondary)}a{text-decoration:none;color:inherit}
   .topbar-actions{gap:6px}
   .topbar-actions .btn{font-size:.72rem;padding:7px 10px}
 }
+/* ── Profile tabs ── */
+.profile-tabs{display:flex;gap:0;padding:0 20px;margin-bottom:4px}
+.profile-tab{flex:1;padding:10px 8px;border:none;background:transparent;font-family:var(--font-body);font-weight:600;font-size:.82rem;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.profile-tab.active{color:#93c5fd;border-bottom-color:#3b82f6}
 /* ── Public Card Actions ── */
 .public-card-actions{display:flex;gap:8px;padding:0 20px 20px}
 .public-action-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 8px;border-radius:var(--radius-md);border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#cbd5e1;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:var(--font-body);text-decoration:none}
@@ -285,7 +289,16 @@ function getEmpresas(){ return loadData().empresas; }
 function saveEmpresa(e){ const d=loadData(); const i=d.empresas.findIndex(x=>x.id===e.id); if(i>=0)d.empresas[i]=e; else d.empresas.push(e); saveAndSync(d); }
 function deleteEmpresa(id){ const d=loadData(); d.empresas=d.empresas.filter(e=>e.id!==id); d.cartoes=d.cartoes.filter(c=>c.empresaId!==id); saveAndSync(d); }
 function getCartoes(eid){ const d=loadData(); return eid?d.cartoes.filter(c=>c.empresaId===eid):d.cartoes; }
-function getCartao(id){ return loadData().cartoes.find(c=>c.id===id)||null; }
+function getCartao(id){
+  // Aceita tanto id quanto slug personalizado
+  const cartoes = loadData().cartoes;
+  return cartoes.find(c=>c.id===id) || cartoes.find(c=>c.slug&&c.slug===id) || null;
+}
+function slugIsAvailable(slug, excludeId=''){
+  if(!slug) return false;
+  const cartoes = loadData().cartoes;
+  return !cartoes.some(c=>c.slug===slug && c.id!==excludeId);
+}
 function saveCartao(c){ const d=loadData(); const i=d.cartoes.findIndex(x=>x.id===c.id); if(i>=0)d.cartoes[i]=c; else d.cartoes.push(c); saveAndSync(d); }
 function deleteCartao(id){ const d=loadData(); d.cartoes=d.cartoes.filter(c=>c.id!==id); saveAndSync(d); }
 function getUser(){ return loadData().user; }
@@ -308,12 +321,13 @@ async function registerScan(cartaoId){
   }catch(e){ console.warn('registerScan error',e); }
 }
 
-function cardUrl(id){
-  // SEMPRE com barra no final antes do ? para evitar redirect do GitHub Pages
-  // GitHub Pages redireciona /cartaonfc -> /cartaonfc/ e PERDE o ?card=ID
+function cardUrl(idOrSlug){
+  // Usa slug personalizado se disponível, senão usa id
+  const c = loadData().cartoes.find(x=>x.id===idOrSlug||x.slug===idOrSlug);
+  const key = (c&&c.slug) ? c.slug : idOrSlug;
   const origin = window.location.origin;
   const path   = window.location.pathname.replace(/\/+$/, '') + '/';
-  return origin + path + '?card=' + id;
+  return origin + path + '?card=' + key;
 }
 
 async function hashPassword(p){
@@ -442,6 +456,15 @@ async function fetchWithTimeout(url, ms=5000){
 async function init(){
   const params = new URLSearchParams(window.location.search);
   const cardId = params.get('card');
+  const empresaSlug = params.get('empresa');
+
+  if(empresaSlug && !cardId){
+    showLoading('Carregando portal...');
+    try{ const r=await fetchWithTimeout(DB_JSON_URL+'?t='+Date.now(),5000); if(r.ok){const d=await r.json();saveData(d);} }catch(e){}
+    renderEmpresaPortal(empresaSlug);
+    return;
+  }
+
   if(cardId){
     showLoading('Carregando cartão...');
     // Tenta buscar db.json com timeout de 5s — se falhar usa localStorage
@@ -482,6 +505,41 @@ function showLoading(msg){
 function hideLoading(){}
 
 function logout(){ clearSession(); init(); }
+const PLAN_LIMITS={free:1,pro:10,business:999};
+function selectPlan(el){
+  document.querySelectorAll('.plan-opt').forEach(o=>{
+    o.classList.remove('selected');
+    o.style.borderColor='var(--border)';
+    o.style.background='transparent';
+  });
+  el.classList.add('selected');
+  const colors={free:'#64748b',pro:'#2563eb',business:'#7c3aed'};
+  el.style.borderColor=colors[el.dataset.plan];
+  el.style.background='rgba(37,99,235,.06)';
+  document.getElementById('ep').value=el.dataset.plan;
+}
+function checkPlanAndCreate(eid){
+  const emp=getEmpresas().find(e=>e.id===eid);
+  const plano=emp?.plano||'free';
+  const limite=PLAN_LIMITS[plano]||1;
+  const atual=getCartoes(eid).length;
+  if(atual>=limite){
+    const nomes={free:'Free — 1 cartão',pro:'Pro — 10 cartões',business:'Business — ilimitado'};
+    toast('Limite do plano '+nomes[plano]+' atingido. Faça upgrade!','error');
+    return;
+  }
+  renderCartaoEditor(null,eid);
+}
+function validateSlug(input){
+  const s = input.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
+  input.value = s;
+  const status = document.getElementById('slug-status');
+  if(!s){ status.innerHTML=''; return; }
+  const available = slugIsAvailable(s, _editId||'');
+  status.innerHTML = available
+    ? '<span style="color:var(--success)">✅ Disponível — link será: ?card='+s+'</span>'
+    : '<span style="color:var(--danger)">❌ Este slug já está em uso</span>';
+}
 async function syncNow(){
   const btn=document.getElementById('btn-sync');
   if(btn){ btn.textContent='☁️ ...'; btn.disabled=true; }
@@ -619,11 +677,12 @@ function renderDashboard(){
       <div class="empresa-card-top">
         <div class="empresa-avatar">${initials(e.name)}</div>
         <div class="empresa-info"><div class="empresa-name">${esc(e.name)}</div><div class="empresa-email">${esc(e.cnpj||e.email||'—')}</div></div>
-        <span class="empresa-badge">● Ativo</span>
+        <span id="plan-badge-${e.id}" style="font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:99px;white-space:nowrap;border:1px solid;${(()=>{const p=e.plano||'free';return p==='business'?'color:#7c3aed;border-color:#7c3aed40;background:rgba(124,58,237,.08)':p==='pro'?'color:#2563eb;border-color:#2563eb40;background:rgba(37,99,235,.08)':'color:#64748b;border-color:#64748b40;background:rgba(100,116,139,.08)'})()}">${(()=>{const p=e.plano||'free';return p==='business'?'💎 Business':p==='pro'?'⭐ Pro':'🆓 Free'})()}</span>
       </div>
       <div class="empresa-card-bottom">
-        <span style="font-size:.73rem;color:var(--text-muted)">📇 <strong style="color:var(--accent)">${cnt}</strong> cartão(ões)${e.email?` · ✉️ ${esc(e.email)}`:''}</span>
+        <span style="font-size:.73rem;color:var(--text-muted)">📇 <strong style="color:var(--accent)">${cnt}</strong>/${(()=>{const lm={free:1,pro:10,business:'∞'};return lm[e.plano||'free']})()}${e.email?` · ✉️ ${esc(e.email)}`:''}</span>
         <div class="empresa-actions">
+          ${e.slug?`<button class="btn btn-secondary btn-icon btn-sm" onclick="copyWhitelabelLink('${e.slug}')" title="Link exclusivo do cliente">🔗</button>`:''}
           <button class="btn btn-secondary btn-icon btn-sm" onclick="openEmpresaModal('${e.id}')" title="Editar">✏️</button>
           <button class="btn btn-secondary btn-icon btn-sm" onclick="renderCartoesPage('${e.id}')" title="Cartões">📇</button>
           <button class="btn btn-danger btn-icon btn-sm" onclick="showConfirm('Excluir empresa e todos os cartões?',()=>{ deleteEmpresa('${e.id}'); toast('Empresa excluída'); renderDashboard(); })" title="Excluir">🗑️</button>
@@ -659,7 +718,8 @@ function openEmpresaModal(id){
   ov.querySelector('#es-save').onclick=()=>{
     const nome=ov.querySelector('#en').value.trim();
     if(!nome){ toast('Informe o nome','error'); return; }
-    saveEmpresa({id:e?.id||genId(),name:nome,cnpj:ov.querySelector('#ec').value.trim(),email:ov.querySelector('#ee').value.trim(),telefone:ov.querySelector('#et').value.trim(),createdAt:e?.createdAt||Date.now()});
+    const eslug=ov.querySelector('#eslug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,40)||'';
+    saveEmpresa({id:e?.id||genId(),name:nome,slug:eslug,cnpj:ov.querySelector('#ec').value.trim(),email:ov.querySelector('#ee').value.trim(),telefone:ov.querySelector('#et').value.trim(),plano:ov.querySelector('#ep')?.value||'free',createdAt:e?.createdAt||Date.now()});
     toast(e?'Empresa atualizada!':'Empresa criada! 🎉'); ov.remove(); renderDashboard();
   };
 }
@@ -669,7 +729,7 @@ function renderCartoesPage(empresaId, filterEmpresaId, highlightId){
   const eid=empresaId||filterEmpresaId;
   const app=document.getElementById('app'); app.className='';
   const cartoes=getCartoes(eid); const emp=eid?getEmpresas().find(e=>e.id===eid):null;
-  const rows=cartoes.length===0?`<div class="empty-state"><div class="empty-state-icon">📇</div><div class="empty-state-title">Nenhum cartão ainda</div><p class="empty-state-text">Crie seu primeiro cartão digital</p><button class="btn btn-primary mt-4" onclick="renderCartaoEditor(null,'${eid||''}')">➕ Criar Cartão</button></div>`:
+  const rows=cartoes.length===0?`<div class="empty-state"><div class="empty-state-icon">📇</div><div class="empty-state-title">Nenhum cartão ainda</div><p class="empty-state-text">Crie seu primeiro cartão digital</p><button class="btn btn-primary mt-4" onclick="checkPlanAndCreate('${eid||''}')">➕ Criar Cartão</button></div>`:
     cartoes.map(c=>{ const ce=getEmpresas().find(e=>e.id===c.empresaId); const tipos=[...new Set((c.contatos||[]).map(x=>x.tipo))]; const icons=tipos.slice(0,5).map(t=>typeConfig(t).icon).join(' ');
     return `<div class="empresa-card">
       <div class="empresa-card-top">
@@ -697,7 +757,7 @@ function renderCartoesPage(empresaId, filterEmpresaId, highlightId){
       <div><div class="topbar-title">📇 ${emp?esc(emp.name):'Meus Cartões'}</div><div class="topbar-subtitle">${cartoes.length} cartão(ões)</div></div>
       <div class="topbar-actions">
         <button class="btn btn-secondary" onclick="renderDashboard()">← Empresas</button>
-        <button class="btn btn-primary" onclick="renderCartaoEditor(null,'${eid||''}')">➕ Novo Cartão</button>
+        <button class="btn btn-primary" onclick="checkPlanAndCreate('${eid||''}')">➕ Novo Cartão</button>
       </div>
     </div>
     <div class="page-content"><div class="cards-grid">${rows}</div></div>
@@ -705,12 +765,13 @@ function renderCartoesPage(empresaId, filterEmpresaId, highlightId){
 }
 
 // ── CARTAO EDITOR ─────────────────────────────────────────
-let _contatos=[], _urgencia=[], _selectedColor='linear-gradient(135deg,#2563eb,#6366f1)', _editId=null, _editEmpId=null;
+let _contatos=[], _contatos2=[], _urgencia=[], _selectedColor='linear-gradient(135deg,#2563eb,#6366f1)', _editId=null, _editEmpId=null;
 
 function renderCartaoEditor(cartaoId, empresaId){
   _editId=cartaoId; _editEmpId=empresaId;
   const ex=cartaoId?getCartao(cartaoId):null;
   _contatos=ex?(ex.contatos||[]).map(c=>({...c})):[];
+  _contatos2=ex?(ex.contatos2||[]).map(c=>({...c})):[];
   _urgencia=ex?(ex.urgenciaContatos||[]).map(u=>({...u})):[];
   _selectedColor=ex?.cor||'linear-gradient(135deg,#2563eb,#6366f1)';
   const isIdoso=ex?.tipo==='idoso';
@@ -744,6 +805,15 @@ function renderCartaoEditor(cartaoId, empresaId){
             <div class="form-group"><label class="form-label">Nome *</label><input class="form-input" id="f-nome" placeholder="João da Silva" value="${esc(ex?.nome||'')}"></div>
             <div class="form-group"><label class="form-label">Cargo</label><input class="form-input" id="f-cargo" placeholder="Gerente de Vendas" value="${esc(ex?.cargo||'')}"></div>
           </div>
+          <div class="form-group">
+            <label class="form-label">🔗 Link Personalizado <span style="font-size:.68rem;font-weight:400;color:var(--text-muted)">(opcional — ex: vovozinha)</span></label>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:.78rem;color:var(--text-muted);white-space:nowrap;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm) 0 0 var(--radius-sm);padding:10px 10px 10px 12px">?card=</span>
+              <input class="form-input" id="f-slug" placeholder="vovozinha" style="border-radius:0 var(--radius-sm) var(--radius-sm) 0;border-left:none"
+                value="${esc(ex?.slug||'')}" oninput="validateSlug(this)">
+            </div>
+            <div id="slug-status" style="font-size:.72rem;margin-top:4px"></div>
+          </div>
           <div class="form-grid">
             <div class="form-group"><label class="form-label">Empresa vinculada</label><select class="form-select" id="f-eid" onchange="autoFillEmpresa(this)"><option value="">— Nenhuma —</option>${empOpts}</select></div>
             <div class="form-group"><label class="form-label">Nome (exibição)</label><input class="form-input" id="f-empresa" placeholder="Pastelaria da Vovozinha" value="${esc(ex?.empresa||'')}"></div>
@@ -760,12 +830,27 @@ function renderCartaoEditor(cartaoId, empresaId){
       </div>
       <div>
         <div class="card mb-4">
-          <div class="section-header" style="margin-bottom:14px">
-            <h3>📱 Contatos</h3>
-            <button class="btn btn-primary btn-sm" onclick="addContato()">➕ Adicionar</button>
+          <div class="section-header" style="margin-bottom:10px">
+            <h3>📱 Perfis / Contatos</h3>
           </div>
-          <p class="text-sm text-muted" style="margin-bottom:14px">Múltiplos do mesmo tipo são permitidos. Use o Rótulo para identificar.</p>
-          <div id="contatos-list"></div>
+          <div style="display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid var(--border)">
+            <button id="tab-btn-1" onclick="switchEditorTab(1)" style="flex:1;padding:8px;border:none;background:none;font-family:var(--font-body);font-weight:700;font-size:.82rem;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">
+              ✏️ <input id="f-aba1" style="border:none;background:none;font-weight:700;font-size:.82rem;width:90px;color:var(--accent);outline:none;cursor:text" value="${esc(ex?.nomeAba1||'Profissional')}" onclick="event.stopPropagation()">
+            </button>
+            <button id="tab-btn-2" onclick="switchEditorTab(2)" style="flex:1;padding:8px;border:none;background:none;font-family:var(--font-body);font-weight:600;font-size:.82rem;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted)">
+              ✏️ <input id="f-aba2" style="border:none;background:none;font-weight:600;font-size:.82rem;width:80px;color:var(--text-muted);outline:none;cursor:text" value="${esc(ex?.nomeAba2||'Pessoal')}" onclick="event.stopPropagation()">
+            </button>
+          </div>
+          <div id="editor-tab-1">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn btn-primary btn-sm" onclick="addContato(1)">➕ Adicionar</button></div>
+            <p class="text-sm text-muted" style="margin-bottom:10px">Múltiplos do mesmo tipo. Use o Rótulo para identificar.</p>
+            <div id="contatos-list"></div>
+          </div>
+          <div id="editor-tab-2" style="display:none">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn btn-primary btn-sm" onclick="addContato(2)">➕ Adicionar</button></div>
+            <p class="text-sm text-muted" style="margin-bottom:10px">Contatos do perfil pessoal.</p>
+            <div id="contatos-list-2"></div>
+          </div>
         </div>
         <div class="card" id="urgencia-section" style="${isIdoso?'':'display:none'}">
           <div class="section-header" style="margin-bottom:14px">
@@ -777,7 +862,7 @@ function renderCartaoEditor(cartaoId, empresaId){
       </div>
     </div>
   </div>`;
-  renderContatosList(); renderUrgenciaList();
+  renderContatosList(); renderContatosList2(); renderUrgenciaList();
 }
 
 function setTipo(t){
@@ -813,7 +898,36 @@ function updateContato(id,field,val){
   if(field==='tipo'){ const cfg=typeConfig(val); const el=document.getElementById('cti-'+id); if(el)el.textContent=cfg.icon;
     const badge=document.getElementById('ctb-'+id); if(badge){ badge.style.background=cfg.bg; badge.style.borderColor=cfg.border; badge.style.color=cfg.color; } }
 }
-function addContato(){ _contatos.push({id:genId(),tipo:'whatsapp',rotulo:'WhatsApp',valor:''}); renderContatosList(); }
+function renderContatosList2(){
+  const el=document.getElementById('contatos-list-2'); if(!el)return;
+  if(_contatos2.length===0){ el.innerHTML='<p class="text-sm text-muted" style="padding:12px">Nenhum contato no perfil pessoal.</p>'; return; }
+  el.innerHTML=_contatos2.map((c)=>{
+    const cfg=typeConfig(c.tipo);
+    const opts=Object.entries(CONTACT_TYPES).map(([k,v])=>`<option value="${k}" ${k===c.tipo?'selected':''}>${v.icon} ${v.label}</option>`).join('');
+    return `<div class="contact-item" id="ci2-${c.id}">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="contact-type-badge" id="ctb2-${c.id}" style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.color};padding:6px 10px"><span id="cti2-${c.id}">${cfg.icon}</span></div>
+        <select class="form-select" style="flex:1;padding:7px 8px;font-size:.78rem" onchange="updateContato2('${c.id}','tipo',this.value)">${opts}</select>
+      </div>
+      <input class="form-input" placeholder="Rótulo" value="${esc(c.rotulo||cfg.label)}" onchange="updateContato2('${c.id}','rotulo',this.value)" style="font-size:.8rem;padding:8px 10px">
+      <input class="form-input" placeholder="Valor" value="${esc(c.valor||'')}" onchange="updateContato2('${c.id}','valor',this.value)" style="font-size:.8rem;padding:8px 10px">
+      <button class="contact-remove" onclick="removeContato2('${c.id}')">🗑️</button>
+    </div>`;
+  }).join('');
+}
+function updateContato2(id,f,v){ const c=_contatos2.find(x=>x.id===id); if(!c)return; c[f]=v; if(f==='tipo'){ const cfg=typeConfig(v); const i=document.getElementById('cti2-'+id); if(i)i.textContent=cfg.icon; const b=document.getElementById('ctb2-'+id); if(b){b.style.background=cfg.bg;b.style.borderColor=cfg.border;b.style.color=cfg.color;} } }
+function removeContato2(id){ _contatos2=_contatos2.filter(x=>x.id!==id); renderContatosList2(); }
+function addContato(tab=1){
+  if(tab===2){ _contatos2.push({id:genId(),tipo:'whatsapp',rotulo:'WhatsApp',valor:''}); renderContatosList2(); }
+  else { _contatos.push({id:genId(),tipo:'whatsapp',rotulo:'WhatsApp',valor:''}); renderContatosList(); }
+}
+function switchEditorTab(t){
+  document.getElementById('editor-tab-1').style.display=t===1?'':'none';
+  document.getElementById('editor-tab-2').style.display=t===2?'':'none';
+  const btn1=document.getElementById('tab-btn-1'), btn2=document.getElementById('tab-btn-2');
+  if(btn1){ btn1.style.borderBottomColor=t===1?'var(--accent)':'transparent'; btn1.style.color=t===1?'var(--accent)':'var(--text-muted)'; document.getElementById('f-aba1').style.color=t===1?'var(--accent)':'var(--text-muted)'; }
+  if(btn2){ btn2.style.borderBottomColor=t===2?'var(--accent)':'transparent'; btn2.style.color=t===2?'var(--accent)':'var(--text-muted)'; document.getElementById('f-aba2').style.color=t===2?'var(--accent)':'var(--text-muted)'; }
+}
 function removeContato(id){ _contatos=_contatos.filter(x=>x.id!==id); renderContatosList(); }
 
 function renderUrgenciaList(){
@@ -841,8 +955,12 @@ function saveCartaoForm(){
     bio:document.getElementById('f-bio').value.trim(),
     foto:document.getElementById('f-foto').value.trim(),
     cor:_selectedColor,
+    slug:(()=>{ const s=document.getElementById('f-slug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,40); return s||''; })(),
     tipo:document.getElementById('f-tipo').value,
     contatos:_contatos.filter(c=>c.valor||c.tipo==='site'),
+    contatos2:_contatos2.filter(c=>c.valor||c.tipo==='site'),
+    nomeAba1:document.getElementById('f-aba1')?.value.trim()||'Profissional',
+    nomeAba2:document.getElementById('f-aba2')?.value.trim()||'Pessoal',
     urgenciaContatos:_urgencia.filter(u=>u.nome||u.numero),
     createdAt:_editId?getCartao(_editId)?.createdAt:Date.now()
   };
@@ -1158,6 +1276,70 @@ function renderGHSetup(onDone){
   };
 }
 
+// ── WHITELABEL PORTAL ─────────────────────────────────────
+function copyWhitelabelLink(slug){
+  const origin = window.location.origin;
+  const path   = window.location.pathname.replace(/\/+$/, '') + '/';
+  const url    = origin + path + '?empresa=' + slug;
+  navigator.clipboard.writeText(url).then(()=>toast('Link exclusivo copiado! 🔗')).catch(()=>toast(url,'info'));
+}
+
+function renderEmpresaPortal(slug){
+  const app = document.getElementById('app'); app.className='fullscreen';
+  document.body.style.margin='0'; document.body.style.padding='0';
+
+  const emp = loadData().empresas.find(e=>e.slug===slug);
+  if(!emp){
+    app.innerHTML=`<div class="public-card-wrapper"><div class="public-card">
+      <div class="public-card-header" style="padding:48px 28px">
+        <div style="font-size:4rem;margin-bottom:16px">🏢</div>
+        <div class="public-card-name">Portal não encontrado</div>
+        <p class="public-card-bio">Verifique o link com a empresa.</p>
+      </div>
+      <div class="public-card-footer"><span>Powered by</span><strong style="color:#60a5fa">Wyc Connect</strong></div>
+    </div></div>`;
+    return;
+  }
+
+  const cartoes = loadData().cartoes.filter(c=>c.empresaId===emp.id && (c.contatos||[]).length>0);
+  const corEmp  = emp.cor || 'linear-gradient(135deg,#2563eb,#6366f1)';
+
+  const cartaoCards = cartoes.length===0
+    ? '<p style="text-align:center;color:#64748b;padding:24px;font-size:.88rem">Nenhum cartão disponível.</p>'
+    : cartoes.map(c=>`
+      <a href="?card=${esc(c.slug||c.id)}" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-md);margin-bottom:10px;text-decoration:none;transition:all .2s;color:#f1f5f9"
+         onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">
+        <div style="width:48px;height:48px;border-radius:50%;background:${c.cor||corEmp};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;color:#fff;flex-shrink:0;overflow:hidden">
+          ${c.foto?`<img src="${esc(c.foto)}" style="width:100%;height:100%;object-fit:cover">`:initials(c.nome||'?')}
+        </div>
+        <div style="flex:1;overflow:hidden">
+          <div style="font-weight:700;font-size:.95rem">${esc(c.nome||'Sem nome')}</div>
+          <div style="font-size:.78rem;color:#94a3b8">${c.cargo?esc(c.cargo):''}</div>
+        </div>
+        <span style="color:#60a5fa;font-size:.9rem">→</span>
+      </a>`).join('');
+
+  app.innerHTML=`<div class="public-card-wrapper">
+    <div class="public-card">
+      <div style="height:90px;background:${corEmp}"></div>
+      <div class="public-card-header" style="padding-top:16px">
+        <div class="public-card-tag">🏢 PORTAL EXCLUSIVO</div>
+        <div class="public-card-name">${esc(emp.name)}</div>
+        ${emp.cnpj?`<div class="public-card-company">CNPJ: ${esc(emp.cnpj)}</div>`:''}
+        <div class="public-card-company" style="margin-top:4px">${cartoes.length} cartão(ões) disponível(is)</div>
+      </div>
+      <div style="padding:0 20px 24px">${cartaoCards}</div>
+      <div class="public-card-footer" style="flex-direction:column;gap:8px">
+        <div>🔐 Portal verificado &nbsp;<strong style="color:#60a5fa">Wyc Connect</strong></div>
+        <a href="https://wa.me/5519990143009" target="_blank" rel="noopener"
+           style="display:inline-flex;align-items:center;gap:6px;color:#4ade80;font-size:.7rem;font-weight:600;text-decoration:none">
+          💬 Desenvolvido por Wyc Consultoria
+        </a>
+      </div>
+    </div>
+  </div>`;
+}
+
 // ── PUBLIC CARD ───────────────────────────────────────────
 function buildVCard(c){
   const lines=['BEGIN:VCARD','VERSION:3.0'];
@@ -1184,6 +1366,14 @@ function downloadVCard(cardId){
   a.click();
 }
 
+function switchPublicTab(t){
+  document.getElementById('pub-contacts-1').style.display=t===1?'flex':'none';
+  const c2=document.getElementById('pub-contacts-2');
+  if(c2) c2.style.display=t===2?'flex':'none';
+  const t1=document.getElementById('ptab1'), t2=document.getElementById('ptab2');
+  if(t1){t1.classList.toggle('active',t===1);}
+  if(t2){t2.classList.toggle('active',t===2);}
+}
 async function shortenUrl(url){
   try{
     const r=await fetchWithTimeout('https://tinyurl.com/api-create.php?url='+encodeURIComponent(url),4000);
@@ -1230,10 +1420,15 @@ function renderPublicCard(cardId){
   const isIdoso=c.tipo==='idoso';
   const scans=c.scans||0;
 
-  const contatos=(c.contatos||[]).map(ct=>{
+  const buildContactBtns = (list) => (list||[]).map(ct=>{
     const cfg=typeConfig(ct.tipo); const href=buildHref(ct.tipo,ct.valor);
     return `<a href="${esc(href)}" target="_blank" rel="noopener" class="public-contact-btn" style="background:${cfg.bg};border:1px solid ${cfg.border};color:${cfg.color}"><span class="public-contact-icon">${cfg.icon}</span><span class="public-contact-label">${esc(ct.rotulo||cfg.label)}<span class="public-contact-sublabel">${esc(ct.valor||'')}</span></span><span style="opacity:.6;font-size:.9rem">→</span></a>`;
   }).join('');
+  const contatos=buildContactBtns(c.contatos);
+  const contatos2=buildContactBtns(c.contatos2);
+  const hasMultiProfile = (c.contatos2||[]).length>0;
+  const aba1=c.nomeAba1||'Profissional';
+  const aba2=c.nomeAba2||'Pessoal';
 
   const urgencia=c.urgenciaContatos||[];
   const urgHtml=isIdoso?`<div style="padding:0 20px 20px"><div style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f87171;margin-bottom:10px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#f87171;display:inline-block;animation:pulse 1.5s infinite"></span>EMERGÊNCIA</div>${(urgencia.length>0?urgencia:[{icone:'🚑',nome:'SAMU',numero:'192'},{icone:'🚒',nome:'Bombeiros',numero:'193'},{icone:'🚓',nome:'Polícia',numero:'190'}]).map(u=>`<a href="tel:${esc(u.numero)}" class="public-contact-btn" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171;margin-bottom:8px"><span class="public-contact-icon">${esc(u.icone||'📞')}</span><span class="public-contact-label">${esc(u.nome)}<span class="public-contact-sublabel">${esc(u.numero)}</span></span><span style="font-size:.72rem;background:rgba(239,68,68,.2);padding:2px 8px;border-radius:99px;font-weight:700">LIGAR</span></a>`).join('')}</div>`:'';
@@ -1261,7 +1456,13 @@ function renderPublicCard(cardId){
       ${c.empresa?`<div class="public-card-company" style="color:#60a5fa">${esc(c.empresa)}</div>`:''}
       ${c.bio?`<div class="public-card-bio">${esc(c.bio)}</div>`:''}
     </div>
-    <div class="public-card-contacts">${contatos||'<p style="text-align:center;color:#475569;font-size:.82rem">Nenhum contato cadastrado</p>'}</div>
+    ${hasMultiProfile?`
+    <div class="profile-tabs">
+      <button class="profile-tab active" id="ptab1" onclick="switchPublicTab(1)">${esc(aba1)}</button>
+      <button class="profile-tab" id="ptab2" onclick="switchPublicTab(2)">${esc(aba2)}</button>
+    </div>`:''}
+    <div class="public-card-contacts" id="pub-contacts-1">${contatos||'<p style="text-align:center;color:#475569;font-size:.82rem">Nenhum contato cadastrado</p>'}</div>
+    ${hasMultiProfile?`<div class="public-card-contacts" id="pub-contacts-2" style="display:none">${contatos2||'<p style="text-align:center;color:#475569;font-size:.82rem">Nenhum contato no perfil pessoal</p>'}</div>`:''}
     ${urgHtml}
     <div class="public-card-actions">
       <button class="public-action-btn" onclick="downloadVCard('${cardId}')">📲 Salvar Contato</button>
