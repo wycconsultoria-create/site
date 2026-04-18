@@ -18,6 +18,16 @@
       "telefone": "11972699775",
       "plano": "free",
       "createdAt": 1776434620854
+    },
+    {
+      "id": "dypkcuscchmo4ck56p",
+      "name": "teste",
+      "slug": "",
+      "cnpj": "",
+      "email": "",
+      "telefone": "",
+      "plano": "free",
+      "createdAt": 1776517346113
     }
   ],
   "cartoes": [
