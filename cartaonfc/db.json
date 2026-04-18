@@ -12,9 +12,11 @@
     {
       "id": "atxuy8dcnq4mo2zb1yu",
       "name": "Vovozinha",
+      "slug": "",
       "cnpj": "",
       "email": "",
       "telefone": "11972699775",
+      "plano": "free",
       "createdAt": 1776434620854
     }
   ],
@@ -58,5 +60,11 @@
         }
       ]
     }
-  ]
+  ],
+  "auth": {
+    "hash": "902395108469c8015a50f19325bcca2625ffa00c2c666eef78163c5eee3751d6",
+    "nome": "Wyc Consultoria",
+    "email": "wycconsultoria@gmail.com",
+    "createdAt": 1776367151556
+  }
 }
