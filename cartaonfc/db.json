@@ -26,7 +26,7 @@
       "cnpj": "",
       "email": "wycconsultoria@wycconsultoria.com.br",
       "telefone": "(19) 99014-3009",
-      "plano": "free",
+      "plano": "business",
       "createdAt": 1776608375020
     }
   ],
@@ -76,5 +76,6 @@
     "nome": "Wyc Consultoria",
     "email": "wycconsultoria@gmail.com",
     "createdAt": 1776367151556
-  }
+  },
+  "_localTs": 1776609560694
 }
