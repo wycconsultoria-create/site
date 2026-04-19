@@ -18,6 +18,16 @@
       "telefone": "11972699775",
       "plano": "pro",
       "createdAt": 1776434620854
+    },
+    {
+      "id": "8mf655p6ofmo5ur7jg",
+      "name": "Wyc Consultoria",
+      "slug": "",
+      "cnpj": "",
+      "email": "wycconsultoria@wycconsultoria.com.br",
+      "telefone": "(19) 99014-3009",
+      "plano": "free",
+      "createdAt": 1776608375020
     }
   ],
   "cartoes": [
