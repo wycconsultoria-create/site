@@ -492,22 +492,23 @@ async function init(){
     renderPublicCard(cardId);
     return;
   }
-  // Painel admin: busca db.json para sincronizar dados e auth
+  // Painel admin: busca db.json SÓ para pegar o auth (não sobrescreve dados locais)
   showLoading('Verificando acesso...');
+  const localData = loadData();
+  const hasLocalData = (localData.empresas||[]).length > 0 || (localData.cartoes||[]).length > 0;
+
   try{
     const r = await fetchWithTimeout(DB_JSON_URL + '?t=' + Date.now(), 5000);
     if(r.ok){
       const remote = await r.json();
-      const local  = loadData();
-      // Só sobrescreve se o remoto for mais recente que o local
-      // Compara _localTs (timestamp da última modificação)
-      const remoteTs = remote._localTs || 0;
-      const localTs  = local._localTs  || 0;
-      if(remoteTs >= localTs){
+      // Auth sempre sincroniza (permite login em qualquer dispositivo)
+      if(remote.auth) localStorage.setItem(AUTH_KEY, JSON.stringify(remote.auth));
+      // Só usa dados do remoto se o localStorage estiver VAZIO
+      // (primeiro acesso neste dispositivo)
+      if(!hasLocalData){
         saveData(remote);
       }
-      // Auth sempre vem do remoto (para funcionar em qualquer dispositivo)
-      if(remote.auth) localStorage.setItem(AUTH_KEY, JSON.stringify(remote.auth));
+      // Se local tem dados, NUNCA sobrescreve — local é a fonte da verdade no admin
     }
   }catch(e){ console.warn('auth sync failed, using local cache'); }
 
@@ -571,8 +572,9 @@ async function syncNow(){
   const btn=document.getElementById('btn-sync');
   if(btn){ btn.textContent='☁️ ...'; btn.disabled=true; }
   const d = loadData();
-  // Garante que auth está no payload
   try{ const a=JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); if(a) d.auth=a; }catch{}
+  d._localTs = Date.now(); // marca timestamp para referência
+  saveData(d); // atualiza local com novo timestamp
   const ok=await ghPush(d);
   if(btn){ btn.textContent='☁️ Sync'; btn.disabled=false; }
   toast(ok?'Sincronizado! ✅':'Erro no sync — verifique ⚙️ GitHub Sync', ok?'success':'error');
