@@ -54,7 +54,15 @@
       "nomeAba1": "Profissional",
       "nomeAba2": "Pessoal",
       "urgenciaContatos": [],
-      "createdAt": 1776609852621
+      "createdAt": 1776609852621,
+      "scans": 1,
+      "lastScan": 1776609876538,
+      "scanLog": [
+        {
+          "ts": 1776609876538,
+          "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+      ]
     }
   ],
   "auth": {
