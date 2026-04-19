@@ -274,14 +274,18 @@ async function syncFromGitHub(){
 
 // Salva local + envia para GitHub
 async function saveAndSync(d){
-  // Sempre inclui o auth no db.json para funcionar em qualquer dispositivo
   try{
     const authLocal = JSON.parse(localStorage.getItem(AUTH_KEY)||'null');
     if(authLocal) d.auth = authLocal;
   }catch{}
+  // Marca timestamp da última modificação local
+  d._localTs = Date.now();
   saveData(d);
-  const ok=await ghPush(d);
-  if(!ok) console.warn('GitHub sync failed - saved locally only');
+  const ok = await ghPush(d);
+  if(!ok){
+    // Avisa o usuário que o sync falhou — dados só no navegador atual
+    toast('⚠️ Não foi possível sincronizar. Clique em ☁️ Sync manualmente.','error');
+  }
   return ok;
 }
 
@@ -471,23 +475,39 @@ async function init(){
     try{
       const r = await fetchWithTimeout(DB_JSON_URL + '?t=' + Date.now(), 5000);
       if(r.ok){
-        const data = await r.json();
-        saveData(data);
+        const remote = await r.json();
+        const local  = loadData();
+        // Para cartão público sempre usa dados do GitHub (mais confiável)
+        if((remote._localTs||0) >= (local._localTs||0)){
+          saveData(remote);
+        } else {
+          // Usa local mas mescla os cartões do remoto para garantir consistência
+          const merged = {...local};
+          if(remote.cartoes) merged.cartoes = remote.cartoes;
+          saveData(merged);
+        }
       }
     }catch(e){ console.warn('db.json fetch failed (usando cache local):', e.message); }
     // SEMPRE renderiza, mesmo se fetch falhou
     renderPublicCard(cardId);
     return;
   }
-  // Painel admin: busca db.json primeiro para pegar auth config de qualquer dispositivo
+  // Painel admin: busca db.json para sincronizar dados e auth
   showLoading('Verificando acesso...');
   try{
     const r = await fetchWithTimeout(DB_JSON_URL + '?t=' + Date.now(), 5000);
     if(r.ok){
-      const data = await r.json();
-      saveData(data);
-      // Se db.json tem auth config, salva no localStorage deste dispositivo
-      if(data.auth) localStorage.setItem(AUTH_KEY, JSON.stringify(data.auth));
+      const remote = await r.json();
+      const local  = loadData();
+      // Só sobrescreve se o remoto for mais recente que o local
+      // Compara _localTs (timestamp da última modificação)
+      const remoteTs = remote._localTs || 0;
+      const localTs  = local._localTs  || 0;
+      if(remoteTs >= localTs){
+        saveData(remote);
+      }
+      // Auth sempre vem do remoto (para funcionar em qualquer dispositivo)
+      if(remote.auth) localStorage.setItem(AUTH_KEY, JSON.stringify(remote.auth));
     }
   }catch(e){ console.warn('auth sync failed, using local cache'); }
 
