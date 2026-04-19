@@ -35,7 +35,7 @@
       "id": "n874b3r6u7imo5vmvnx",
       "empresaId": "8mf655p6ofmo5ur7jg",
       "nome": "Wilson Caversan",
-      "cargo": "Proprietário",
+      "cargo": "Administrador",
       "empresa": "Wyc Consultoria",
       "bio": "",
       "foto": "",
@@ -54,15 +54,7 @@
       "nomeAba1": "Profissional",
       "nomeAba2": "Pessoal",
       "urgenciaContatos": [],
-      "createdAt": 1776609852621,
-      "scans": 1,
-      "lastScan": 1776609934925,
-      "scanLog": [
-        {
-          "ts": 1776609934925,
-          "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
-      ]
+      "createdAt": 1776609852621
     }
   ],
   "auth": {
@@ -71,5 +63,5 @@
     "email": "wycconsultoria@gmail.com",
     "createdAt": 1776367151556
   },
-  "_localTs": 1776609931562
+  "_localTs": 1776609944592
 }
