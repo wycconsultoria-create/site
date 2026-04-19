@@ -33,6 +33,12 @@
           "tipo": "whatsapp",
           "rotulo": "WhatsApp",
           "valor": "(19) 99014-3009"
+        },
+        {
+          "id": "fnqobr5j0pmo5yx3xb",
+          "tipo": "site",
+          "rotulo": "Site",
+          "valor": ""
         }
       ],
       "contatos2": [],
@@ -42,5 +48,5 @@
       "createdAt": 1776609852621
     }
   ],
-  "_localTs": 1776615261276
+  "_localTs": 1776615378967
 }
