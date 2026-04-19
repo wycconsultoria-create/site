@@ -48,5 +48,11 @@
       "createdAt": 1776609852621
     }
   ],
-  "_localTs": 1776615596076
+  "_localTs": 1776615726544,
+  "auth": {
+    "hash": "902395108469c8015a50f19325bcca2625ffa00c2c666eef78163c5eee3751d6",
+    "nome": "Wilson",
+    "email": "wycconsultoria@gmail.com.br",
+    "createdAt": 1776615726542
+  }
 }
