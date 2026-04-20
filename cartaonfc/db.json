@@ -74,6 +74,12 @@
           "tipo": "whatsapp",
           "rotulo": "WhatsApp",
           "valor": "Peça Pelo Whatsapp"
+        },
+        {
+          "id": "zt8guyj376cmo7hje6t",
+          "tipo": "site",
+          "rotulo": "Avaliem Nosso Atendimento",
+          "valor": "https://www.google.com/search?newwindow=1&sca_esv=21f0f7159a2b44ff&sxsrf=ANbL-n4GueqS99vMMtHIXPeMfFNqb3yHbA:1776254078050&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOTdUn2o5Hq88gx2tPT2qCVWKuKbbQtZf0cIzH2HjaDZCUqo9C48-pi8x9YmiLSmX5xDa6N0Ivl2hw4xnqhezA89u__7cejzlQpqVJKLeAIYqtglRHg%3D%3D&q=Pastelaria+Da+Vovozinha+Coment%C3%A1rios&sa=X&ved=2ahUKEwjolOmK5u-TAxWULLkGHZ_fAWIQ0bkNegQILRAF&biw=1777&bih=812&dpr=0.9"
         }
       ],
       "contatos2": [],
@@ -83,7 +89,7 @@
       "createdAt": 1776706907452
     }
   ],
-  "_localTs": 1776707100663,
+  "_localTs": 1776707118747,
   "auth": {
     "hash": "902395108469c8015a50f19325bcca2625ffa00c2c666eef78163c5eee3751d6",
     "nome": "Wilson",
