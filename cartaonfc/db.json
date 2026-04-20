@@ -82,10 +82,10 @@
       "urgenciaContatos": [],
       "createdAt": 1776706907452,
       "scans": 1,
-      "lastScan": 1776707062982,
+      "lastScan": 1776707072737,
       "scanLog": [
         {
-          "ts": 1776707062982,
+          "ts": 1776707072737,
           "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
       ]
