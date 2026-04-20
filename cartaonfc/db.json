@@ -56,9 +56,34 @@
       "nomeAba2": "Pessoal",
       "urgenciaContatos": [],
       "createdAt": 1776609852621
+    },
+    {
+      "id": "wwbco174q8mo7hf3nf",
+      "empresaId": "24x4efcm4x3mo7h9d2o",
+      "nome": "Pastelaria da Vovozinha",
+      "cargo": "",
+      "empresa": "",
+      "bio": "",
+      "foto": "",
+      "cor": "linear-gradient(135deg,#2563eb,#6366f1)",
+      "slug": "",
+      "tipo": "profissional",
+      "contatos": [
+        {
+          "id": "7ww9lk30plimo7hf18t",
+          "tipo": "whatsapp",
+          "rotulo": "WhatsApp",
+          "valor": "Peça Pelo Whatsapp"
+        }
+      ],
+      "contatos2": [],
+      "nomeAba1": "Profissional",
+      "nomeAba2": "Pessoal",
+      "urgenciaContatos": [],
+      "createdAt": 1776706907452
     }
   ],
-  "_localTs": 1776706842036,
+  "_localTs": 1776706907453,
   "auth": {
     "hash": "902395108469c8015a50f19325bcca2625ffa00c2c666eef78163c5eee3751d6",
     "nome": "Wilson",
