@@ -230,7 +230,7 @@ async function initFirebase(){
   if(_db) return _db;
   try{
     const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const { getFirestore, doc, getDoc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
     const cfg = {
       apiKey:            "AIzaSyBNKv2-4oFu1_Pk-rImfeKfkS3ZPVGBktE",
       authDomain:        "wyc-connect.firebaseapp.com",
@@ -245,6 +245,25 @@ async function initFirebase(){
   }catch(e){ console.error('Firebase init error',e); return null; }
 }
 
+// Comprime imagem para caber no Firestore (máx ~200KB)
+function compressImage(base64DataUrl, maxWidth=320, quality=0.72){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if(w > maxWidth){ h = Math.round(h * maxWidth / w); w = maxWidth; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const result = canvas.toDataURL('image/jpeg', quality);
+      console.log('Compressão:', Math.round(base64DataUrl.length/1024)+'KB →', Math.round(result.length/1024)+'KB');
+      resolve(result);
+    };
+    img.onerror = ()=> resolve(base64DataUrl);
+    img.src = base64DataUrl;
+  });
+}
+
 async function fbLoad(){
   try{
     const db = await initFirebase(); if(!db) return null;
@@ -257,18 +276,40 @@ async function fbLoad(){
   }
 }
 
+function cleanForFirestore(obj, depth=0){
+  if(obj === null || obj === undefined) return null;
+  if(typeof obj === 'string'){
+    // Firestore tem limite de 1MB por doc — base64 > 250KB é perigoso
+    if(obj.startsWith('data:image') && obj.length > 250000){
+      console.warn('Imagem grande demais para Firestore:', Math.round(obj.length/1024)+'KB');
+      toast('⚠️ Imagem muito grande — redimensione antes de salvar','error');
+      return ''; // remove para não quebrar o doc
+    }
+    return obj;
+  }
+  if(typeof obj === 'number' || typeof obj === 'boolean') return obj;
+  if(Array.isArray(obj)) return obj.map(item => cleanForFirestore(item, depth+1));
+  if(typeof obj === 'object'){
+    const clean = {};
+    for(const [k,v] of Object.entries(obj)){
+      if(v === undefined) continue;
+      clean[k] = cleanForFirestore(v, depth+1);
+    }
+    return clean;
+  }
+  return obj;
+}
+
 async function fbSave(data){
   try{
     const db = await initFirebase();
     if(!db){ console.error('Firebase não inicializou'); return false; }
     const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    // Firestore não aceita undefined — limpa os dados antes de salvar
-    const clean = JSON.parse(JSON.stringify(data, (k,v) => v===undefined ? null : v));
+    const clean = cleanForFirestore(data);
     await setDoc(doc(db,'wyc','data'), clean);
     return true;
   }catch(e){
     console.error('fbSave error:', e.code, e.message);
-    // Mostra erro específico para facilitar diagnóstico
     if(e.code==='permission-denied'){
       toast('🔒 Firebase: permissão negada. Verifique as Regras do Firestore.','error');
     } else if(e.code==='unavailable'){
@@ -547,6 +588,18 @@ function checkPlanAndCreate(eid){
   }
   renderCartaoEditor(null,eid);
 }
+async function handleLogoUpload(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    // Logo: max 200px, alta qualidade para preservar detalhes
+    const compressed=await compressImage(ev.target.result,200,0.9);
+    document.getElementById('elogo').value=compressed;
+    document.getElementById('emp-logo-prev').innerHTML=`<img src="${compressed}" style="width:100%;height:100%;object-fit:contain;padding:4px">`;
+    toast('✅ Logo pronta! ('+Math.round(compressed.length/1024)+'KB)','success');
+  };
+  reader.readAsDataURL(file);
+}
 function validateSlug(input){
   const s = input.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
   input.value = s;
@@ -689,7 +742,9 @@ function renderDashboard(){
     empresas.map(e=>{ const cnt=cartoes.filter(c=>c.empresaId===e.id).length; return `
     <div class="empresa-card">
       <div class="empresa-card-top">
-        <div class="empresa-avatar">${initials(e.name)}</div>
+        <div class="empresa-avatar">
+          ${e.logo?`<img src="${esc(e.logo)}" style="width:100%;height:100%;object-fit:contain;padding:4px">`:initials(e.name)}
+        </div>
         <div class="empresa-info"><div class="empresa-name">${esc(e.name)}</div><div class="empresa-email">${esc(e.cnpj||e.email||'—')}</div></div>
         <span id="plan-badge-${e.id}" style="font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:99px;white-space:nowrap;border:1px solid;${(()=>{const p=e.plano||'free';return p==='business'?'color:#7c3aed;border-color:#7c3aed40;background:rgba(124,58,237,.08)':p==='pro'?'color:#2563eb;border-color:#2563eb40;background:rgba(37,99,235,.08)':'color:#64748b;border-color:#64748b40;background:rgba(100,116,139,.08)'})()}">${(()=>{const p=e.plano||'free';return p==='business'?'💎 Business':p==='pro'?'⭐ Pro':'🆓 Free'})()}</span>
       </div>
@@ -726,13 +781,28 @@ function openEmpresaModal(id){
       <div class="form-group"><label class="form-label">E-mail</label><input class="form-input" id="ee" type="email" placeholder="email@empresa.com" value="${esc(e?.email||'')}"></div>
     </div>
     <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" id="et" placeholder="(11) 9 0000-0000" value="${esc(e?.telefone||'')}"></div>
+    <div class="form-group">
+      <label class="form-label">Logo da Empresa</label>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="emp-logo-prev" style="width:64px;height:64px;border-radius:10px;overflow:hidden;border:2px solid var(--border);flex-shrink:0;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;font-size:1.5rem">
+          ${e?.logo?`<img src="${esc(e.logo)}" style="width:100%;height:100%;object-fit:contain;padding:4px">`:'🏢'}
+        </div>
+        <div style="flex:1">
+          <input class="form-input" id="elogo" placeholder="URL da logo ou faça upload" value="${esc(e?.logo||'')}">
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin-top:6px;display:inline-flex">
+            📷 Upload logo
+            <input type="file" accept="image/*" onchange="handleLogoUpload(this)" style="display:none">
+          </label>
+        </div>
+      </div>
+    </div>
     <div class="modal-footer"><button class="btn btn-secondary modal-close">Cancelar</button><button class="btn btn-primary" id="es-save">${e?'💾 Salvar':'➕ Criar'}</button></div>`);
   ov.querySelector('#ec').addEventListener('input',ev=>{ let v=ev.target.value.replace(/\D/g,'').slice(0,14); v=v.replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d)/,'$1-$2'); ev.target.value=v; });
   ov.querySelector('#es-save').onclick=()=>{
     const nome=ov.querySelector('#en').value.trim();
     if(!nome){ toast('Informe o nome','error'); return; }
     const eslug=ov.querySelector('#eslug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,40)||'';
-    saveEmpresa({id:e?.id||genId(),name:nome,slug:eslug,cnpj:ov.querySelector('#ec').value.trim(),email:ov.querySelector('#ee').value.trim(),telefone:ov.querySelector('#et').value.trim(),plano:ov.querySelector('#ep')?.value||'free',createdAt:e?.createdAt||Date.now()});
+    saveEmpresa({id:e?.id||genId(),name:nome,slug:eslug,logo:ov.querySelector('#elogo')?.value.trim()||'',cnpj:ov.querySelector('#ec').value.trim(),email:ov.querySelector('#ee').value.trim(),telefone:ov.querySelector('#et').value.trim(),plano:ov.querySelector('#ep')?.value||'free',createdAt:e?.createdAt||Date.now()});
     toast(e?'Empresa atualizada!':'Empresa criada! 🎉'); ov.remove(); renderDashboard();
   };
 }
@@ -746,8 +816,12 @@ function renderCartoesPage(empresaId, filterEmpresaId, highlightId){
     cartoes.map(c=>{ const ce=getEmpresas().find(e=>e.id===c.empresaId); const tipos=[...new Set((c.contatos||[]).map(x=>x.tipo))]; const icons=tipos.slice(0,5).map(t=>typeConfig(t).icon).join(' ');
     return `<div class="empresa-card">
       <div class="empresa-card-top">
-        <div class="empresa-avatar" style="background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'}">
-          ${c.foto?`<img src="${esc(c.foto)}" style="width:100%;height:100%;object-fit:cover">`:initials(c.nome||'?')}
+        <div class="empresa-avatar" style="background:${c.foto?'#f8faff':c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'}">
+          ${c.foto
+            ?`<img src="${esc(c.foto)}" style="width:100%;height:100%;object-fit:cover">`
+            :ce?.logo
+              ?`<img src="${esc(ce.logo)}" style="width:100%;height:100%;object-fit:contain;padding:4px">`
+              :initials(c.nome||'?')}
         </div>
         <div class="empresa-info"><div class="empresa-name">${esc(c.nome||'Sem nome')}</div>
         <div class="empresa-email">${c.cargo?esc(c.cargo):''}${c.cargo&&ce?' · ':''}${ce?esc(ce.name):''}</div></div>
@@ -832,9 +906,20 @@ function renderCartaoEditor(cartaoId, empresaId){
             <div class="form-group"><label class="form-label">Nome (exibição)</label><input class="form-input" id="f-empresa" placeholder="Pastelaria da Vovozinha" value="${esc(ex?.empresa||'')}"></div>
           </div>
           <div class="form-group"><label class="form-label">Bio</label><textarea class="form-textarea" id="f-bio" placeholder="Uma breve descrição...">${esc(ex?.bio||'')}</textarea></div>
-          <div class="form-group"><label class="form-label">Foto (URL)</label><input class="form-input" id="f-foto" placeholder="https://..." value="${esc(ex?.foto||'')}">
-            <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin-top:8px;display:inline-flex">📷 Upload <input type="file" accept="image/*" onchange="handleFotoUpload(this)" style="display:none"></label>
-
+          <div class="form-group">
+            <label class="form-label">Foto do Perfil</label>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div id="foto-prev" style="width:64px;height:64px;border-radius:50%;overflow:hidden;border:2px solid var(--border);flex-shrink:0;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;font-size:1.5rem">
+                ${ex?.foto?`<img src="${esc(ex.foto)}" style="width:100%;height:100%;object-fit:cover">`:'📷'}
+              </div>
+              <div style="flex:1">
+                <input class="form-input" id="f-foto" placeholder="URL da foto ou faça upload" value="${esc(ex?.foto||'')}">
+                <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin-top:6px;display:inline-flex">
+                  📷 Upload foto
+                  <input type="file" accept="image/*" onchange="handleFotoUpload('foto')" style="display:none">
+                </label>
+              </div>
+            </div>
           </div>
           <div class="form-group"><label class="form-label">Cor</label>
             <div class="color-picker">${colors.map(bg=>`<div class="color-swatch ${_selectedColor===bg?'selected':''}" style="background:${bg}" onclick="selectColor(this,'${bg}')"></div>`).join('')}</div>
@@ -887,7 +972,28 @@ function setTipo(t){
 }
 function autoFillEmpresa(sel){ const e=getEmpresas().find(x=>x.id===sel.value); if(e) document.getElementById('f-empresa').value=e.name; }
 function selectColor(el,color){ document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected')); el.classList.add('selected'); _selectedColor=color; }
-function handleFotoUpload(input){ const file=input.files[0]; if(!file)return; const r=new FileReader(); r.onload=ev=>{ document.getElementById('f-foto').value=ev.target.result; document.getElementById('foto-prev').innerHTML=`<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover">`; }; r.readAsDataURL(file); }
+async function handleFotoUpload(field){
+  const input = event.target;
+  const file = input.files[0]; if(!file) return;
+  const fieldId = field==='banner' ? 'f-banner' : 'f-foto';
+  const prevId  = field==='banner' ? 'banner-prev' : 'foto-prev';
+  const maxW    = field==='banner' ? 800 : 320;
+
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const inp = document.getElementById(fieldId);
+    if(inp){ inp.value='Comprimindo...'; inp.disabled=true; }
+    // Comprime para caber no Firestore (< 200KB)
+    const compressed = await compressImage(ev.target.result, maxW, 0.75);
+    // Preview
+    const prevEl = document.getElementById(prevId);
+    if(prevEl) prevEl.innerHTML=`<img src="${compressed}" style="width:100%;height:100%;object-fit:cover">`;
+    // Salva no campo
+    if(inp){ inp.value=compressed; inp.disabled=false; }
+    toast('✅ Imagem pronta! ('+Math.round(compressed.length/1024)+'KB)','success');
+  };
+  reader.readAsDataURL(file);
+}
 
 function renderContatosList(){
   const el=document.getElementById('contatos-list'); if(!el)return;
@@ -1140,7 +1246,7 @@ function renderPlanos(){
         const pct=Math.min(100,Math.round((cnt/lim)*100));
         return `
         <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
-          <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:.8rem;flex-shrink:0">${initials(e.name)}</div>
+          <div style="width:36px;height:36px;border-radius:8px;background:${e.logo?'#f8faff':'linear-gradient(135deg,var(--accent),var(--accent-2))'};display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:.8rem;flex-shrink:0;overflow:hidden">${e.logo?`<img src="${esc(e.logo)}" style="width:100%;height:100%;object-fit:contain;padding:3px">`:initials(e.name)}</div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.name)}</div>
             <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
@@ -1244,7 +1350,7 @@ function renderAnalytics(){
     <div style="margin-bottom:16px;padding:16px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-md)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:.85rem">${initials(e.name)}</div>
+          <div style="width:36px;height:36px;border-radius:8px;background:${e.logo?'#f8faff':'linear-gradient(135deg,var(--accent),var(--accent-2))'};display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:.85rem;overflow:hidden">${e.logo?`<img src="${esc(e.logo)}" style="width:100%;height:100%;object-fit:contain;padding:3px">`:initials(e.name)}</div>
           <div><div style="font-weight:700;font-size:.92rem">${esc(e.name)}</div><div style="font-size:.72rem;color:var(--text-muted)">${e.cartoes.length} cartão(ões)</div></div>
         </div>
         <div style="text-align:right"><div style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--accent)">${e.totalScans}</div><div style="font-size:.68rem;color:var(--text-muted)">scans totais</div></div>
@@ -1460,9 +1566,12 @@ function renderPublicCard(cardId){
   const urgencia=c.urgenciaContatos||[];
   const urgHtml=isIdoso?`<div style="padding:0 20px 20px"><div style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f87171;margin-bottom:10px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#f87171;display:inline-block;animation:pulse 1.5s infinite"></span>EMERGÊNCIA</div>${(urgencia.length>0?urgencia:[{icone:'🚑',nome:'SAMU',numero:'192'},{icone:'🚒',nome:'Bombeiros',numero:'193'},{icone:'🚓',nome:'Polícia',numero:'190'}]).map(u=>`<a href="tel:${esc(u.numero)}" class="public-contact-btn" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171;margin-bottom:8px"><span class="public-contact-icon">${esc(u.icone||'📞')}</span><span class="public-contact-label">${esc(u.nome)}<span class="public-contact-sublabel">${esc(u.numero)}</span></span><span style="font-size:.72rem;background:rgba(239,68,68,.2);padding:2px 8px;border-radius:99px;font-weight:700">LIGAR</span></a>`).join('')}</div>`:'';
 
+  const emp = loadData().empresas.find(x=>x.id===c.empresaId);
   const avatarHtml=c.foto
     ?`<img src="${esc(c.foto)}" class="public-card-avatar" alt="${esc(c.nome)}">`
-    :`<div class="public-card-avatar-placeholder" style="background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'}">${initials(c.nome||'?')}</div>`;
+    :emp?.logo
+      ?`<img src="${esc(emp.logo)}" class="public-card-avatar" alt="${esc(emp.name)}" style="object-fit:contain;padding:6px;background:#fff">`
+      :`<div class="public-card-avatar-placeholder" style="background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'}">${initials(c.nome||'?')}</div>`;
 
   const bannerHtml=c.banner
     ?`<img src="${esc(c.banner)}" class="public-card-banner" alt="banner">`
