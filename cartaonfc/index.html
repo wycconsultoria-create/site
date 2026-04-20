@@ -251,16 +251,33 @@ async function fbLoad(){
     const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
     const snap = await getDoc(doc(db,'wyc','data'));
     return snap.exists() ? snap.data() : null;
-  }catch(e){ console.warn('fbLoad error',e); return null; }
+  }catch(e){
+    console.error('fbLoad error:', e.code, e.message);
+    return null;
+  }
 }
 
 async function fbSave(data){
   try{
-    const db = await initFirebase(); if(!db) return false;
+    const db = await initFirebase();
+    if(!db){ console.error('Firebase não inicializou'); return false; }
     const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    await setDoc(doc(db,'wyc','data'), data);
+    // Firestore não aceita undefined — limpa os dados antes de salvar
+    const clean = JSON.parse(JSON.stringify(data, (k,v) => v===undefined ? null : v));
+    await setDoc(doc(db,'wyc','data'), clean);
     return true;
-  }catch(e){ console.warn('fbSave error',e); return false; }
+  }catch(e){
+    console.error('fbSave error:', e.code, e.message);
+    // Mostra erro específico para facilitar diagnóstico
+    if(e.code==='permission-denied'){
+      toast('🔒 Firebase: permissão negada. Verifique as Regras do Firestore.','error');
+    } else if(e.code==='unavailable'){
+      toast('📡 Firebase offline. Dado salvo localmente.','error');
+    } else {
+      toast('⚠️ Firebase: '+e.message,'error');
+    }
+    return false;
+  }
 }
 
 // ── Leitura local (síncrona — cache) ─────────────────────
