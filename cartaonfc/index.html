@@ -120,10 +120,10 @@ p{color:var(--text-secondary)}a{text-decoration:none;color:inherit}
 .public-card-company{font-size:.85rem;color:#94a3b8;margin-bottom:4px}
 .public-card-bio{font-size:.82rem;color:#94a3b8;line-height:1.5;margin-top:8px}
 .public-card-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(37,99,235,.2);color:#93c5fd;border:1px solid rgba(37,99,235,.4);font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:99px;margin-bottom:12px}
-.public-card-contacts{padding:0 20px 28px;display:flex;flex-direction:column;gap:10px}
-.public-contact-btn{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:var(--radius-md);cursor:pointer;border:none;font-family:var(--font-body);font-weight:600;font-size:.88rem;transition:all .2s;text-align:left;width:100%}
-.public-contact-btn:hover{opacity:.88;transform:translateY(-1px)}
-.public-contact-btn:active{transform:scale(.98)}
+.public-card-contacts{padding:0 20px 24px;display:flex;flex-direction:column;gap:10px}
+.public-contact-btn{display:flex;align-items:center;gap:14px;padding:15px 20px;border-radius:12px;cursor:pointer;border:none;font-family:var(--font-body);font-weight:700;font-size:.92rem;transition:all .2s;text-align:left;width:100%;text-decoration:none}
+.public-contact-btn:hover{opacity:.88;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.public-contact-btn:active{transform:scale(.97)}
 .public-contact-icon{font-size:1.2rem;min-width:24px;text-align:center}
 .public-contact-label{flex:1}
 .public-contact-sublabel{font-size:.72rem;opacity:.75;font-weight:400;display:block}
@@ -362,16 +362,29 @@ function setSession(){ sessionStorage.setItem(SESSION_KEY,JSON.stringify({ts:Dat
 function clearSession(){ sessionStorage.removeItem(SESSION_KEY); }
 
 // ── CONTACTS ──────────────────────────────────────────────
+// SVGs oficiais — fora do esc() para não serem escapados
+const BRAND_ICONS={
+  whatsapp:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.532 5.845L.054 23.454a.5.5 0 00.492.546h.057l5.735-1.503A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.9 9.9 0 01-5.031-1.373l-.361-.214-3.737.979.998-3.648-.235-.374A9.861 9.861 0 012.1 12c0-5.468 4.432-9.9 9.9-9.9 5.469 0 9.9 4.432 9.9 9.9 0 5.469-4.431 9.9-9.9 9.9z"/></svg>`,
+  instagram:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>`,
+  email:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>`,
+  site:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>`,
+  telefone:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>`,
+  linkedin:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>`,
+  facebook:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`,
+  tiktok:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.79 1.53V6.78a4.85 4.85 0 01-1.02-.09z"/></svg>`,
+  outro:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>`,
+};
+
 const CONTACT_TYPES={
-  whatsapp: {label:'WhatsApp', icon:'💬', color:'#16a34a', bg:'rgba(22,163,74,.12)', border:'rgba(22,163,74,.3)'},
-  email:    {label:'E-mail',   icon:'✉️',  color:'#b45309', bg:'rgba(180,83,9,.12)',  border:'rgba(180,83,9,.3)'},
-  site:     {label:'Site',     icon:'🌐', color:'#0369a1', bg:'rgba(3,105,161,.12)', border:'rgba(3,105,161,.3)'},
-  instagram:{label:'Instagram',icon:'📸', color:'#be185d', bg:'rgba(190,24,93,.12)', border:'rgba(190,24,93,.3)'},
-  telefone: {label:'Telefone', icon:'📞', color:'#7c3aed', bg:'rgba(124,58,237,.12)',border:'rgba(124,58,237,.3)'},
-  linkedin: {label:'LinkedIn', icon:'💼', color:'#0056a0', bg:'rgba(0,86,160,.12)',  border:'rgba(0,86,160,.3)'},
-  facebook: {label:'Facebook', icon:'👥', color:'#1558c0', bg:'rgba(21,88,192,.12)', border:'rgba(21,88,192,.3)'},
-  tiktok:   {label:'TikTok',   icon:'🎵', color:'#c8003e', bg:'rgba(200,0,62,.12)',  border:'rgba(200,0,62,.3)'},
-  outro:    {label:'Outro',    icon:'🔗', color:'#475569', bg:'rgba(71,85,105,.1)',  border:'rgba(71,85,105,.25)'},
+  whatsapp: {label:'WhatsApp', icon:'whatsapp', emoji:'💬', color:'#ffffff', bg:'#25d366', border:'#25d366'},
+  email:    {label:'E-mail',   icon:'email',    emoji:'✉️',  color:'#ffffff', bg:'#f59e0b', border:'#f59e0b'},
+  site:     {label:'Site',     icon:'site',     emoji:'🌐', color:'#ffffff', bg:'#64748b', border:'#64748b'},
+  instagram:{label:'Instagram',icon:'instagram',emoji:'📸', color:'#ffffff', bg:'linear-gradient(135deg,#f58529,#dd2a7b,#8134af)', border:'#dd2a7b'},
+  telefone: {label:'Telefone', icon:'telefone', emoji:'📞', color:'#ffffff', bg:'#7c3aed', border:'#7c3aed'},
+  linkedin: {label:'LinkedIn', icon:'linkedin', emoji:'💼', color:'#ffffff', bg:'#0077b5', border:'#0077b5'},
+  facebook: {label:'Facebook', icon:'facebook', emoji:'👥', color:'#ffffff', bg:'#1877f2', border:'#1877f2'},
+  tiktok:   {label:'TikTok',   icon:'tiktok',  emoji:'🎵', color:'#ffffff', bg:'#010101', border:'#010101'},
+  outro:    {label:'Outro',    icon:'outro',    emoji:'🔗', color:'#ffffff', bg:'#475569', border:'#475569'},
 };
 function typeConfig(t){ return CONTACT_TYPES[t]||CONTACT_TYPES.outro; }
 function buildHref(t,v){
@@ -864,7 +877,7 @@ function renderContatosList(){
   if(_contatos.length===0){ el.innerHTML='<p class="text-sm text-muted" style="padding:12px">Nenhum contato adicionado.</p>'; return; }
   el.innerHTML=_contatos.map((c,i)=>{
     const cfg=typeConfig(c.tipo);
-    const opts=Object.entries(CONTACT_TYPES).map(([k,v])=>`<option value="${k}" ${k===c.tipo?'selected':''}>${v.icon} ${v.label}</option>`).join('');
+    const opts=Object.entries(CONTACT_TYPES).map(([k,v])=>`<option value="${k}" ${k===c.tipo?'selected':''}>${v.emoji} ${v.label}</option>`).join('');
     return `<div class="contact-item" id="ci-${c.id}">
       <div style="display:flex;align-items:center;gap:6px">
         <div class="contact-type-badge" id="ctb-${c.id}" style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.color};padding:6px 10px"><span id="cti-${c.id}">${cfg.icon}</span></div>
@@ -878,7 +891,7 @@ function renderContatosList(){
 }
 function updateContato(id,field,val){
   const c=_contatos.find(x=>x.id===id); if(!c)return; c[field]=val;
-  if(field==='tipo'){ const cfg=typeConfig(val); const el=document.getElementById('cti-'+id); if(el)el.textContent=cfg.icon;
+  if(field==='tipo'){ const cfg=typeConfig(val); const el=document.getElementById('cti-'+id); if(el)el.textContent=cfg.emoji;
     const badge=document.getElementById('ctb-'+id); if(badge){ badge.style.background=cfg.bg; badge.style.borderColor=cfg.border; badge.style.color=cfg.color; } }
 }
 function renderContatosList2(){
@@ -886,7 +899,7 @@ function renderContatosList2(){
   if(_contatos2.length===0){ el.innerHTML='<p class="text-sm text-muted" style="padding:12px">Nenhum contato no perfil pessoal.</p>'; return; }
   el.innerHTML=_contatos2.map((c)=>{
     const cfg=typeConfig(c.tipo);
-    const opts=Object.entries(CONTACT_TYPES).map(([k,v])=>`<option value="${k}" ${k===c.tipo?'selected':''}>${v.icon} ${v.label}</option>`).join('');
+    const opts=Object.entries(CONTACT_TYPES).map(([k,v])=>`<option value="${k}" ${k===c.tipo?'selected':''}>${v.emoji} ${v.label}</option>`).join('');
     return `<div class="contact-item" id="ci2-${c.id}">
       <div style="display:flex;align-items:center;gap:6px">
         <div class="contact-type-badge" id="ctb2-${c.id}" style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.color};padding:6px 10px"><span id="cti2-${c.id}">${cfg.icon}</span></div>
@@ -898,7 +911,7 @@ function renderContatosList2(){
     </div>`;
   }).join('');
 }
-function updateContato2(id,f,v){ const c=_contatos2.find(x=>x.id===id); if(!c)return; c[f]=v; if(f==='tipo'){ const cfg=typeConfig(v); const i=document.getElementById('cti2-'+id); if(i)i.textContent=cfg.icon; const b=document.getElementById('ctb2-'+id); if(b){b.style.background=cfg.bg;b.style.borderColor=cfg.border;b.style.color=cfg.color;} } }
+function updateContato2(id,f,v){ const c=_contatos2.find(x=>x.id===id); if(!c)return; c[f]=v; if(f==='tipo'){ const cfg=typeConfig(v); const i=document.getElementById('cti2-'+id); if(i)i.textContent=cfg.emoji; const b=document.getElementById('ctb2-'+id); if(b){b.style.background=cfg.bg;b.style.borderColor=cfg.border;b.style.color=cfg.color;} } }
 function removeContato2(id){ _contatos2=_contatos2.filter(x=>x.id!==id); renderContatosList2(); }
 function addContato(tab=1){
   if(tab===2){ _contatos2.push({id:genId(),tipo:'whatsapp',rotulo:'WhatsApp',valor:''}); renderContatosList2(); }
@@ -1412,8 +1425,14 @@ function renderPublicCard(cardId){
   const scans=c.scans||0;
 
   const buildContactBtns = (list) => (list||[]).map(ct=>{
-    const cfg=typeConfig(ct.tipo); const href=buildHref(ct.tipo,ct.valor);
-    return `<a href="${esc(href)}" target="_blank" rel="noopener" class="public-contact-btn" style="background:${cfg.bg};border:1px solid ${cfg.border};color:${cfg.color}"><span class="public-contact-icon">${cfg.icon}</span><span class="public-contact-label">${esc(ct.rotulo||cfg.label)}<span class="public-contact-sublabel">${esc(ct.valor||'')}</span></span><span style="opacity:.6;font-size:.9rem">→</span></a>`;
+    const cfg  = typeConfig(ct.tipo);
+    const href = buildHref(ct.tipo, ct.valor);
+    return `<a href="${esc(href)}" target="_blank" rel="noopener" class="public-contact-btn"
+      style="background:${cfg.bg};border:none;color:#fff">
+      <span style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;flex-shrink:0;color:#fff">${BRAND_ICONS[cfg.icon]||''}</span>
+      <span style="font-size:.92rem;font-weight:700;flex:1;color:#fff">${esc(ct.rotulo||cfg.label)}</span>
+      <span style="opacity:.7;font-size:.85rem;color:#fff">→</span>
+    </a>`;
   }).join('');
   const contatos=buildContactBtns(c.contatos);
   const contatos2=buildContactBtns(c.contatos2);
