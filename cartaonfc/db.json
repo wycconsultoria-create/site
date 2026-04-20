@@ -1,7 +1,7 @@
 {
   "user": {
-    "name": "Usuário WYC",
-    "email": ""
+    "name": "Wilson",
+    "email": "wycconsultoria@gmail.com.br"
   },
   "empresas": [
     {
@@ -13,6 +13,16 @@
       "telefone": "(19) 99014-3009",
       "plano": "free",
       "createdAt": 1776614981134
+    },
+    {
+      "id": "24x4efcm4x3mo7h9d2o",
+      "name": "Vovozinha",
+      "slug": "",
+      "cnpj": "",
+      "email": "",
+      "telefone": "",
+      "plano": "free",
+      "createdAt": 1776706639728
     }
   ],
   "cartoes": [
@@ -48,7 +58,7 @@
       "createdAt": 1776609852621
     }
   ],
-  "_localTs": 1776615726544,
+  "_localTs": 1776706639729,
   "auth": {
     "hash": "902395108469c8015a50f19325bcca2625ffa00c2c666eef78163c5eee3751d6",
     "nome": "Wilson",
