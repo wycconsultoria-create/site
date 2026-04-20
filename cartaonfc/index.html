@@ -222,71 +222,66 @@ const SESSION_KEY = 'wyc_session';
 const SESSION_TTL = 8 * 60 * 60 * 1000;
 const DEFAULT_DATA = { user:{ name:'Usuário WYC', email:'' }, empresas:[], cartoes:[] };
 
-// GitHub config — preenchido na primeira configuração
-function getGHConfig(){ try{ return JSON.parse(localStorage.getItem('wyc_gh')||'null'); }catch{ return null; } }
-function saveGHConfig(c){ localStorage.setItem('wyc_gh',JSON.stringify(c)); }
+// ── FIREBASE ─────────────────────────────────────────────
+// SDK via CDN — sem npm, sem build
+let _db = null; // Firestore instance
 
-// ── Leitura local (síncrona) ──────────────────────────────
+async function initFirebase(){
+  if(_db) return _db;
+  try{
+    const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getFirestore, doc, getDoc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const cfg = {
+      apiKey:            "AIzaSyBNKv2-4oFu1_Pk-rImfeKfkS3ZPVGBktE",
+      authDomain:        "wyc-connect.firebaseapp.com",
+      projectId:         "wyc-connect",
+      storageBucket:     "wyc-connect.firebasestorage.app",
+      messagingSenderId: "689075693127",
+      appId:             "1:689075693127:web:264d489277de4d92a53362"
+    };
+    const app = getApps().length ? getApps()[0] : initializeApp(cfg);
+    _db = getFirestore(app);
+    return _db;
+  }catch(e){ console.error('Firebase init error',e); return null; }
+}
+
+async function fbLoad(){
+  try{
+    const db = await initFirebase(); if(!db) return null;
+    const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const snap = await getDoc(doc(db,'wyc','data'));
+    return snap.exists() ? snap.data() : null;
+  }catch(e){ console.warn('fbLoad error',e); return null; }
+}
+
+async function fbSave(data){
+  try{
+    const db = await initFirebase(); if(!db) return false;
+    const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    await setDoc(doc(db,'wyc','data'), data);
+    return true;
+  }catch(e){ console.warn('fbSave error',e); return false; }
+}
+
+// ── Leitura local (síncrona — cache) ─────────────────────
 function loadData(){
   try{ const r=localStorage.getItem(STORE_KEY); return r?{...JSON.parse(JSON.stringify(DEFAULT_DATA)),...JSON.parse(r)}:JSON.parse(JSON.stringify(DEFAULT_DATA)); }
   catch{ return JSON.parse(JSON.stringify(DEFAULT_DATA)); }
 }
 function saveData(d){ localStorage.setItem(STORE_KEY,JSON.stringify(d)); }
 
-// ── Sincronização GitHub (async) ──────────────────────────
-async function ghGet(){
-  const gh=getGHConfig(); if(!gh) return null;
-  try{
-    const r=await fetch(`https://api.github.com/repos/${gh.owner}/${gh.repo}/contents/${gh.path}`,
-      {headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json'}});
-    if(!r.ok) return null;
-    const j=await r.json();
-    const text=atob(j.content.replace(/\n/g,''));
-    return {data:JSON.parse(text), sha:j.sha};
-  }catch(e){ console.warn('ghGet error',e); return null; }
-}
-
-async function ghPush(data){
-  const gh=getGHConfig(); if(!gh) return false;
-  try{
-    // Pega SHA atual primeiro
-    let sha='';
-    try{
-      const r=await fetch(`https://api.github.com/repos/${gh.owner}/${gh.repo}/contents/${gh.path}`,
-        {headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json'}});
-      if(r.ok){ const j=await r.json(); sha=j.sha; }
-    }catch{}
-    const content=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
-    const body={message:'wyc: update data',content,...(sha?{sha}:{})};
-    const r=await fetch(`https://api.github.com/repos/${gh.owner}/${gh.repo}/contents/${gh.path}`,
-      {method:'PUT',headers:{'Authorization':'token '+gh.token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
-    return r.ok;
-  }catch(e){ console.warn('ghPush error',e); return false; }
-}
-
-// Carrega do GitHub e atualiza localStorage
-async function syncFromGitHub(){
-  try{
-    const r=await fetch(DB_JSON_URL+'?t='+Date.now());
-    if(r.ok){ const data=await r.json(); saveData(data); }
-  }catch(e){ console.warn('syncFromGitHub error',e); }
-}
-
-// Salva local + envia para GitHub
+// Salva local + Firebase em tempo real (sem precisar clicar em Sync)
 async function saveAndSync(d){
   try{
     const authLocal = JSON.parse(localStorage.getItem(AUTH_KEY)||'null');
     if(authLocal) d.auth = authLocal;
   }catch{}
-  // Marca timestamp da última modificação local
-  d._localTs = Date.now();
-  saveData(d);
-  const ok = await ghPush(d);
-  if(!ok){
-    // Avisa o usuário que o sync falhou — dados só no navegador atual
-    toast('⚠️ Não foi possível sincronizar. Clique em ☁️ Sync manualmente.','error');
-  }
-  return ok;
+  saveData(d); // cache local imediato — UI já atualiza
+  // Firebase em background — não bloqueia a UI
+  fbSave(d).then(ok=>{
+    if(!ok) toast('⚠️ Erro ao salvar na nuvem. Verifique conexão.','error');
+  }).catch(()=> toast('⚠️ Sem conexão. Dado salvo localmente.','error'));
+  return true; // retorna true imediatamente para não travar a UI
 }
 
 function getEmpresas(){ return loadData().empresas; }
@@ -316,12 +311,11 @@ async function registerScan(cartaoId){
     if(!c) return;
     c.scans = (c.scans||0) + 1;
     c.lastScan = Date.now();
-    // Adiciona ao histórico de scans (guarda últimos 200)
     if(!c.scanLog) c.scanLog=[];
     c.scanLog.push({ts:Date.now(), ua: navigator.userAgent.slice(0,60)});
     if(c.scanLog.length>200) c.scanLog=c.scanLog.slice(-200);
     saveData(d);
-    await ghPush(d);
+    await fbSave(d); // Firebase
   }catch(e){ console.warn('registerScan error',e); }
 }
 
@@ -441,81 +435,39 @@ document.addEventListener('click', e=>{
 });
 
 // ── ROUTER ────────────────────────────────────────────────
-// URL fixa do db.json público no GitHub
-const DB_JSON_URL = 'https://raw.githubusercontent.com/wycconsultoria-create/site/main/cartaonfc/db.json';
-
-async function fetchWithTimeout(url, ms=5000){
-  const ctrl = new AbortController();
-  const timer = setTimeout(()=>ctrl.abort(), ms);
-  try{
-    const r = await fetch(url, {signal: ctrl.signal});
-    clearTimeout(timer);
-    return r;
-  }catch(e){
-    clearTimeout(timer);
-    throw e;
-  }
-}
-
 async function init(){
-  const params = new URLSearchParams(window.location.search);
-  const cardId = params.get('card');
+  const params      = new URLSearchParams(window.location.search);
+  const cardId      = params.get('card');
   const empresaSlug = params.get('empresa');
 
-  if(empresaSlug && !cardId){
-    showLoading('Carregando portal...');
-    try{ const r=await fetchWithTimeout(DB_JSON_URL+'?t='+Date.now(),5000); if(r.ok){const d=await r.json();saveData(d);} }catch(e){}
-    renderEmpresaPortal(empresaSlug);
-    return;
-  }
-
-  if(cardId){
-    showLoading('Carregando cartão...');
-    // Tenta buscar db.json com timeout de 5s — se falhar usa localStorage
+  // ── Cartão público ou portal empresa ─────────────────────
+  if(cardId || empresaSlug){
+    showLoading('Carregando...');
     try{
-      const r = await fetchWithTimeout(DB_JSON_URL + '?t=' + Date.now(), 5000);
-      if(r.ok){
-        const remote = await r.json();
-        const local  = loadData();
-        // Para cartão público sempre usa dados do GitHub (mais confiável)
-        if((remote._localTs||0) >= (local._localTs||0)){
-          saveData(remote);
-        } else {
-          // Usa local mas mescla os cartões do remoto para garantir consistência
-          const merged = {...local};
-          if(remote.cartoes) merged.cartoes = remote.cartoes;
-          saveData(merged);
-        }
-      }
-    }catch(e){ console.warn('db.json fetch failed (usando cache local):', e.message); }
-    // SEMPRE renderiza, mesmo se fetch falhou
-    renderPublicCard(cardId);
+      const remote = await fbLoad();
+      if(remote){ saveData(remote); }
+    }catch(e){ console.warn('Firebase load failed, using cache'); }
+    if(empresaSlug) renderEmpresaPortal(empresaSlug);
+    else             renderPublicCard(cardId);
     return;
   }
-  // Painel admin: busca db.json SÓ para pegar o auth (não sobrescreve dados locais)
-  showLoading('Verificando acesso...');
-  const localData = loadData();
-  const hasLocalData = (localData.empresas||[]).length > 0 || (localData.cartoes||[]).length > 0;
 
+  // ── Painel admin ──────────────────────────────────────────
+  showLoading('Conectando...');
   try{
-    const r = await fetchWithTimeout(DB_JSON_URL + '?t=' + Date.now(), 5000);
-    if(r.ok){
-      const remote = await r.json();
-      // Auth sempre sincroniza (permite login em qualquer dispositivo)
+    const remote = await fbLoad();
+    if(remote){
+      // Auth sempre vem da nuvem (login em qualquer dispositivo)
       if(remote.auth) localStorage.setItem(AUTH_KEY, JSON.stringify(remote.auth));
-      // Só usa dados do remoto se o localStorage estiver VAZIO
-      // (primeiro acesso neste dispositivo)
-      if(!hasLocalData){
-        saveData(remote);
-      }
-      // Se local tem dados, NUNCA sobrescreve — local é a fonte da verdade no admin
+      // Dados: Firebase é a fonte da verdade
+      saveData(remote);
     }
-  }catch(e){ console.warn('auth sync failed, using local cache'); }
+  }catch(e){ console.warn('Firebase load failed, using local cache'); }
 
   const app = document.getElementById('app');
   app.className = '';
   app.innerHTML = '';
-  isAuthenticated()?renderDashboard():renderLogin(renderDashboard);
+  isAuthenticated() ? renderDashboard() : renderLogin(renderDashboard);
 }
 
 function showLoading(msg){
@@ -526,6 +478,13 @@ function showLoading(msg){
 function hideLoading(){}
 
 function logout(){ clearSession(); init(); }
+
+async function fetchWithTimeout(url, ms=5000){
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), ms);
+  try{ const r=await fetch(url,{signal:ctrl.signal}); clearTimeout(timer); return r; }
+  catch(e){ clearTimeout(timer); throw e; }
+}
 // Limites dos planos — configuráveis pelo admin
 function getPlanConfig(){
   try{ return JSON.parse(localStorage.getItem('wyc_plan_config')||'null') || {free:{limit:1,price:0},pro:{limit:10,price:49},business:{limit:999,price:99}}; }
@@ -568,16 +527,11 @@ function validateSlug(input){
     ? '<span style="color:var(--success)">✅ Disponível — link será: ?card='+s+'</span>'
     : '<span style="color:var(--danger)">❌ Este slug já está em uso</span>';
 }
+// syncNow mantido como utilitário interno (não aparece mais na UI)
 async function syncNow(){
-  const btn=document.getElementById('btn-sync');
-  if(btn){ btn.textContent='☁️ ...'; btn.disabled=true; }
   const d = loadData();
   try{ const a=JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); if(a) d.auth=a; }catch{}
-  d._localTs = Date.now(); // marca timestamp para referência
-  saveData(d); // atualiza local com novo timestamp
-  const ok=await ghPush(d);
-  if(btn){ btn.textContent='☁️ Sync'; btn.disabled=false; }
-  toast(ok?'Sincronizado! ✅':'Erro no sync — verifique ⚙️ GitHub Sync', ok?'success':'error');
+  return await fbSave(d);
 }
 
 // ── LOGIN ─────────────────────────────────────────────────
@@ -684,7 +638,7 @@ function buildSidebar(active){
     <div class="nav-item ${active==='perfil'?'active':''}" style="margin-top:8px" onclick="renderPerfilPage()"><span class="nav-icon">👤</span> Perfil</div>
     <div class="nav-item ${active==='analytics'?'active':''}" onclick="renderAnalytics()"><span class="nav-icon">📊</span> Analytics</div>
     <div class="nav-item ${active==='planos'?'active':''}" onclick="renderPlanos()"><span class="nav-icon">💎</span> Planos</div>
-    <div class="nav-item" onclick="renderGHSetup(renderDashboard)"><span class="nav-icon">⚙️</span> GitHub Sync</div>
+
     <div class="nav-item" onclick="toast('Suporte: suporte@wycconsultoria.com.br','info')"><span class="nav-icon">🆘</span> Suporte</div>
     <div class="sidebar-bottom">
       <div class="user-card" onclick="renderPerfilPage()">
@@ -725,7 +679,6 @@ function renderDashboard(){
       <button class="menu-btn" onclick="openSidebar()">☰</button>
       <div><div class="topbar-title">🏢 Empresas & Agentes</div><div class="topbar-subtitle">Gerencie seus clientes e cartões digitais</div></div>
       <div class="topbar-actions">
-        <button class="btn btn-secondary btn-sm" onclick="syncNow()" title="Sincronizar com GitHub" id="btn-sync">☁️ Sync</button>
         <button class="btn btn-primary" onclick="openEmpresaModal()">➕ Nova Empresa</button>
       </div>
     </div>
@@ -1375,132 +1328,8 @@ function exportCSV(){
   toast('CSV exportado! ⬇️');
 }
 
-// ── GITHUB SETUP ──────────────────────────────────────────
-function renderGHSetup(onDone){
-  const gh=getGHConfig()||{};
-  const app=document.getElementById('app'); app.className='fullscreen';
-  app.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e8f0fe,#f0f4ff);padding:20px">
-  <div style="background:#fff;border:1px solid rgba(37,99,235,.15);border-radius:24px;padding:36px;width:100%;max-width:480px;box-shadow:0 8px 40px rgba(37,99,235,.1)">
-    <div style="text-align:center;margin-bottom:24px">
-      <div style="font-size:2rem;margin-bottom:8px">⚙️</div>
-      <div style="font-family:var(--font-display);font-weight:700;font-size:1.3rem;color:#0f172a">GitHub Sync</div>
-      <p style="font-size:.82rem;color:#64748b;margin-top:6px">Configure para que os cartões fiquem disponíveis em qualquer dispositivo ao escanear o QR Code.</p>
-    </div>
-    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;margin-bottom:20px;font-size:.8rem;color:#1d4ed8">
-      <strong>Como obter o Token:</strong><br>
-      1. Entre em <a href="https://github.com/settings/tokens/new" target="_blank" style="color:#2563eb">github.com/settings/tokens/new</a><br>
-      2. Note: <strong>wyc-connect</strong><br>
-      3. Expiration: <strong>No expiration</strong><br>
-      4. Marque: <strong>repo</strong> (acesso completo)<br>
-      5. Clique <strong>Generate token</strong> e copie
-    </div>
-    <div class="form-group"><label class="form-label">Seu usuário GitHub</label>
-      <input class="form-input" id="gh-owner" placeholder="wycconsultoria-create" value="${gh.owner||'wycconsultoria-create'}"></div>
-    <div class="form-group"><label class="form-label">Nome do repositório</label>
-      <input class="form-input" id="gh-repo" placeholder="site" value="${gh.repo||'site'}"></div>
-    <div class="form-group"><label class="form-label">Caminho do arquivo de dados</label>
-      <input class="form-input" id="gh-path" placeholder="cartaonfc/db.json" value="${gh.path||'cartaonfc/db.json'}"></div>
-    <div class="form-group"><label class="form-label">Token GitHub (Personal Access Token)</label>
-      <input class="form-input" id="gh-token" type="password" placeholder="ghp_xxxxxxxxxxxx" value="${gh.token||''}">
-      <div style="font-size:.72rem;color:#64748b;margin-top:4px">🔒 Salvo apenas neste navegador, nunca enviado a terceiros.</div>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:8px">
-      <button class="btn btn-secondary w-full" onclick="if(typeof onDoneGH==='function')onDoneGH()">Pular por agora</button>
-      <button class="btn btn-primary w-full" id="gh-save">💾 Salvar e Sincronizar</button>
-    </div>
-    <div id="gh-status" style="margin-top:12px;text-align:center;font-size:.8rem"></div>
-  </div></div>`;
-
-  window.onDoneGH = onDone;
-
-  document.getElementById('gh-save').onclick = async () => {
-    const btn = document.getElementById('gh-save');
-    const st  = document.getElementById('gh-status');
-    const owner = document.getElementById('gh-owner').value.trim();
-    const repo  = document.getElementById('gh-repo').value.trim();
-    const path  = document.getElementById('gh-path').value.trim();
-    const token = document.getElementById('gh-token').value.trim();
-    if(!owner||!repo||!path||!token){ toast('Preencha todos os campos','error'); return; }
-    btn.disabled=true; btn.textContent='Testando...'; st.innerHTML='';
-    saveGHConfig({owner,repo,path,token});
-    // Test: push current data
-    const data = loadData();
-    st.innerHTML='<span style="color:#64748b">Enviando dados para o GitHub...</span>';
-    const ok = await ghPush(data);
-    if(ok){
-      st.innerHTML='<span style="color:#16a34a">✅ Sincronizado com sucesso! Aguarde ~60s para o GitHub Pages atualizar.</span>';
-      toast('GitHub configurado! ✅');
-      setTimeout(()=>{ if(typeof onDoneGH==='function') onDoneGH(); },2000);
-    } else {
-      st.innerHTML='<span style="color:#dc2626">❌ Erro ao conectar. Verifique o token e as permissões (repo).</span>';
-      btn.disabled=false; btn.textContent='💾 Salvar e Sincronizar';
-    }
-  };
-}
-
-// ── WHITELABEL PORTAL ─────────────────────────────────────
-function copyWhitelabelLink(slug){
-  const origin = window.location.origin;
-  const path   = window.location.pathname.replace(/\/+$/, '') + '/';
-  const url    = origin + path + '?empresa=' + slug;
-  navigator.clipboard.writeText(url).then(()=>toast('Link exclusivo copiado! 🔗')).catch(()=>toast(url,'info'));
-}
-
-function renderEmpresaPortal(slug){
-  const app = document.getElementById('app'); app.className='fullscreen';
-  document.body.style.margin='0'; document.body.style.padding='0';
-
-  const emp = loadData().empresas.find(e=>e.slug===slug);
-  if(!emp){
-    app.innerHTML=`<div class="public-card-wrapper"><div class="public-card">
-      <div class="public-card-header" style="padding:48px 28px">
-        <div style="font-size:4rem;margin-bottom:16px">🏢</div>
-        <div class="public-card-name">Portal não encontrado</div>
-        <p class="public-card-bio">Verifique o link com a empresa.</p>
-      </div>
-      <div class="public-card-footer"><span>Powered by</span><strong style="color:#60a5fa">Wyc Connect</strong></div>
-    </div></div>`;
-    return;
-  }
-
-  const cartoes = loadData().cartoes.filter(c=>c.empresaId===emp.id && (c.contatos||[]).length>0);
-  const corEmp  = emp.cor || 'linear-gradient(135deg,#2563eb,#6366f1)';
-
-  const cartaoCards = cartoes.length===0
-    ? '<p style="text-align:center;color:#64748b;padding:24px;font-size:.88rem">Nenhum cartão disponível.</p>'
-    : cartoes.map(c=>`
-      <a href="?card=${esc(c.slug||c.id)}" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-md);margin-bottom:10px;text-decoration:none;transition:all .2s;color:#f1f5f9"
-         onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.05)'">
-        <div style="width:48px;height:48px;border-radius:50%;background:${c.cor||corEmp};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;color:#fff;flex-shrink:0;overflow:hidden">
-          ${c.foto?`<img src="${esc(c.foto)}" style="width:100%;height:100%;object-fit:cover">`:initials(c.nome||'?')}
-        </div>
-        <div style="flex:1;overflow:hidden">
-          <div style="font-weight:700;font-size:.95rem">${esc(c.nome||'Sem nome')}</div>
-          <div style="font-size:.78rem;color:#94a3b8">${c.cargo?esc(c.cargo):''}</div>
-        </div>
-        <span style="color:#60a5fa;font-size:.9rem">→</span>
-      </a>`).join('');
-
-  app.innerHTML=`<div class="public-card-wrapper">
-    <div class="public-card">
-      <div style="height:90px;background:${corEmp}"></div>
-      <div class="public-card-header" style="padding-top:16px">
-        <div class="public-card-tag">🏢 PORTAL EXCLUSIVO</div>
-        <div class="public-card-name">${esc(emp.name)}</div>
-        ${emp.cnpj?`<div class="public-card-company">CNPJ: ${esc(emp.cnpj)}</div>`:''}
-        <div class="public-card-company" style="margin-top:4px">${cartoes.length} cartão(ões) disponível(is)</div>
-      </div>
-      <div style="padding:0 20px 24px">${cartaoCards}</div>
-      <div class="public-card-footer" style="flex-direction:column;gap:8px">
-        <div>🔐 Portal verificado &nbsp;<strong style="color:#60a5fa">Wyc Connect</strong></div>
-        <a href="https://wa.me/5519990143009" target="_blank" rel="noopener"
-           style="display:inline-flex;align-items:center;gap:6px;color:#4ade80;font-size:.7rem;font-weight:600;text-decoration:none">
-          💬 Desenvolvido por Wyc Consultoria
-        </a>
-      </div>
-    </div>
-  </div>`;
-}
+// GitHub Setup removido — usando Firebase
+function renderGHSetup(onDone){ if(onDone) onDone(); }
 
 // ── PUBLIC CARD ───────────────────────────────────────────
 function buildVCard(c){
