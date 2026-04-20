@@ -268,8 +268,20 @@ async function fbLoad(){
   try{
     const db = await initFirebase(); if(!db) return null;
     const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const snap = await getDoc(doc(db,'wyc','data'));
-    return snap.exists() ? snap.data() : null;
+    // Carrega 3 documentos separados para evitar limite de 1MB
+    const [snapCfg, snapEmp, snapCart] = await Promise.all([
+      getDoc(doc(db,'wyc','config')),
+      getDoc(doc(db,'wyc','empresas')),
+      getDoc(doc(db,'wyc','cartoes')),
+    ]);
+    const cfg   = snapCfg.exists()   ? snapCfg.data()   : {};
+    const emps  = snapEmp.exists()   ? snapEmp.data()   : {};
+    const carts = snapCart.exists()  ? snapCart.data()  : {};
+    return {
+      ...cfg,
+      empresas: emps.list  || [],
+      cartoes:  carts.list || [],
+    };
   }catch(e){
     console.error('fbLoad error:', e.code, e.message);
     return null;
@@ -305,8 +317,22 @@ async function fbSave(data){
     const db = await initFirebase();
     if(!db){ console.error('Firebase não inicializou'); return false; }
     const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const clean = cleanForFirestore(data);
-    await setDoc(doc(db,'wyc','data'), clean);
+    // Separa em 3 documentos para evitar limite de 1MB por doc
+    // doc 1: config (auth, user, planos) — pequeno
+    const cfgData = cleanForFirestore({
+      auth:  data.auth  || null,
+      user:  data.user  || {},
+    });
+    // doc 2: empresas (com logos) — médio
+    const empData = cleanForFirestore({ list: data.empresas || [] });
+    // doc 3: cartoes (com fotos) — maior
+    const cartData = cleanForFirestore({ list: data.cartoes || [] });
+
+    await Promise.all([
+      setDoc(doc(db,'wyc','config'),  cfgData),
+      setDoc(doc(db,'wyc','empresas'), empData),
+      setDoc(doc(db,'wyc','cartoes'),  cartData),
+    ]);
     return true;
   }catch(e){
     console.error('fbSave error:', e.code, e.message);
