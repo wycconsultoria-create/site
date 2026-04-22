@@ -390,16 +390,23 @@ function genId(){ return Math.random().toString(36).slice(2)+Date.now().toString
 
 async function registerScan(cartaoId){
   try{
-    const d = loadData();
-    const c = d.cartoes.find(x=>x.id===cartaoId);
-    if(!c) return;
+    // Carrega dados frescos do Firebase para garantir que temos o cartão
+    let d = loadData();
+    let c = d.cartoes.find(x=>x.id===cartaoId||x.slug===cartaoId);
+    if(!c){
+      // Tenta buscar do Firebase (celular sem localStorage)
+      const remote = await fbLoad();
+      if(remote){ saveData(remote); d = remote; }
+      c = d.cartoes.find(x=>x.id===cartaoId||x.slug===cartaoId);
+      if(!c){ console.warn('registerScan: cartão não encontrado', cartaoId); return; }
+    }
     c.scans = (c.scans||0) + 1;
     c.lastScan = Date.now();
     if(!c.scanLog) c.scanLog=[];
-    c.scanLog.push({ts:Date.now(), ua: navigator.userAgent.slice(0,60)});
-    if(c.scanLog.length>200) c.scanLog=c.scanLog.slice(-200);
+    c.scanLog.push({ts:Date.now()});
+    if(c.scanLog.length>500) c.scanLog=c.scanLog.slice(-500);
     saveData(d);
-    await fbSave(d); // Firebase
+    await fbSave(d);
   }catch(e){ console.warn('registerScan error',e); }
 }
 
@@ -1340,23 +1347,29 @@ function changeEmpresaPlan(empId, newPlan){
 }
 
 // ── ANALYTICS ─────────────────────────────────────────────
-function renderAnalytics(){
+function renderAnalytics(filtroEmpresaId=''){
   const app=document.getElementById('app'); app.className='';
   const empresas=getEmpresas();
-  const cartoes=getCartoes();
-  const totalScans=cartoes.reduce((s,c)=>s+(c.scans||0),0);
-  const topCartoes=[...cartoes].sort((a,b)=>(b.scans||0)-(a.scans||0)).slice(0,10);
+  const todosCartoes=getCartoes();
 
-  // Build per-empresa stats
+  // Aplica filtro de empresa
+  const cartoesFiltrados = filtroEmpresaId
+    ? todosCartoes.filter(c=>c.empresaId===filtroEmpresaId)
+    : todosCartoes;
+
+  const totalScans=cartoesFiltrados.reduce((s,c)=>s+(c.scans||0),0);
+
+  // Stats por empresa (sempre mostra todas para o filtro, mas detalha só a selecionada)
   const empStats=empresas.map(e=>{
-    const ec=cartoes.filter(c=>c.empresaId===e.id);
+    const ec=cartoesFiltrados.filter(c=>c.empresaId===e.id);
     const scans=ec.reduce((s,c)=>s+(c.scans||0),0);
     return {...e, cartoes:ec, totalScans:scans};
-  }).sort((a,b)=>b.totalScans-a.totalScans);
+  }).filter(e=> filtroEmpresaId ? e.id===filtroEmpresaId : true)
+    .sort((a,b)=>b.totalScans-a.totalScans);
 
   function fmtDate(ts){ if(!ts)return '—'; return new Date(ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
 
-  // Build scan history chart data (last 14 days)
+  // Chart — últimos 14 dias (filtrado por empresa)
   const days=14;
   const dayLabels=[];
   const dayData=[];
@@ -1366,108 +1379,141 @@ function renderAnalytics(){
     const start=new Date(d); start.setHours(0,0,0,0);
     const end=new Date(d); end.setHours(23,59,59,999);
     let count=0;
-    cartoes.forEach(c=>(c.scanLog||[]).forEach(s=>{ if(s.ts>=start.getTime()&&s.ts<=end.getTime()) count++; }));
+    cartoesFiltrados.forEach(c=>(c.scanLog||[]).forEach(s=>{
+      if(s.ts>=start.getTime()&&s.ts<=end.getTime()) count++;
+    }));
     dayData.push(count);
   }
   const maxDay=Math.max(...dayData,1);
-
-  const empresaRows=empStats.length===0?'<p class="text-muted text-sm" style="padding:20px">Nenhuma empresa cadastrada.</p>':
-    empStats.map(e=>`
-    <div style="margin-bottom:16px;padding:16px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-md)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:36px;height:36px;border-radius:8px;background:${e.logo?'#f8faff':'linear-gradient(135deg,var(--accent),var(--accent-2))'};display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:.85rem;overflow:hidden">${e.logo?`<img src="${esc(e.logo)}" style="width:100%;height:100%;object-fit:contain;padding:3px">`:initials(e.name)}</div>
-          <div><div style="font-weight:700;font-size:.92rem">${esc(e.name)}</div><div style="font-size:.72rem;color:var(--text-muted)">${e.cartoes.length} cartão(ões)</div></div>
-        </div>
-        <div style="text-align:right"><div style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--accent)">${e.totalScans}</div><div style="font-size:.68rem;color:var(--text-muted)">scans totais</div></div>
-      </div>
-      ${e.cartoes.map(c=>`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-secondary);border-radius:8px;margin-bottom:6px">
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="width:28px;height:28px;border-radius:50%;background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'};display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0">
-              ${c.foto?`<img src="${esc(c.foto)}" style="width:100%;height:100%;object-fit:cover">`:initials(c.nome||'?')}
-            </div>
-            <div>
-              <div style="font-size:.82rem;font-weight:600">${esc(c.nome||'Sem nome')}</div>
-              <div style="font-size:.68rem;color:var(--text-muted)">Último scan: ${fmtDate(c.lastScan)}</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="text-align:right;min-width:40px">
-              <div style="font-weight:700;font-size:.92rem;color:var(--accent)">${c.scans||0}</div>
-              <div style="font-size:.65rem;color:var(--text-muted)">scans</div>
-            </div>
-            <div style="width:60px;height:6px;background:var(--border);border-radius:99px;overflow:hidden">
-              <div style="width:${totalScans>0?Math.round(((c.scans||0)/totalScans)*100):0}%;height:100%;background:var(--accent);border-radius:99px"></div>
-            </div>
-          </div>
-        </div>`).join('')}
-    </div>`).join('');
-
-  // Mini bar chart SVG
   const barW=Math.floor(520/days)-2;
   const bars=dayData.map((v,i)=>{
     const h=Math.max(4,Math.round((v/maxDay)*60));
-    return `<g><rect x="${i*(barW+2)}" y="${60-h}" width="${barW}" height="${h}" rx="3" fill="${v>0?'#2563eb':'#e2e8f0'}"/>${v>0?`<text x="${i*(barW+2)+barW/2}" y="76" text-anchor="middle" font-size="7" fill="#94a3b8">${dayLabels[i]}</text>`:`<text x="${i*(barW+2)+barW/2}" y="76" text-anchor="middle" font-size="7" fill="#cbd5e1">${dayLabels[i]}</text>`}</g>`;
+    const lbl=dayLabels[i];
+    return `<g>
+      <rect x="${i*(barW+2)}" y="${60-h}" width="${barW}" height="${h}" rx="3" fill="${v>0?'#2563eb':'#e2e8f0'}"/>
+      <text x="${i*(barW+2)+barW/2}" y="76" text-anchor="middle" font-size="7" fill="${v>0?'#94a3b8':'#cbd5e1'}">${lbl}</text>
+      ${v>0?`<text x="${i*(barW+2)+barW/2}" y="${60-h-4}" text-anchor="middle" font-size="7" font-weight="bold" fill="#2563eb">${v}</text>`:''}
+    </g>`;
   }).join('');
+
+  // Filtro select options
+  const empOptions=`<option value="">🌐 Todas as empresas</option>`+
+    empresas.map(e=>`<option value="${e.id}" ${e.id===filtroEmpresaId?'selected':''}>${esc(e.name)}</option>`).join('');
+
+  // Empresa rows
+  const empresaRows=empStats.length===0
+    ?'<p class="text-muted text-sm" style="padding:20px">Nenhum dado encontrado.</p>'
+    :empStats.map(e=>{
+      const empScans=e.totalScans;
+      return `
+      <div style="margin-bottom:16px;padding:16px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-md)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:40px;height:40px;border-radius:8px;background:${e.logo?'#f8faff':'linear-gradient(135deg,var(--accent),var(--accent-2))'};display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:.85rem;overflow:hidden;flex-shrink:0">
+              ${e.logo?`<img src="${esc(e.logo)}" style="width:100%;height:100%;object-fit:contain;padding:3px">`:initials(e.name)}
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:.95rem">${esc(e.name)}</div>
+              <div style="font-size:.72rem;color:var(--text-muted)">${e.cartoes.length} cartão(ões)</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;color:var(--accent)">${empScans}</div>
+            <div style="font-size:.68rem;color:var(--text-muted)">scans totais</div>
+          </div>
+        </div>
+        ${e.cartoes.length===0?'<p style="font-size:.78rem;color:var(--text-muted);padding:4px 0">Nenhum cartão nesta empresa.</p>':
+          e.cartoes.map(c=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-secondary);border-radius:8px;margin-bottom:6px">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+              <div style="width:32px;height:32px;border-radius:50%;background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'};display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0">
+                ${c.foto?`<img src="${esc(c.foto)}" style="width:100%;height:100%;object-fit:cover">`:e.logo?`<img src="${esc(e.logo)}" style="width:100%;height:100%;object-fit:contain;padding:3px">`:initials(c.nome||'?')}
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.nome||'Sem nome')}</div>
+                <div style="font-size:.68rem;color:var(--text-muted)">Último: ${fmtDate(c.lastScan)}</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <div style="text-align:right">
+                <div style="font-weight:800;font-size:1.1rem;color:var(--accent)">${c.scans||0}</div>
+                <div style="font-size:.62rem;color:var(--text-muted)">scans</div>
+              </div>
+              <div style="width:52px;height:6px;background:var(--border);border-radius:99px;overflow:hidden">
+                <div style="width:${empScans>0?Math.min(100,Math.round(((c.scans||0)/empScans)*100)):0}%;height:100%;background:var(--accent);border-radius:99px"></div>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+    }).join('');
 
   app.innerHTML=`${buildSidebar('analytics')}
   <div class="main-content">
     <div class="topbar">
       <button class="menu-btn" onclick="openSidebar()">☰</button>
-      <div><div class="topbar-title">📊 Analytics</div><div class="topbar-subtitle">Scans de QR Code por empresa e cartão</div></div>
+      <div><div class="topbar-title">📊 Analytics</div><div class="topbar-subtitle">Scans de QR Code${filtroEmpresaId?' · '+esc(empresas.find(e=>e.id===filtroEmpresaId)?.name||''):''}</div></div>
       <div class="topbar-actions">
-        <button class="btn btn-secondary" onclick="exportCSV()">⬇️ Exportar CSV</button>
-        <button class="btn btn-secondary" onclick="renderDashboard()">← Empresas</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportCSV('${filtroEmpresaId}')">⬇️ CSV</button>
+        <button class="btn btn-secondary" onclick="renderDashboard()">← Voltar</button>
       </div>
     </div>
     <div class="page-content">
 
-      <!-- KPI cards -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-bottom:24px">
-        <div class="card" style="text-align:center;padding:20px 16px">
+      <!-- Filtro empresa -->
+      <div class="card" style="margin-bottom:20px;padding:16px 20px">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <label style="font-size:.8rem;font-weight:700;color:var(--text-muted);white-space:nowrap">🔍 Filtrar por empresa:</label>
+          <select class="form-select" style="flex:1;min-width:180px;max-width:320px"
+            onchange="renderAnalytics(this.value)">
+            ${empOptions}
+          </select>
+          ${filtroEmpresaId?`<button class="btn btn-secondary btn-sm" onclick="renderAnalytics('')">✕ Limpar filtro</button>`:''}
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:20px">
+        <div class="card" style="text-align:center;padding:18px 12px">
           <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${totalScans}</div>
-          <div style="font-size:.78rem;color:var(--text-muted);margin-top:4px">Total de Scans</div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Total de Scans</div>
         </div>
-        <div class="card" style="text-align:center;padding:20px 16px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${cartoes.length}</div>
-          <div style="font-size:.78rem;color:var(--text-muted);margin-top:4px">Cartões Ativos</div>
+        <div class="card" style="text-align:center;padding:18px 12px">
+          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${cartoesFiltrados.length}</div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Cartões</div>
         </div>
-        <div class="card" style="text-align:center;padding:20px 16px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${empresas.length}</div>
-          <div style="font-size:.78rem;color:var(--text-muted);margin-top:4px">Empresas</div>
-        </div>
-        <div class="card" style="text-align:center;padding:20px 16px">
+        <div class="card" style="text-align:center;padding:18px 12px">
           <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${dayData.slice(-7).reduce((a,b)=>a+b,0)}</div>
-          <div style="font-size:.78rem;color:var(--text-muted);margin-top:4px">Scans (7 dias)</div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Últimos 7 dias</div>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 12px">
+          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${dayData.slice(-1)[0]||0}</div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Hoje</div>
         </div>
       </div>
 
       <!-- Chart -->
-      <div class="card" style="margin-bottom:24px">
-        <h3 style="margin-bottom:16px">📈 Scans por dia (últimos 14 dias)</h3>
+      <div class="card" style="margin-bottom:20px">
+        <h3 style="margin-bottom:14px">📈 Scans por dia (14 dias)</h3>
         <div style="overflow-x:auto">
-          <svg viewBox="0 0 ${days*(barW+2)} 80" style="width:100%;min-width:300px;height:90px">${bars}</svg>
+          <svg viewBox="0 0 ${days*(barW+2)} 84" style="width:100%;min-width:300px;height:90px">${bars}</svg>
         </div>
       </div>
 
-      <!-- Per empresa -->
+      <!-- Detalhamento -->
       <div class="card">
-        <h3 style="margin-bottom:16px">🏢 Detalhamento por Empresa</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h3>🏢 ${filtroEmpresaId?'Detalhamento':'Por Empresa'}</h3>
+        </div>
         ${empresaRows}
       </div>
 
     </div>
   </div>`;
-
-  // Wire sidebar nav
-  document.querySelectorAll('[data-page=empresas],[onclick*="renderDashboard"]').forEach(el=>{
-    if(el.getAttribute('onclick')==='renderDashboard()') el.onclick=()=>renderDashboard();
-  });
 }
 
-function exportCSV(){
-  const cartoes=getCartoes();
+function exportCSV(filtroEmpresaId=''){
+  const allCartoes=getCartoes();
+  const cartoes=filtroEmpresaId?allCartoes.filter(c=>c.empresaId===filtroEmpresaId):allCartoes;
   const empresas=getEmpresas();
   const rows=[['Empresa','Cartão','Cargo','Tipo','Scans','Último Scan']];
   cartoes.forEach(c=>{
@@ -1527,22 +1573,30 @@ function switchPublicTab(t){
   if(t1){t1.classList.toggle('active',t===1);}
   if(t2){t2.classList.toggle('active',t===2);}
 }
-async function shortenUrl(url){
-  try{
-    const r=await fetchWithTimeout('https://tinyurl.com/api-create.php?url='+encodeURIComponent(url),4000);
-    if(r.ok){const t=await r.text();if(t.startsWith('http'))return t.trim();}
-  }catch{}
-  return url;
-}
-
 async function shareCard(cardId){
   const c=getCartao(cardId); if(!c) return;
-  const url=await shortenUrl(cardUrl(cardId));
+  const url=cardUrl(cardId);
+  const title=c.nome||'Cartão Digital';
   const text=(c.nome||'')+(c.empresa?' — '+c.empresa:'');
+
+  // Tenta abrir menu nativo de compartilhamento (Android/iOS)
   if(navigator.share){
-    try{await navigator.share({title:c.nome,text,url});return;}catch(e){if(e.name==='AbortError')return;}
+    try{
+      await navigator.share({title, text, url});
+      return;
+    }catch(e){
+      if(e.name==='AbortError') return; // usuário cancelou
+      // Se falhar, cai no fallback abaixo
+    }
   }
-  try{await navigator.clipboard.writeText(url);toast('Link copiado! 📋');}catch{toast('Não foi possível compartilhar','error');}
+  // Fallback: copia o link
+  try{
+    await navigator.clipboard.writeText(url);
+    toast('Link copiado! 📋');
+  }catch{
+    // Último recurso: abre em nova aba
+    window.open(url,'_blank');
+  }
 }
 
 function maybeShowInstallBanner(){
