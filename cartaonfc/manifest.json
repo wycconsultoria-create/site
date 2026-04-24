@@ -1,0 +1,19 @@
+{
+  "name": "Wyc Connect",
+  "short_name": "Wyc Connect",
+  "description": "Cart\u00e3o digital inteligente",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0f1e",
+  "theme_color": "#0a0f1e",
+  "start_url": "./",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

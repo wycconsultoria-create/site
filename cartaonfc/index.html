@@ -954,8 +954,29 @@ function renderCartaoEditor(cartaoId, empresaId){
               </div>
             </div>
           </div>
-          <div class="form-group"><label class="form-label">Cor</label>
+          <div class="form-group"><label class="form-label">Cor do Cartão (avatar/banner)</label>
             <div class="color-picker">${colors.map(bg=>`<div class="color-swatch ${_selectedColor===bg?'selected':''}" style="background:${bg}" onclick="selectColor(this,'${bg}')"></div>`).join('')}</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cor do Fundo Externo</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap" id="bgcor-picker">
+              ${[
+                {val:'dark',   label:'Escuro',    bg:'linear-gradient(135deg,#0a0f1e,#0f172a)'},
+                {val:'black',  label:'Preto',     bg:'#000000'},
+                {val:'white',  label:'Branco',    bg:'#f8faff'},
+                {val:'blue',   label:'Azul',      bg:'linear-gradient(135deg,#1e3a8a,#1d4ed8)'},
+                {val:'green',  label:'Verde',     bg:'linear-gradient(135deg,#14532d,#15803d)'},
+                {val:'purple', label:'Roxo',      bg:'linear-gradient(135deg,#4c1d95,#7c3aed)'},
+                {val:'red',    label:'Vermelho',  bg:'linear-gradient(135deg,#7f1d1d,#b91c1c)'},
+                {val:'orange', label:'Laranja',   bg:'linear-gradient(135deg,#7c2d12,#ea580c)'},
+                {val:'pink',   label:'Rosa',      bg:'linear-gradient(135deg,#831843,#db2777)'},
+                {val:'gray',   label:'Cinza',     bg:'linear-gradient(135deg,#1f2937,#374151)'},
+              ].map(o=>`
+                <div onclick="selectBgCor('${o.val}')" title="${o.label}"
+                  style="width:32px;height:32px;border-radius:50%;background:${o.bg};cursor:pointer;border:3px solid ${(ex?.bgCor||'dark')===o.val?'#fff':'transparent'};transition:all .2s;box-shadow:0 2px 6px rgba(0,0,0,.3)"
+                  id="bgcor-${o.val}"></div>`).join('')}
+            </div>
+            <input type="hidden" id="f-bgcor" value="${ex?.bgCor||'dark'}">
           </div>
         </div>
       </div>
@@ -1005,6 +1026,12 @@ function setTipo(t){
 }
 function autoFillEmpresa(sel){ const e=getEmpresas().find(x=>x.id===sel.value); if(e) document.getElementById('f-empresa').value=e.name; }
 function selectColor(el,color){ document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected')); el.classList.add('selected'); _selectedColor=color; }
+function selectBgCor(val){
+  document.querySelectorAll('[id^="bgcor-"]').forEach(el=>el.style.border='3px solid transparent');
+  const el=document.getElementById('bgcor-'+val);
+  if(el) el.style.border='3px solid #fff';
+  document.getElementById('f-bgcor').value=val;
+}
 async function handleFotoUpload(field){
   const input = event.target;
   const file = input.files[0]; if(!file) return;
@@ -1107,6 +1134,7 @@ function saveCartaoForm(){
     bio:document.getElementById('f-bio').value.trim(),
     foto:document.getElementById('f-foto').value.trim(),
     cor:_selectedColor,
+    bgCor:document.getElementById('f-bgcor')?.value||'dark',
     slug:(()=>{ const s=document.getElementById('f-slug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,40); return s||''; })(),
     tipo:document.getElementById('f-tipo').value,
     contatos:_contatos.filter(c=>c.valor||c.tipo==='site'),
@@ -1607,8 +1635,8 @@ function maybeShowInstallBanner(){
   if(isStandalone) return ''; // já é app, não mostra
   if(!isIOS&&!isAndroid) return ''; // desktop, não mostra
   const tip=isIOS
-    ?'<strong>💡 Dica:</strong> Toque em <strong>⬆️ Compartilhar</strong> (botão inferior do Safari) → <strong>"Adicionar à Tela de Início"</strong> para abrir sem barra de endereço'
-    :'<strong>💡 Dica:</strong> No Chrome, toque nos <strong>3 pontinhos (⋮)</strong> no canto superior direito → <strong>"Adicionar à tela inicial"</strong> para abrir como app';
+    ?'<strong>📲 Abrir sem barra de endereço:</strong> Toque em <strong>Compartilhar ↑</strong> (ícone na barra inferior do Safari) → <strong>"Adicionar à Tela de Início"</strong>'
+    :'<strong>📲 Abrir sem barra de endereço:</strong> Toque nos <strong>3 pontos ⋮</strong> (canto superior direito do Chrome) → <strong>"Adicionar à tela inicial"</strong>';
   return `<div class="install-banner"><div class="install-banner-text">${tip}</div><button class="install-banner-close" onclick="sessionStorage.setItem('wyc_nb','1');this.closest('.install-banner').remove()">✕</button></div>`;
 }
 
@@ -1617,7 +1645,20 @@ function renderPublicCard(cardId){
   document.body.style.margin='0'; document.body.style.padding='0';
   const c=getCartao(cardId);
   if(!c){
-    app.innerHTML=`<div class="public-card-wrapper"><div class="public-card"><div class="public-card-header" style="padding:48px 28px"><div style="font-size:4rem;margin-bottom:16px">😕</div><div class="public-card-name">Cartão não encontrado</div><p class="public-card-bio">Este cartão pode ter sido removido ou o link está incorreto.</p></div><div class="public-card-footer"><span>Powered by</span><strong style="color:#60a5fa">Wyc Connect</strong></div></div></div>`;
+    const BG_MAP={
+    dark:   'linear-gradient(135deg,#0a0f1e 0%,#0f172a 50%,#0a0f1e 100%)',
+    black:  '#000000',
+    white:  '#f8faff',
+    blue:   'linear-gradient(135deg,#1e3a8a,#1d4ed8)',
+    green:  'linear-gradient(135deg,#14532d,#15803d)',
+    purple: 'linear-gradient(135deg,#4c1d95,#7c3aed)',
+    red:    'linear-gradient(135deg,#7f1d1d,#b91c1c)',
+    orange: 'linear-gradient(135deg,#7c2d12,#ea580c)',
+    pink:   'linear-gradient(135deg,#831843,#db2777)',
+    gray:   'linear-gradient(135deg,#1f2937,#374151)',
+  };
+  const wrapperBg = BG_MAP[c.bgCor||'dark'] || BG_MAP.dark;
+  app.innerHTML=`<div class="public-card-wrapper" style="background:${wrapperBg}"><div class="public-card"><div class="public-card-header" style="padding:48px 28px"><div style="font-size:4rem;margin-bottom:16px">😕</div><div class="public-card-name">Cartão não encontrado</div><p class="public-card-bio">Este cartão pode ter sido removido ou o link está incorreto.</p></div><div class="public-card-footer"><span>Powered by</span><strong style="color:#60a5fa">Wyc Connect</strong></div></div></div>`;
     return;
   }
 
@@ -1661,11 +1702,24 @@ function renderPublicCard(cardId){
     ?`<div class="public-card-tag" style="background:rgba(239,68,68,.2);color:#fca5a5;border-color:rgba(239,68,68,.4)">🧓 IDOSO</div>`
     :`<div class="public-card-tag">✅ PROFISSIONAL</div>`;
 
-  app.innerHTML=`<div class="public-card-wrapper"><div class="public-card">
+  const BG_MAP={
+    dark:   'linear-gradient(135deg,#0a0f1e 0%,#0f172a 50%,#0a0f1e 100%)',
+    black:  '#000000',
+    white:  '#f8faff',
+    blue:   'linear-gradient(135deg,#1e3a8a,#1d4ed8)',
+    green:  'linear-gradient(135deg,#14532d,#15803d)',
+    purple: 'linear-gradient(135deg,#4c1d95,#7c3aed)',
+    red:    'linear-gradient(135deg,#7f1d1d,#b91c1c)',
+    orange: 'linear-gradient(135deg,#7c2d12,#ea580c)',
+    pink:   'linear-gradient(135deg,#831843,#db2777)',
+    gray:   'linear-gradient(135deg,#1f2937,#374151)',
+  };
+  const wrapperBg = BG_MAP[c.bgCor||'dark'] || BG_MAP.dark;
+  app.innerHTML=`<div class="public-card-wrapper" style="background:${wrapperBg}"><div class="public-card">
     ${bannerHtml}
     <div class="public-card-header" style="padding-top:${c.banner?'16px':'36px'}">
       ${tag}
-      ${scans>0?`<div class="scan-badge">👁️ ${scans} visualização${scans>1?'s':''}</div>`:''}
+      <!-- scan badge removido — visível só no analytics -->
       ${avatarHtml}
       <div class="public-card-name">${esc(c.nome||'Sem nome')}</div>
       ${c.cargo?`<div class="public-card-company">${esc(c.cargo)}</div>`:''}
