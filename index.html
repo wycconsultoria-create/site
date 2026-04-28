@@ -1,1649 +1,1009 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Wyc Connect</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WYC Consultoria — Encontre Licitações em Minutos</title>
+<meta name="description" content="Encontre licitações abertas automaticamente, sem experiência prévia. Tecnologia e consultoria para empresas vencerem no mercado público. Fale conosco agora.">
+<meta name="keywords" content="licitações públicas, extrator licitações, PNCP, consultoria licitações, pregão eletrônico, como ganhar licitação">
+<meta property="og:title" content="WYC Consultoria — Encontre Licitações em Minutos">
+<meta property="og:description" content="Pare de perder oportunidades. Nossa tecnologia encontra licitações automaticamente e nossa consultoria te guia até a vitória.">
+<meta property="og:type" content="website">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
 <style>
+
 :root{
-  --bg-primary:#f0f4fb;--bg-secondary:#ffffff;--bg-card:#f8faff;--bg-card-hover:#eef2fc;
-  --border:rgba(59,130,246,.18);--border-focus:rgba(59,130,246,.55);
-  --accent:#2563eb;--accent-glow:rgba(37,99,235,.25);--accent-2:#6366f1;
-  --text-primary:#0f172a;--text-secondary:#334155;--text-muted:#64748b;
-  --success:#16a34a;--danger:#dc2626;--warning:#d97706;
-  --radius-sm:6px;--radius-md:12px;--radius-lg:20px;--radius-xl:28px;
-  --shadow-card:0 2px 12px rgba(37,99,235,.07);
-  --font-display:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
-  --sidebar-w:240px;--topbar-h:64px;
+  --navy:#001450;
+  --blue:#1464a0;
+  --cyan:#14a0c8;
+  --bg:#f4f8fb;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{background:var(--bg-primary);color:var(--text-primary);font-family:var(--font-body);font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden}
-::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg-secondary)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
-h1,h2,h3,h4{font-family:var(--font-display);font-weight:700}
-h2{font-size:1.5rem}h3{font-size:1.15rem}
-p{color:var(--text-secondary)}a{text-decoration:none;color:inherit}
-#app{display:flex;min-height:100vh}
-#app.fullscreen{display:block}
 
-/* SIDEBAR */
-.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--bg-secondary);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0;position:fixed;left:0;top:0;bottom:0;z-index:100}
-.sidebar-logo{display:flex;align-items:center;gap:10px;padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
-.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent-2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:.85rem;color:#fff}
-.logo-text{font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--text-primary)}
-.logo-text span{color:var(--accent)}
-.sidebar-section-label{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);padding:0 20px 8px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:var(--text-secondary);transition:all .2s;font-weight:500}
-.nav-item:hover{background:var(--bg-card);color:var(--text-primary)}
-.nav-item.active{background:rgba(37,99,235,.1);color:var(--accent);border-right:3px solid var(--accent)}
-.nav-icon{font-size:1.1rem;min-width:20px;text-align:center}
-.sidebar-bottom{margin-top:auto;padding:16px 20px 0;border-top:1px solid var(--border)}
-.user-card{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-card);border-radius:var(--radius-md);cursor:pointer;transition:background .2s;margin-bottom:8px}
-.user-card:hover{background:var(--bg-card-hover)}
-.user-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;color:#fff;flex-shrink:0}
-.user-info{flex:1;overflow:hidden}
-.user-name{font-weight:600;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.user-email{font-size:.7rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.btn-logout{width:100%;display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;border:1px solid rgba(220,38,38,.2);background:rgba(220,38,38,.06);color:#dc2626;font-family:var(--font-body);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s}
-.btn-logout:hover{background:rgba(220,38,38,.12)}
+*{margin:0;padding:0;box-sizing:border-box}
 
-/* MAIN */
-.main-content{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{height:var(--topbar-h);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);z-index:50}
-.topbar-title{font-family:var(--font-display);font-size:1.2rem;font-weight:700}
-.topbar-subtitle{font-size:.8rem;color:var(--text-muted)}
-.topbar-actions{margin-left:auto;display:flex;gap:10px}
-.menu-btn{display:none;background:none;border:none;cursor:pointer;font-size:1.4rem;padding:4px;color:var(--text-primary);flex-shrink:0}
-.page-content{padding:28px;flex:1}
-
-/* CARDS GRID */
-.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
-.card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-card)}
-.empresa-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;display:flex;flex-direction:column;gap:14px;transition:all .2s;box-shadow:var(--shadow-card)}
-.empresa-card:hover{border-color:var(--border-focus);box-shadow:0 6px 20px rgba(37,99,235,.12);transform:translateY(-2px)}
-.empresa-card-top{display:flex;align-items:center;gap:12px}
-.empresa-card-bottom{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border)}
-.empresa-avatar{width:48px;height:48px;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;color:#fff;flex-shrink:0;overflow:hidden}
-.empresa-info{flex:1;overflow:hidden}
-.empresa-name{font-weight:700;font-size:1rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.empresa-email{font-size:.72rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.empresa-badge{font-size:.68rem;font-weight:600;background:rgba(22,163,74,.12);color:var(--success);border:1px solid rgba(22,163,74,.25);padding:2px 8px;border-radius:99px}
-.empresa-actions{display:flex;gap:6px;align-items:center}
-
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 18px;border-radius:var(--radius-sm);font-family:var(--font-body);font-weight:600;font-size:.82rem;cursor:pointer;border:none;transition:all .2s;white-space:nowrap}
-.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(37,99,235,.3)}
-.btn-primary:hover{background:#1d4ed8;transform:translateY(-1px)}
-.btn-secondary{background:transparent;color:var(--text-secondary);border:1px solid var(--border)}
-.btn-secondary:hover{border-color:var(--border-focus);color:var(--text-primary)}
-.btn-danger{background:rgba(220,38,38,.1);color:var(--danger);border:1px solid rgba(220,38,38,.25)}
-.btn-danger:hover{background:rgba(220,38,38,.2)}
-.btn-icon{width:32px;height:32px;padding:0;border-radius:var(--radius-sm)}
-.btn-sm{padding:6px 12px;font-size:.78rem}
-
-/* FORMS */
-.form-group{margin-bottom:16px}
-.form-label{display:block;font-weight:600;font-size:.75rem;letter-spacing:.05em;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase}
-.form-input,.form-select,.form-textarea{width:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text-primary);font-family:var(--font-body);font-size:.88rem;transition:border-color .2s;outline:none}
-.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
-.form-select{appearance:none;cursor:pointer}
-.form-textarea{resize:vertical;min-height:80px}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease}
-.modal{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-xl);padding:28px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.2);animation:slideUp .25s ease}
-.modal-wide{max-width:720px}
-.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
-.modal-title{font-family:var(--font-display);font-size:1.2rem;font-weight:700}
-.modal-close{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.3rem;line-height:1;padding:4px;transition:color .2s}
-.modal-close:hover{color:var(--text-primary)}
-.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
-
-/* CONTACT ITEM */
-.contact-item{display:grid;grid-template-columns:160px 1fr 1fr auto;gap:10px;align-items:center;padding:12px 16px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:8px}
-.contact-item:hover{border-color:var(--border-focus)}
-.contact-type-badge{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--radius-sm);font-weight:600;font-size:.75rem;border:1px solid}
-.contact-remove{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1rem;transition:color .2s;padding:4px}
-.contact-remove:hover{color:var(--danger)}
-
-/* PUBLIC CARD */
-.public-card-wrapper{display:flex;align-items:center;justify-content:center;min-height:100vh;width:100%;padding:24px;background:linear-gradient(135deg,#0a0f1e 0%,#0f172a 50%,#0a0f1e 100%)}
-.public-card{width:100%;max-width:360px;background:#1e293b;border-radius:var(--radius-xl);overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08);animation:cardAppear .5s ease forwards}
-.public-card-header{padding:36px 28px 24px;text-align:center;background:linear-gradient(180deg,rgba(37,99,235,.1) 0%,transparent 100%)}
-.public-card-avatar{width:88px;height:88px;border-radius:50%;margin:0 auto 16px;border:3px solid var(--accent);object-fit:cover;box-shadow:0 0 0 4px rgba(37,99,235,.2);display:block}
-.public-card-avatar-placeholder{width:88px;height:88px;border-radius:50%;margin:0 auto 16px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:2rem;color:#fff;border:3px solid var(--accent);box-shadow:0 0 0 4px rgba(37,99,235,.2)}
-.public-card-name{font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:#f1f5f9;line-height:1.2;margin-bottom:4px}
-.public-card-company{font-size:.85rem;color:#94a3b8;margin-bottom:4px}
-.public-card-bio{font-size:.82rem;color:#94a3b8;line-height:1.5;margin-top:8px}
-.public-card-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(37,99,235,.2);color:#93c5fd;border:1px solid rgba(37,99,235,.4);font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:99px;margin-bottom:12px}
-.public-card-contacts{padding:0 20px 24px;display:flex;flex-direction:column;gap:10px}
-.public-contact-btn{display:flex;align-items:center;gap:14px;padding:15px 20px;border-radius:12px;cursor:pointer;border:none;font-family:var(--font-body);font-weight:700;font-size:.92rem;transition:all .2s;text-align:left;width:100%;text-decoration:none}
-.public-contact-btn:hover{opacity:.88;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
-.public-contact-btn:active{transform:scale(.97)}
-.public-contact-icon{font-size:1.2rem;min-width:24px;text-align:center}
-.public-contact-label{flex:1}
-.public-contact-sublabel{font-size:.72rem;opacity:.75;font-weight:400;display:block}
-.public-card-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.08);text-align:center;font-size:.7rem;color:#475569;display:flex;align-items:center;justify-content:center;gap:6px}
-
-/* QR */
-.qr-canvas-wrapper{background:#fff;border-radius:var(--radius-md);padding:20px;display:inline-block;margin:16px 0;box-shadow:0 8px 32px rgba(0,0,0,.15)}
-.qr-url{font-size:.72rem;color:var(--text-muted);background:var(--bg-primary);padding:8px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);word-break:break-all;font-family:monospace;margin-bottom:16px}
-
-/* TOAST */
-.toast-container{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
-.toast{display:flex;align-items:center;gap:10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 18px;font-size:.84rem;font-weight:500;box-shadow:var(--shadow-card);animation:slideInRight .3s ease;min-width:240px}
-.toast.success{border-color:rgba(22,163,74,.4)}.toast.error{border-color:rgba(220,38,38,.4)}
-
-/* EMPTY STATE */
-.empty-state{text-align:center;padding:60px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;grid-column:1/-1}
-.empty-state-icon{font-size:3rem;opacity:.3}
-.empty-state-title{font-family:var(--font-display);font-size:1.2rem}
-.empty-state-text{color:var(--text-muted);max-width:320px;font-size:.88rem}
-
-/* SECTION HEADER */
-.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-.urgency-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(220,38,38,.12);color:var(--danger);border:1px solid rgba(220,38,38,.3);border-radius:var(--radius-sm);padding:3px 8px;font-size:.68rem;font-weight:700}
-.color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s;flex-shrink:0}
-.color-swatch:hover,.color-swatch.selected{border-color:#fff;transform:scale(1.15);box-shadow:0 0 0 2px var(--accent)}
-.color-picker{display:flex;gap:8px;flex-wrap:wrap}
-.tabs{display:flex;gap:4px;background:var(--bg-primary);border-radius:var(--radius-md);padding:4px;margin-bottom:24px}
-.tab{flex:1;padding:8px 14px;border-radius:var(--radius-sm);border:none;background:none;color:var(--text-secondary);font-family:var(--font-body);font-weight:600;font-size:.82rem;cursor:pointer;transition:all .2s}
-.tab.active{background:var(--bg-secondary);color:var(--text-primary);box-shadow:var(--shadow-card)}
-
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
-@keyframes cardAppear{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:none}}
-@keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-@keyframes shake{0%,100%{transform:translateX(0)}15%{transform:translateX(-8px)}30%{transform:translateX(8px)}45%{transform:translateX(-6px)}60%{transform:translateX(6px)}75%{transform:translateX(-3px)}90%{transform:translateX(3px)}}
-
-.mt-4{margin-top:16px}.mb-4{margin-bottom:16px}.w-full{width:100%}.text-center{text-align:center}
-.text-sm{font-size:.82rem}.text-xs{font-size:.72rem}.text-muted{color:var(--text-muted)}.font-bold{font-weight:700}
-
-/* ── Mobile ── */
-@media(max-width:768px){
-  /* Sidebar vira drawer — oculta por padrão */
-  .sidebar{transform:translateX(-100%);transition:transform .25s ease;box-shadow:none}
-  .sidebar.open{transform:translateX(0);box-shadow:4px 0 24px rgba(0,0,0,.18)}
-  /* Overlay escuro quando sidebar aberta */
-  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
-  .sidebar-overlay.open{display:block}
-  /* Conteúdo ocupa tela toda */
-  .main-content{margin-left:0!important}
-  /* Topbar mobile */
-  .topbar{padding:0 16px;gap:10px}
-  .topbar-title{font-size:1rem}
-  .topbar-subtitle{display:none}
-  /* Botão hamburguer */
-  .menu-btn{display:flex!important}
-  /* Cards em coluna única */
-  .contact-item{grid-template-columns:1fr;grid-template-rows:auto}
-  .form-grid{grid-template-columns:1fr}
-  .cards-grid{grid-template-columns:1fr}
-  /* Editor em coluna única */
-  .page-content [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
-  /* Topbar actions wrap */
-  .topbar-actions{gap:6px}
-  .topbar-actions .btn{font-size:.72rem;padding:7px 10px}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:#2c4a65;
 }
-/* ── Profile tabs ── */
-.profile-tabs{display:flex;gap:0;padding:0 20px;margin-bottom:4px}
-.profile-tab{flex:1;padding:10px 8px;border:none;background:transparent;font-family:var(--font-body);font-weight:600;font-size:.82rem;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
-.profile-tab.active{color:#93c5fd;border-bottom-color:#3b82f6}
-/* ── Public Card Actions ── */
-.public-card-actions{display:flex;gap:8px;padding:0 20px 20px}
-.public-action-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 8px;border-radius:var(--radius-md);border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#cbd5e1;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:var(--font-body);text-decoration:none}
-.public-action-btn:hover{background:rgba(255,255,255,.1);color:#f1f5f9;transform:translateY(-1px)}
-.public-action-btn:active{transform:scale(.97)}
-.scan-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:99px;padding:3px 10px;font-size:.68rem;color:#64748b;margin-bottom:10px}
-.install-banner{margin:0 20px 16px;padding:12px 14px;background:rgba(37,99,235,.12);border:1px solid rgba(37,99,235,.25);border-radius:var(--radius-md);display:flex;align-items:flex-start;gap:10px}
-.install-banner-text{flex:1;font-size:.74rem;color:#93c5fd;line-height:1.5}
-.install-banner-close{background:none;border:none;color:#475569;cursor:pointer;font-size:.9rem;padding:2px;line-height:1;flex-shrink:0;margin-top:2px}
+
+/* ── BRAND BAR ── */
+.brand-bar{
+  background:#edf5fa;
+  padding:18px 8%;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  border-bottom:1px solid #d9e7f2;
+}
+
+.brand-bar img{height:70px}
+
+.brand-text{font-size:0.9rem;color:#4b6a82}
+
+/* ── NAV ── */
+nav{
+  background:var(--navy);
+  color:white;
+  padding:12px 8%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+
+.menu a{
+  color:white;
+  text-decoration:none;
+  margin-left:26px;
+  font-size:0.9rem;
+}
+
+.menu a:hover{color:var(--cyan)}
+
+/* ── HERO ── */
+header{
+  background:linear-gradient(135deg,#001450,#0a2a7a,#1464a0);
+  color:white;
+  padding:80px 8%;
+  scroll-margin-top:52px; /* compensa nav sticky */
+}
+
+.hero{
+  display:grid;
+  grid-template-columns:1.1fr 1fr;
+  align-items:center;
+  gap:40px;
+}
+
+h1{
+  font-family:'Syne';
+  font-size:3rem;
+  line-height:1.1;
+  margin-bottom:20px;
+}
+
+.hero p{
+  opacity:.9;
+  line-height:1.7;
+  margin-bottom:0; /* benefícios já têm margin-top */
+}
+
+/* ── BENEFÍCIOS (classe única, sem duplicata inline) ── */
+.hero-benefits{
+  margin-top:18px;
+  margin-bottom:25px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  font-size:0.95rem;
+  opacity:.95;
+  line-height:1.6;
+}
+
+.btn{
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  color:white;
+  padding:12px 28px;
+  border-radius:40px;
+  text-decoration:none;
+  font-weight:600;
+  transition:.25s;
+  display:inline-block;
+}
+
+.btn:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(0,0,0,.2)}
+
+.hero img{
+  width:100%;
+  max-width:520px;
+  border-radius:16px;
+  box-shadow:0 25px 60px rgba(0,0,0,.35);
+  justify-self:end;
+}
+
+/* ── SECTIONS ── */
+section{
+  padding:50px 8%;
+  scroll-margin-top:52px;
+}
+
+h2{
+  font-family:'Syne';
+  font-size:2.2rem;
+  margin-bottom:18px;
+  color:#001450;
+}
+
+.grid3{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:24px;
+  margin-top:20px;
+}
+
+.card{
+  background:white;
+  padding:26px;
+  border-radius:16px;
+  box-shadow:0 8px 25px rgba(0,0,0,.08);
+  transition:.25s;
+}
+
+.card:hover{transform:translateY(-4px);box-shadow:0 15px 40px rgba(0,0,0,.12)}
+
+.card h3{font-family:'Syne';margin-bottom:10px}
+
+/* ── ABOUT ── */
+.about{
+  display:grid;
+  grid-template-columns:1fr 1.2fr;
+  gap:40px;
+  align-items:center;
+}
+
+.about img{
+  width:100%;
+  max-width:420px;
+  border-radius:16px;
+  box-shadow:0 15px 40px rgba(0,0,0,.15);
+  justify-self:center;
+}
+
+.stats{
+  display:flex;
+  gap:40px;
+  margin-top:20px;
+}
+
+.stat strong{
+  font-family:'Syne';
+  font-size:1.8rem;
+  color:#001450;
+  display:block;
+}
+
+/* ── AUTHORITY ── */
+.authority{background:#edf5fa}
+
+.authority-list{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:20px;
+  margin-top:20px;
+}
+
+.badge{
+  background:white;
+  padding:18px;
+  border-radius:12px;
+  text-align:center;
+  font-size:0.9rem;
+  box-shadow:0 6px 18px rgba(0,0,0,.06);
+}
+
+/* ── TESTIMONIALS ── */
+.testimonials{background:#edf5fa}
+
+.testimonial{text-align:center}
+
+.testimonial img{
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  margin-bottom:10px;
+  object-fit:cover;
+}
+
+/* ── CTA ── */
+.cta{
+  background:var(--navy);
+  color:white;
+  text-align:center;
+}
+
+.cta h2{color:white}
+
+/* ── FOOTER ── */
+footer{
+  background:#050f30;
+  color:white;
+  padding:30px 8%;
+  display:flex;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+
+/* ── WHATSAPP ── */
+.whatsapp{
+  position:fixed;
+  bottom:25px;
+  right:25px;
+  background:#25D366;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  font-size:28px;
+  text-decoration:none;
+  box-shadow:0 10px 25px rgba(0,0,0,.25);
+  z-index:200;
+}
+
+/* ── REVEAL ANIMATION ── */
+.reveal{
+  opacity:0;
+  transform:translateY(30px);
+  transition:opacity .7s ease, transform .7s ease;
+}
+
+.reveal.visible{
+  opacity:1;
+  transform:none;
+}
+
+/* ══════════════════════════════════════
+   HAMBURGER MENU
+══════════════════════════════════════ */
+.hamburger{
+  display:none;
+  flex-direction:column;
+  gap:5px;
+  cursor:pointer;
+  padding:4px;
+  background:none;
+  border:none;
+}
+
+.hamburger span{
+  display:block;
+  width:26px;
+  height:2px;
+  background:white;
+  border-radius:2px;
+  transition:.3s;
+}
+
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* ══════════════════════════════════════
+   CARROSSEL DEPOIMENTOS
+   — desktop: grid normal (3 colunas)
+   — mobile:  carrossel horizontal
+══════════════════════════════════════ */
+.carousel-wrap{position:relative}
+
+/* dots ficam ocultos em desktop */
+.carousel-dots{
+  display:none;
+  justify-content:center;
+  gap:8px;
+  margin-top:14px;
+}
+
+.carousel-dots span{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#c5d8e8;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.carousel-dots span.active{background:var(--blue);transform:scale(1.2)}
+
+/* ══════════════════════════════════════
+   TABLET  ≤ 900px
+══════════════════════════════════════ */
+@media(max-width:900px){
+
+  .hero,.about{grid-template-columns:1fr}
+  .hero img{justify-self:center}
+  .about img{justify-self:center}
+  .grid3{grid-template-columns:1fr}
+  .authority-list{grid-template-columns:1fr 1fr}
+  h1{font-size:2.2rem}
+
+  /* serviços: empilha imagem + cards */
+  #servicos > div[style]{
+    grid-template-columns:1fr !important;
+  }
+  #servicos > div > img{
+    max-width:100% !important;
+    justify-self:center;
+  }
+}
+
+/* ══════════════════════════════════════
+   MOBILE  ≤ 600px
+══════════════════════════════════════ */
+@media(max-width:600px){
+
+  /* ── brand bar ── */
+  .brand-bar{padding:14px 5%}
+  .brand-bar img{height:50px}
+  .brand-text{font-size:0.8rem}
+
+  /* ── nav hamburger ── */
+  nav{padding:12px 5%}
+
+  .hamburger{display:flex}
+
+  .menu{
+    display:none;
+    flex-direction:column;
+    gap:0;
+    position:absolute;
+    top:100%;
+    left:0;
+    right:0;
+    background:var(--navy);
+    padding:0 5%;
+    border-top:1px solid rgba(255,255,255,.1);
+    z-index:99;
+  }
+
+  .menu.open{display:flex}
+
+  .menu a{
+    margin-left:0;
+    padding:14px 0;
+    border-bottom:1px solid rgba(255,255,255,.08);
+    font-size:1rem;
+  }
+
+  .menu a:last-child{border-bottom:none}
+
+  /* ── hero ── */
+  header{padding:50px 5% 40px}
+
+  h1{font-size:1.9rem;line-height:1.15}
+
+  .hero p{font-size:0.95rem !important}
+
+  .hero-benefits{font-size:0.88rem;gap:8px}
+
+  .hero img{
+    max-width:100%;
+    border-radius:12px;
+    box-shadow:0 15px 35px rgba(0,0,0,.3);
+  }
+
+  .btn{
+    width:100%;
+    text-align:center;
+    padding:14px 20px;
+    font-size:1rem;
+  }
+
+  /* ── sections ── */
+  section{padding:40px 5%}
+
+  h2{font-size:1.7rem}
+
+  /* ── about ── */
+  .about img{max-width:100%}
+
+  .stats{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    margin-top:20px;
+  }
+
+  .stat{
+    background:white;
+    padding:16px;
+    border-radius:12px;
+    box-shadow:0 4px 14px rgba(0,0,0,.07);
+    text-align:center;
+  }
+
+  .stat strong{font-size:1.5rem}
+
+  /* ── authority ── */
+  .authority-list{grid-template-columns:1fr 1fr;gap:12px}
+
+  .badge{padding:12px 10px;font-size:0.82rem}
+
+  /* ── depoimentos: carrossel ── */
+  .grid3{
+    display:flex;
+    gap:0;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:12px;
+    scrollbar-width:none;
+  }
+
+  .grid3::-webkit-scrollbar{display:none}
+
+  .grid3 .card{
+    scroll-snap-align:start;
+    flex:0 0 90%;
+    margin-right:16px;
+  }
+
+  .carousel-dots{display:flex}
+
+  /* ── cta ── */
+  .cta{padding:50px 5%}
+  .cta h2{font-size:1.6rem}
+  .cta p{font-size:0.95rem}
+  .cta .btn{display:inline-block;width:auto;padding:14px 32px}
+
+  /* ── footer ── */
+  footer{
+    flex-direction:column;
+    gap:10px;
+    text-align:center;
+    padding:24px 5%;
+  }
+
+  /* ── whatsapp ── */
+  .whatsapp{
+    width:52px;
+    height:52px;
+    font-size:24px;
+    bottom:18px;
+    right:18px;
+  }
+}
+
+
+/* ── SISTEMAS ── */
+#sistemas{background:linear-gradient(135deg,#001450,#0a2a7a);color:white;padding:70px 8%;}
+#sistemas h2{color:white;text-align:center;margin-bottom:10px;}
+#sistemas .sistemas-sub{text-align:center;color:rgba(255,255,255,.7);margin-bottom:40px;font-size:1rem;max-width:600px;margin-left:auto;margin-right:auto;}
+.sistemas-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;}
+.sistema-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:32px;transition:.3s;cursor:pointer;text-decoration:none;color:white;display:block;position:relative;overflow:hidden;}
+.sistema-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;transition:.3s;}
+.sistema-card.extrator::before{background:linear-gradient(90deg,#00c9a7,#14a0c8);}
+.sistema-card.connect::before{background:linear-gradient(90deg,#38b6e8,#00c9a7);}
+.sistema-card:hover{transform:translateY(-6px);background:rgba(255,255,255,.1);box-shadow:0 20px 50px rgba(0,0,0,.3);}
+.sistema-badge{font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:20px;display:inline-block;margin-bottom:16px;}
+.sistema-card.extrator .sistema-badge{background:rgba(0,201,167,.2);color:#00c9a7;border:1px solid rgba(0,201,167,.3);}
+.sistema-card.connect .sistema-badge{background:rgba(56,182,232,.2);color:#38b6e8;border:1px solid rgba(56,182,232,.3);}
+.sistema-card h3{font-family:'Syne';font-size:1.4rem;margin-bottom:10px;}
+.sistema-card p{font-size:0.9rem;color:rgba(255,255,255,.7);line-height:1.7;margin-bottom:20px;}
+.sistema-features{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:24px;}
+.sistema-features li{font-size:0.85rem;color:rgba(255,255,255,.65);display:flex;align-items:flex-start;gap:8px;}
+.sistema-features li::before{content:'→';flex-shrink:0;margin-top:1px;}
+.sistema-card.extrator .sistema-features li::before{color:#00c9a7;}
+.sistema-card.connect .sistema-features li::before{color:#38b6e8;}
+.sistema-link{font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:6px;transition:.2s;}
+.sistema-card.extrator .sistema-link{color:#00c9a7;}
+.sistema-card.connect .sistema-link{color:#38b6e8;}
+.sistema-card:hover .sistema-link{gap:10px;}
+@media(max-width:700px){.sistemas-grid{grid-template-columns:1fr;}}
+
+/* ── GLOSSÁRIO ── */
+.glossario{background:#fff;border-top:3px solid var(--cyan);padding:50px 8%;}
+.glossario h2{color:#001450;margin-bottom:8px;font-size:1.8rem;}
+.glossario-intro{color:#5a7a92;margin-bottom:30px;font-size:0.97rem;line-height:1.6;}
+.glossario-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;}
+.glossario-item{background:#f4f8fb;border-left:4px solid var(--cyan);border-radius:0 12px 12px 0;padding:16px 20px;}
+.glossario-item .termo{font-family:'Syne';font-weight:700;font-size:1rem;color:#001450;margin-bottom:4px;}
+.glossario-item .sigla{display:inline-block;font-size:0.72rem;background:var(--cyan);color:white;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle;letter-spacing:.5px;}
+.glossario-item p{font-size:0.88rem;color:#4b6a82;line-height:1.6;}
+
+/* ── TOOLTIP ── */
+.tip{
+  border-bottom:1px dashed var(--cyan);
+  cursor:help;
+  position:relative;
+  display:inline-block;
+}
+.tip::after{
+  content:attr(data-tip);
+  position:absolute;
+  top:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:#001450;
+  color:white;
+  font-size:0.78rem;
+  line-height:1.5;
+  padding:8px 12px;
+  border-radius:8px;
+  width:220px;
+  text-align:center;
+  pointer-events:none;
+  opacity:0;
+  transition:.2s;
+  z-index:9999;
+  box-shadow:0 6px 20px rgba(0,0,0,.35);
+}
+.tip:hover::after,.tip:focus::after{opacity:1;}
+
+@media(max-width:600px){
+  .glossario-grid{grid-template-columns:1fr;}
+  .tip::after{display:none;}
+}
 </style>
 </head>
+
 <body>
-<div id="app"></div>
 
-<script>
-// =========================================================
-//  WYC CONNECT – Single File Bundle
-// =========================================================
+<!-- BRAND -->
+<div class="brand-bar">
+  <img src="logo.png" alt="WYC Consultoria">
+  <div class="brand-text">
+    <strong>WYC CONSULTORIA</strong><br>
+    Estratégia e inteligência para vencer licitações públicas
+  </div>
+</div>
 
-// ── STORE ─────────────────────────────────────────────────
-// Dados ficam no localStorage E num arquivo db.json no GitHub
-// O db.json é lido publicamente (cartões) e escrito via API token (admin)
-const STORE_KEY   = 'wyc_connect_data';
-const AUTH_KEY    = 'wyc_auth';
-const SESSION_KEY = 'wyc_session';
-const SESSION_TTL = 8 * 60 * 60 * 1000;
-const DEFAULT_DATA = { user:{ name:'Usuário WYC', email:'' }, empresas:[], cartoes:[] };
+<!-- NAV -->
+<nav>
+  <div style="font-family:'Syne';font-weight:700;letter-spacing:.5px">WYC</div>
 
-// ── FIREBASE ─────────────────────────────────────────────
-// SDK via CDN — sem npm, sem build
-let _db = null; // Firestore instance
+  <div class="menu" id="navMenu">
+    <a href="#sobre"      onclick="closeMenu()">Consultoria</a>
+    <a href="#servicos"   onclick="closeMenu()">Serviços</a>
+    <a href="#resultados" onclick="closeMenu()">Resultados</a>
+    <a href="#sistemas"   onclick="closeMenu()">⚡ Extrator</a>
+    <a href="#connect"    onclick="closeMenu()" style="color:#38b6e8;">📇 Connect</a>
+    <a href="#glossario"  onclick="closeMenu()">📖 Glossário</a>
+    <a href="#contato"    onclick="closeMenu()">Contato</a>
+  </div>
 
-async function initFirebase(){
-  if(_db) return _db;
-  try{
-    const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const cfg = {
-      apiKey:            "AIzaSyBNKv2-4oFu1_Pk-rImfeKfkS3ZPVGBktE",
-      authDomain:        "wyc-connect.firebaseapp.com",
-      projectId:         "wyc-connect",
-      storageBucket:     "wyc-connect.firebasestorage.app",
-      messagingSenderId: "689075693127",
-      appId:             "1:689075693127:web:264d489277de4d92a53362"
-    };
-    const app = getApps().length ? getApps()[0] : initializeApp(cfg);
-    _db = getFirestore(app);
-    return _db;
-  }catch(e){ console.error('Firebase init error',e); return null; }
-}
+  <button class="hamburger" id="hamburger" aria-label="Abrir menu" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
 
-// Comprime imagem para caber no Firestore (máx ~200KB)
-function compressImage(base64DataUrl, maxWidth=320, quality=0.72){
-  return new Promise(resolve=>{
-    const img = new Image();
-    img.onload = ()=>{
-      const canvas = document.createElement('canvas');
-      let w = img.width, h = img.height;
-      if(w > maxWidth){ h = Math.round(h * maxWidth / w); w = maxWidth; }
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const result = canvas.toDataURL('image/jpeg', quality);
-      console.log('Compressão:', Math.round(base64DataUrl.length/1024)+'KB →', Math.round(result.length/1024)+'KB');
-      resolve(result);
-    };
-    img.onerror = ()=> resolve(base64DataUrl);
-    img.src = base64DataUrl;
-  });
-}
+<!-- HERO -->
+<header>
+  <div class="hero reveal">
 
-async function fbLoad(){
-  try{
-    const db = await initFirebase(); if(!db) return null;
-    const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    // Carrega 3 documentos separados para evitar limite de 1MB
-    const [snapCfg, snapEmp, snapCart] = await Promise.all([
-      getDoc(doc(db,'wyc','config')),
-      getDoc(doc(db,'wyc','empresas')),
-      getDoc(doc(db,'wyc','cartoes')),
-    ]);
-    const cfg   = snapCfg.exists()   ? snapCfg.data()   : {};
-    const emps  = snapEmp.exists()   ? snapEmp.data()   : {};
-    const carts = snapCart.exists()  ? snapCart.data()  : {};
-    return {
-      ...cfg,
-      empresas: emps.list  || [],
-      cartoes:  carts.list || [],
-    };
-  }catch(e){
-    console.error('fbLoad error:', e.code, e.message);
-    return null;
-  }
-}
+    <div>
+      <h1>Encontre licitações e oportunidades em minutos — mesmo sem experiência</h1>
 
-function cleanForFirestore(obj, depth=0){
-  if(obj === null || obj === undefined) return null;
-  if(typeof obj === 'string'){
-    // Firestore tem limite de 1MB por doc — base64 > 250KB é perigoso
-    if(obj.startsWith('data:image') && obj.length > 250000){
-      console.warn('Imagem grande demais para Firestore:', Math.round(obj.length/1024)+'KB');
-      toast('⚠️ Imagem muito grande — redimensione antes de salvar','error');
-      return ''; // remove para não quebrar o doc
-    }
-    return obj;
-  }
-  if(typeof obj === 'number' || typeof obj === 'boolean') return obj;
-  if(Array.isArray(obj)) return obj.map(item => cleanForFirestore(item, depth+1));
-  if(typeof obj === 'object'){
-    const clean = {};
-    for(const [k,v] of Object.entries(obj)){
-      if(v === undefined) continue;
-      clean[k] = cleanForFirestore(v, depth+1);
-    }
-    return clean;
-  }
-  return obj;
-}
+      <p style="font-size:1.05rem;max-width:520px">
+        Pare de perder oportunidades por não saber onde buscar.
+        Nossa tecnologia encontra licitações automaticamente e nossa consultoria te guia do zero até a vitória.
+      </p>
 
-async function fbSave(data){
-  try{
-    const db = await initFirebase();
-    if(!db){ console.error('Firebase não inicializou'); return false; }
-    const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    // Separa em 3 documentos para evitar limite de 1MB por doc
-    // doc 1: config (auth, user, planos) — pequeno
-    const cfgData = cleanForFirestore({
-      auth:  data.auth  || null,
-      user:  data.user  || {},
-    });
-    // doc 2: empresas (com logos) — médio
-    const empData = cleanForFirestore({ list: data.empresas || [] });
-    // doc 3: cartoes (com fotos) — maior
-    const cartData = cleanForFirestore({ list: data.cartoes || [] });
-
-    await Promise.all([
-      setDoc(doc(db,'wyc','config'),  cfgData),
-      setDoc(doc(db,'wyc','empresas'), empData),
-      setDoc(doc(db,'wyc','cartoes'),  cartData),
-    ]);
-    return true;
-  }catch(e){
-    console.error('fbSave error:', e.code, e.message);
-    if(e.code==='permission-denied'){
-      toast('🔒 Firebase: permissão negada. Verifique as Regras do Firestore.','error');
-    } else if(e.code==='unavailable'){
-      toast('📡 Firebase offline. Dado salvo localmente.','error');
-    } else {
-      toast('⚠️ Firebase: '+e.message,'error');
-    }
-    return false;
-  }
-}
-
-// ── Leitura local (síncrona — cache) ─────────────────────
-function loadData(){
-  try{ const r=localStorage.getItem(STORE_KEY); return r?{...JSON.parse(JSON.stringify(DEFAULT_DATA)),...JSON.parse(r)}:JSON.parse(JSON.stringify(DEFAULT_DATA)); }
-  catch{ return JSON.parse(JSON.stringify(DEFAULT_DATA)); }
-}
-function saveData(d){ localStorage.setItem(STORE_KEY,JSON.stringify(d)); }
-
-// Salva local + Firebase em tempo real (sem precisar clicar em Sync)
-async function saveAndSync(d){
-  try{
-    const authLocal = JSON.parse(localStorage.getItem(AUTH_KEY)||'null');
-    if(authLocal) d.auth = authLocal;
-  }catch{}
-  saveData(d); // cache local imediato — UI já atualiza
-  // Firebase em background — não bloqueia a UI
-  fbSave(d).then(ok=>{
-    if(!ok) toast('⚠️ Erro ao salvar na nuvem. Verifique conexão.','error');
-  }).catch(()=> toast('⚠️ Sem conexão. Dado salvo localmente.','error'));
-  return true; // retorna true imediatamente para não travar a UI
-}
-
-function getEmpresas(){ return loadData().empresas; }
-function saveEmpresa(e){ const d=loadData(); const i=d.empresas.findIndex(x=>x.id===e.id); if(i>=0)d.empresas[i]=e; else d.empresas.push(e); saveAndSync(d); }
-function deleteEmpresa(id){ const d=loadData(); d.empresas=d.empresas.filter(e=>e.id!==id); d.cartoes=d.cartoes.filter(c=>c.empresaId!==id); saveAndSync(d); }
-function getCartoes(eid){ const d=loadData(); return eid?d.cartoes.filter(c=>c.empresaId===eid):d.cartoes; }
-function getCartao(id){
-  // Aceita tanto id quanto slug personalizado
-  const cartoes = loadData().cartoes;
-  return cartoes.find(c=>c.id===id) || cartoes.find(c=>c.slug&&c.slug===id) || null;
-}
-function slugIsAvailable(slug, excludeId=''){
-  if(!slug) return false;
-  const cartoes = loadData().cartoes;
-  return !cartoes.some(c=>c.slug===slug && c.id!==excludeId);
-}
-function saveCartao(c){ const d=loadData(); const i=d.cartoes.findIndex(x=>x.id===c.id); if(i>=0)d.cartoes[i]=c; else d.cartoes.push(c); saveAndSync(d); }
-function deleteCartao(id){ const d=loadData(); d.cartoes=d.cartoes.filter(c=>c.id!==id); saveAndSync(d); }
-function getUser(){ return loadData().user; }
-function saveUser(u){ const d=loadData(); d.user=u; saveAndSync(d); }
-function genId(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
-
-async function registerScan(cartaoId){
-  try{
-    const d = loadData();
-    const c = d.cartoes.find(x=>x.id===cartaoId);
-    if(!c) return;
-    c.scans = (c.scans||0) + 1;
-    c.lastScan = Date.now();
-    if(!c.scanLog) c.scanLog=[];
-    c.scanLog.push({ts:Date.now(), ua: navigator.userAgent.slice(0,60)});
-    if(c.scanLog.length>200) c.scanLog=c.scanLog.slice(-200);
-    saveData(d);
-    await fbSave(d); // Firebase
-  }catch(e){ console.warn('registerScan error',e); }
-}
-
-function cardUrl(idOrSlug){
-  // Usa slug personalizado se disponível, senão usa id
-  const c = loadData().cartoes.find(x=>x.id===idOrSlug||x.slug===idOrSlug);
-  const key = (c&&c.slug) ? c.slug : idOrSlug;
-  const origin = window.location.origin;
-  const path   = window.location.pathname.replace(/\/+$/, '') + '/';
-  return origin + path + '?card=' + key;
-}
-
-async function hashPassword(p){
-  const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(p));
-  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
-}
-function getAuthConfig(){
-  // Primeiro tenta localStorage, depois tenta do db.json (syncado)
-  try{
-    const local = JSON.parse(localStorage.getItem(AUTH_KEY)||'null');
-    if(local) return local;
-    // Fallback: auth pode estar no campo auth do db.json
-    const d = loadData();
-    if(d.auth) return d.auth;
-    return null;
-  }catch{ return null; }
-}
-function saveAuthConfig(c){
-  localStorage.setItem(AUTH_KEY,JSON.stringify(c));
-  // Salva também dentro do db.json para outros dispositivos
-  const d = loadData();
-  d.auth = c;
-  saveAndSync(d);
-}
-function isAuthenticated(){
-  try{
-    const s=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');
-    if(!s) return false;
-    if(Date.now()-s.ts>SESSION_TTL){ sessionStorage.removeItem(SESSION_KEY); return false; }
-    return true;
-  }catch{ return false; }
-}
-function setSession(){ sessionStorage.setItem(SESSION_KEY,JSON.stringify({ts:Date.now()})); }
-function clearSession(){ sessionStorage.removeItem(SESSION_KEY); }
-
-// ── CONTACTS ──────────────────────────────────────────────
-// SVGs oficiais — fora do esc() para não serem escapados
-const BRAND_ICONS={
-  whatsapp:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.532 5.845L.054 23.454a.5.5 0 00.492.546h.057l5.735-1.503A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.9a9.9 9.9 0 01-5.031-1.373l-.361-.214-3.737.979.998-3.648-.235-.374A9.861 9.861 0 012.1 12c0-5.468 4.432-9.9 9.9-9.9 5.469 0 9.9 4.432 9.9 9.9 0 5.469-4.431 9.9-9.9 9.9z"/></svg>`,
-  instagram:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>`,
-  email:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>`,
-  site:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>`,
-  telefone:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>`,
-  linkedin:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>`,
-  facebook:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`,
-  tiktok:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.79 1.53V6.78a4.85 4.85 0 01-1.02-.09z"/></svg>`,
-  outro:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>`,
-};
-
-const CONTACT_TYPES={
-  whatsapp: {label:'WhatsApp', icon:'whatsapp', emoji:'💬', color:'#ffffff', bg:'#25d366', border:'#25d366'},
-  email:    {label:'E-mail',   icon:'email',    emoji:'✉️',  color:'#ffffff', bg:'#f59e0b', border:'#f59e0b'},
-  site:     {label:'Site',     icon:'site',     emoji:'🌐', color:'#ffffff', bg:'#64748b', border:'#64748b'},
-  instagram:{label:'Instagram',icon:'instagram',emoji:'📸', color:'#ffffff', bg:'linear-gradient(135deg,#f58529,#dd2a7b,#8134af)', border:'#dd2a7b'},
-  telefone: {label:'Telefone', icon:'telefone', emoji:'📞', color:'#ffffff', bg:'#7c3aed', border:'#7c3aed'},
-  linkedin: {label:'LinkedIn', icon:'linkedin', emoji:'💼', color:'#ffffff', bg:'#0077b5', border:'#0077b5'},
-  facebook: {label:'Facebook', icon:'facebook', emoji:'👥', color:'#ffffff', bg:'#1877f2', border:'#1877f2'},
-  tiktok:   {label:'TikTok',   icon:'tiktok',  emoji:'🎵', color:'#ffffff', bg:'#010101', border:'#010101'},
-  outro:    {label:'Outro',    icon:'outro',    emoji:'🔗', color:'#ffffff', bg:'#475569', border:'#475569'},
-};
-function typeConfig(t){ return CONTACT_TYPES[t]||CONTACT_TYPES.outro; }
-function buildHref(t,v){
-  if(!v) return '#';
-  if(t==='whatsapp'){ const c=v.replace(/\D/g,''); return 'https://wa.me/'+(c.startsWith('55')?c:'55'+c); }
-  if(t==='email') return 'mailto:'+v;
-  if(t==='telefone') return 'tel:'+v.replace(/\s/g,'');
-  const cfg=typeConfig(t);
-  if(cfg.prefix&&!v.startsWith('http')&&!v.startsWith(cfg.prefix)) return cfg.prefix+v;
-  return v.startsWith('http')?v:'https://'+v;
-}
-
-// ── UI HELPERS ────────────────────────────────────────────
-function toast(msg,type='success'){
-  let c=document.getElementById('toast-container');
-  if(!c){ c=document.createElement('div'); c.id='toast-container'; c.className='toast-container'; document.body.appendChild(c); }
-  const icons={success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'};
-  const el=document.createElement('div'); el.className='toast '+type;
-  el.innerHTML=`<span>${icons[type]||'✅'}</span><span>${msg}</span>`;
-  c.appendChild(el);
-  setTimeout(()=>{ el.style.cssText='opacity:0;transform:translateX(20px);transition:all .3s'; setTimeout(()=>el.remove(),300); },3000);
-}
-function showConfirm(msg,cb){
-  const ov=document.createElement('div'); ov.className='modal-overlay';
-  ov.innerHTML=`<div class="modal" style="max-width:380px;text-align:center"><div style="font-size:2.5rem;margin-bottom:12px">⚠️</div><h3 class="modal-title" style="margin-bottom:10px">Confirmar</h3><p style="margin-bottom:24px">${msg}</p><div style="display:flex;gap:10px;justify-content:center"><button class="btn btn-secondary" id="cc">Cancelar</button><button class="btn btn-danger" id="co">Confirmar</button></div></div>`;
-  document.body.appendChild(ov);
-  ov.querySelector('#cc').onclick=()=>ov.remove();
-  ov.querySelector('#co').onclick=()=>{ ov.remove(); cb(); };
-  ov.onclick=e=>{ if(e.target===ov)ov.remove(); };
-}
-function openModal(html,wide=false){
-  const ov=document.createElement('div'); ov.className='modal-overlay';
-  ov.innerHTML=`<div class="modal${wide?' modal-wide':''}">${html}</div>`;
-  document.body.appendChild(ov);
-  ov.onclick=e=>{ if(e.target===ov)ov.remove(); };
-  ov.querySelector('.modal-close')?.addEventListener('click',()=>ov.remove());
-  return ov;
-}
-function initials(n=''){ return n.trim().split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()||'?'; }
-function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-// ── SIDEBAR MOBILE ────────────────────────────────────────
-function openSidebar(){
-  const s=document.getElementById('main-sidebar');
-  const o=document.getElementById('sidebar-overlay');
-  if(s) s.classList.add('open');
-  if(o) o.classList.add('open');
-  document.body.style.overflow='hidden';
-}
-function closeSidebar(){
-  const s=document.getElementById('main-sidebar');
-  const o=document.getElementById('sidebar-overlay');
-  if(s) s.classList.remove('open');
-  if(o) o.classList.remove('open');
-  document.body.style.overflow='';
-}
-// Auto-close sidebar when a nav item is clicked on mobile
-document.addEventListener('click', e=>{
-  const navItem = e.target.closest('.nav-item');
-  if(navItem && window.innerWidth<=768) closeSidebar();
-});
-
-// ── ROUTER ────────────────────────────────────────────────
-async function init(){
-  const params      = new URLSearchParams(window.location.search);
-  const cardId      = params.get('card');
-  const empresaSlug = params.get('empresa');
-
-  // ── Cartão público ou portal empresa ─────────────────────
-  if(cardId || empresaSlug){
-    showLoading('Carregando...');
-    try{
-      const remote = await fbLoad();
-      if(remote){ saveData(remote); }
-    }catch(e){ console.warn('Firebase load failed, using cache'); }
-    if(empresaSlug) renderEmpresaPortal(empresaSlug);
-    else             renderPublicCard(cardId);
-    return;
-  }
-
-  // ── Painel admin ──────────────────────────────────────────
-  showLoading('Conectando...');
-  try{
-    const remote = await fbLoad();
-    if(remote){
-      // Auth sempre vem da nuvem (login em qualquer dispositivo)
-      if(remote.auth) localStorage.setItem(AUTH_KEY, JSON.stringify(remote.auth));
-      // Dados: Firebase é a fonte da verdade
-      saveData(remote);
-    }
-  }catch(e){ console.warn('Firebase load failed, using local cache'); }
-
-  const app = document.getElementById('app');
-  app.className = '';
-  app.innerHTML = '';
-  isAuthenticated() ? renderDashboard() : renderLogin(renderDashboard);
-}
-
-function showLoading(msg){
-  const app=document.getElementById('app');
-  app.className='fullscreen';
-  app.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0a0f1e,#0f172a)"><div style="text-align:center;color:#f1f5f9"><div style="width:52px;height:52px;background:linear-gradient(135deg,#2563eb,#6366f1);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;color:#fff;margin-bottom:16px">WC</div><div id="loading-msg" style="font-size:.9rem;opacity:.7;margin-top:8px">${msg||'Carregando...'}</div></div></div>`;
-}
-function hideLoading(){}
-
-function logout(){ clearSession(); init(); }
-
-async function fetchWithTimeout(url, ms=5000){
-  const ctrl = new AbortController();
-  const timer = setTimeout(()=>ctrl.abort(), ms);
-  try{ const r=await fetch(url,{signal:ctrl.signal}); clearTimeout(timer); return r; }
-  catch(e){ clearTimeout(timer); throw e; }
-}
-// Limites dos planos — configuráveis pelo admin
-function getPlanConfig(){
-  try{ return JSON.parse(localStorage.getItem('wyc_plan_config')||'null') || {free:{limit:1,price:0},pro:{limit:10,price:49},business:{limit:999,price:99}}; }
-  catch{ return {free:{limit:1,price:0},pro:{limit:10,price:49},business:{limit:999,price:99}}; }
-}
-function savePlanConfig(cfg){ localStorage.setItem('wyc_plan_config',JSON.stringify(cfg)); }
-// Alias para compatibilidade
-const PLAN_LIMITS={get free(){ return getPlanConfig().free.limit; }, get pro(){ return getPlanConfig().pro.limit; }, get business(){ return getPlanConfig().business.limit; }};
-function selectPlan(el){
-  document.querySelectorAll('.plan-opt').forEach(o=>{
-    o.classList.remove('selected');
-    o.style.borderColor='var(--border)';
-    o.style.background='transparent';
-  });
-  el.classList.add('selected');
-  const colors={free:'#64748b',pro:'#2563eb',business:'#7c3aed'};
-  el.style.borderColor=colors[el.dataset.plan];
-  el.style.background='rgba(37,99,235,.06)';
-  document.getElementById('ep').value=el.dataset.plan;
-}
-function checkPlanAndCreate(eid){
-  const emp=getEmpresas().find(e=>e.id===eid);
-  const plano=emp?.plano||'free';
-  const cfg=getPlanConfig();
-  const limite=cfg[plano]?.limit||1;
-  const atual=getCartoes(eid).length;
-  if(atual>=limite){
-    toast('Limite do plano '+plano.charAt(0).toUpperCase()+plano.slice(1)+' ('+limite+' cartões) atingido. Faça upgrade!','error');
-    return;
-  }
-  renderCartaoEditor(null,eid);
-}
-async function handleLogoUpload(input){
-  const file=input.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=async ev=>{
-    // Logo: max 200px, alta qualidade para preservar detalhes
-    const compressed=await compressImage(ev.target.result,200,0.9);
-    document.getElementById('elogo').value=compressed;
-    document.getElementById('emp-logo-prev').innerHTML=`<img src="${compressed}" style="width:100%;height:100%;object-fit:contain;padding:4px">`;
-    toast('✅ Logo pronta! ('+Math.round(compressed.length/1024)+'KB)','success');
-  };
-  reader.readAsDataURL(file);
-}
-function validateSlug(input){
-  const s = input.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
-  input.value = s;
-  const status = document.getElementById('slug-status');
-  if(!s){ status.innerHTML=''; return; }
-  const available = slugIsAvailable(s, _editId||'');
-  status.innerHTML = available
-    ? '<span style="color:var(--success)">✅ Disponível — link será: ?card='+s+'</span>'
-    : '<span style="color:var(--danger)">❌ Este slug já está em uso</span>';
-}
-// syncNow mantido como utilitário interno (não aparece mais na UI)
-async function syncNow(){
-  const d = loadData();
-  try{ const a=JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); if(a) d.auth=a; }catch{}
-  return await fbSave(d);
-}
-
-// ── LOGIN ─────────────────────────────────────────────────
-function renderLogin(onSuccess){
-  const app=document.getElementById('app');
-  app.className='fullscreen';
-  const cfg=getAuthConfig(); const isSetup=!cfg;
-  app.innerHTML=`
-  <div id="login-root" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e8f0fe 0%,#f0f4ff 50%,#e8f0fe 100%);padding:20px">
-    <div style="position:fixed;top:-80px;left:-80px;width:320px;height:320px;border-radius:50%;background:rgba(37,99,235,.08);pointer-events:none"></div>
-    <div style="position:fixed;bottom:-60px;right:-60px;width:280px;height:280px;border-radius:50%;background:rgba(99,102,241,.07);pointer-events:none"></div>
-    <div style="background:#fff;border:1px solid rgba(37,99,235,.15);border-radius:24px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(37,99,235,.1);position:relative;z-index:1;animation:slideUp .3s ease">
-      <div style="text-align:center;margin-bottom:28px">
-        <div style="width:52px;height:52px;background:linear-gradient(135deg,#2563eb,#6366f1);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:1rem;color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.35);margin-bottom:14px">WC</div>
-        <div style="font-family:var(--font-display);font-weight:700;font-size:1.4rem;color:#0f172a">Wyc <span style="color:#2563eb">Connect</span></div>
-        <div style="font-size:.82rem;color:#64748b;margin-top:4px">${isSetup?'🔧 Primeira vez? Configure seu acesso abaixo':'🔐 Acesso restrito · Entre com suas credenciais'}</div>
-      </div>
-      <div id="lf">
-        ${isSetup?`
-        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:.8rem;color:#1d4ed8">👋 <strong>Bem-vindo!</strong> Configure seu usuário e senha para proteger o painel.</div>
-        <div style="margin-bottom:14px"><label style="display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;color:#475569;margin-bottom:6px">Seu Nome</label>
-        <input id="l-nome" class="form-input" placeholder="Nome do administrador" style="background:#f8faff;border-color:#e2e8f0;color:#0f172a"></div>
-        <div style="margin-bottom:14px"><label style="display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;color:#475569;margin-bottom:6px">E-mail</label>
-        <input id="l-email" class="form-input" type="email" placeholder="seu@email.com" style="background:#f8faff;border-color:#e2e8f0;color:#0f172a"></div>`:''}
-        <div style="margin-bottom:14px">
-          <label style="display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;color:#475569;margin-bottom:6px">${isSetup?'Criar Senha':'Senha'}</label>
-          <div style="position:relative">
-            <input id="l-senha" class="form-input" type="password" placeholder="${isSetup?'Mínimo 6 caracteres':'Digite sua senha'}" style="background:#f8faff;border-color:#e2e8f0;color:#0f172a;padding-right:44px" autocomplete="${isSetup?'new-password':'current-password'}">
-            <button id="tpwd" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#64748b;padding:4px">👁️</button>
-          </div>
-        </div>
-        ${isSetup?`<div style="margin-bottom:20px">
-          <label style="display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;color:#475569;margin-bottom:6px">Confirmar Senha</label>
-          <div style="position:relative">
-            <input id="l-confirm" class="form-input" type="password" placeholder="Repita a senha" style="background:#f8faff;border-color:#e2e8f0;color:#0f172a;padding-right:44px" autocomplete="new-password">
-            <button id="tpwd2" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#64748b;padding:4px">👁️</button>
-          </div></div>`:`<div style="margin-bottom:20px"><label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:.82rem;color:#475569"><input type="checkbox" id="l-rem" style="accent-color:#2563eb"> Manter conectado</label></div>`}
-        <button id="btn-login" style="width:100%;padding:12px;background:linear-gradient(135deg,#2563eb,#6366f1);color:#fff;border:none;border-radius:10px;font-family:var(--font-body);font-weight:700;font-size:.92rem;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,.35);display:flex;align-items:center;justify-content:center;gap:8px">
-          <span id="bli">${isSetup?'🔧':'🔐'}</span><span id="blt">${isSetup?'Criar Conta & Entrar':'Entrar'}</span>
-        </button>
-      </div>
-      <div style="margin-top:20px;text-align:center;font-size:.72rem;color:#94a3b8">🔒 Dados armazenados localmente · Wyc Connect v1.0</div>
-    </div>
-  </div>`;
-
-  document.getElementById('tpwd')?.addEventListener('click',()=>{ const i=document.getElementById('l-senha'); i.type=i.type==='password'?'text':'password'; });
-  document.getElementById('tpwd2')?.addEventListener('click',()=>{ const i=document.getElementById('l-confirm'); i.type=i.type==='password'?'text':'password'; });
-  document.getElementById('login-root').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('btn-login').click(); });
-
-  document.getElementById('btn-login').addEventListener('click',async()=>{
-    const btn=document.getElementById('btn-login'),blt=document.getElementById('blt'),bli=document.getElementById('bli');
-    const senha=document.getElementById('l-senha').value;
-    btn.disabled=true; blt.textContent='Aguarde...'; bli.textContent='⏳';
-    try{
-      if(isSetup){
-        const nome=document.getElementById('l-nome').value.trim();
-        const email=document.getElementById('l-email').value.trim();
-        const confirm=document.getElementById('l-confirm').value;
-        if(!nome){ toast('Informe seu nome','error'); btn.disabled=false;blt.textContent='Criar Conta & Entrar';bli.textContent='🔧';return; }
-        if(!senha||senha.length<6){ toast('Senha: mínimo 6 caracteres','error'); btn.disabled=false;blt.textContent='Criar Conta & Entrar';bli.textContent='🔧';return; }
-        if(senha!==confirm){ toast('As senhas não conferem','error'); btn.disabled=false;blt.textContent='Criar Conta & Entrar';bli.textContent='🔧';return; }
-        const hash=await hashPassword(senha);
-        saveAuthConfig({hash,nome,email,createdAt:Date.now()});
-        saveUser({name:nome,email});
-        setSession();
-        toast('Conta criada! Bem-vindo(a) 🎉');
-        setTimeout(()=>{ if(!getGHConfig()) renderGHSetup(onSuccess); else onSuccess(); },600);
-      } else {
-        if(!senha){ toast('Digite sua senha','error'); btn.disabled=false;blt.textContent='Entrar';bli.textContent='🔐';return; }
-        const hash=await hashPassword(senha);
-        if(hash!==cfg.hash){
-          const lf=document.getElementById('lf');
-          lf.style.animation='none'; setTimeout(()=>{ lf.style.animation='shake .4s ease'; },10);
-          setTimeout(()=>{ lf.style.animation=''; },420);
-          toast('Senha incorreta ❌','error');
-          btn.disabled=false;blt.textContent='Entrar';bli.textContent='🔐';
-          document.getElementById('l-senha').value=''; document.getElementById('l-senha').focus();
-          return;
-        }
-        setSession();
-        toast('Bem-vindo(a), '+(cfg.nome||'Admin')+'! 👋');
-        setTimeout(()=>onSuccess(),500);
-      }
-    }catch(err){ console.error(err); toast('Erro inesperado. Tente novamente.','error'); btn.disabled=false;blt.textContent=isSetup?'Criar Conta & Entrar':'Entrar';bli.textContent=isSetup?'🔧':'🔐'; }
-  });
-}
-
-// ── SIDEBAR ───────────────────────────────────────────────
-function buildSidebar(active){
-  const u=getUser(); const name=u.name||'Usuário WYC'; const email=u.email||'';
-  const cartoes=getCartoes().slice(0,8);
-  return `
-  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
-  <aside class="sidebar" id="main-sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-icon">WC</div>
-      <div class="logo-text">Wyc <span>Connect</span></div>
-      <button class="menu-btn" style="display:flex;margin-left:auto" onclick="closeSidebar()">✕</button>
-    </div>
-    <div class="sidebar-section-label">Menu</div>
-    <div class="nav-item ${active==='empresas'?'active':''}" onclick="renderDashboard()"><span class="nav-icon">🏢</span> Empresas</div>
-    <div class="nav-item" style="padding-left:20px;font-size:.8rem;color:var(--text-muted);cursor:default"><span class="nav-icon" style="font-size:.8rem">📇</span> Meus Cartões</div>
-    ${cartoes.map(c=>`<div class="nav-item" style="padding:6px 20px 6px 32px;font-size:.78rem" onclick="renderCartoesPage(null,null,'${c.id}')"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;margin-right:4px"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.nome||'Sem nome')}</span></div>`).join('')}
-    <div class="nav-item ${active==='perfil'?'active':''}" style="margin-top:8px" onclick="renderPerfilPage()"><span class="nav-icon">👤</span> Perfil</div>
-    <div class="nav-item ${active==='analytics'?'active':''}" onclick="renderAnalytics()"><span class="nav-icon">📊</span> Analytics</div>
-    <div class="nav-item ${active==='planos'?'active':''}" onclick="renderPlanos()"><span class="nav-icon">💎</span> Planos</div>
-
-    <div class="nav-item" onclick="toast('Suporte: suporte@wycconsultoria.com.br','info')"><span class="nav-icon">🆘</span> Suporte</div>
-    <div class="sidebar-bottom">
-      <div class="user-card" onclick="renderPerfilPage()">
-        <div class="user-avatar">${initials(name)}</div>
-        <div class="user-info"><div class="user-name">${esc(name)}</div><div class="user-email">${esc(email||'Clique para editar')}</div></div>
-        <span style="font-size:.75rem;color:var(--text-muted)">✏️</span>
-      </div>
-      <button class="btn-logout" onclick="logout()">🚪 Sair da conta</button>
-    </div>
-  </aside>`;
-}
-
-// ── DASHBOARD ─────────────────────────────────────────────
-function renderDashboard(){
-  const app=document.getElementById('app'); app.className='';
-  const empresas=getEmpresas(); const cartoes=getCartoes();
-  const rows=empresas.length===0?`<div class="empty-state"><div class="empty-state-icon">🏢</div><div class="empty-state-title">Nenhuma empresa ainda</div><p class="empty-state-text">Crie sua primeira empresa para começar</p><button class="btn btn-primary mt-4" onclick="openEmpresaModal()">➕ Criar Empresa</button></div>`:
-    empresas.map(e=>{ const cnt=cartoes.filter(c=>c.empresaId===e.id).length; return `
-    <div class="empresa-card">
-      <div class="empresa-card-top">
-        <div class="empresa-avatar">
-          ${e.logo?`<img src="${esc(e.logo)}" style="width:100%;height:100%;object-fit:contain;padding:4px">`:initials(e.name)}
-        </div>
-        <div class="empresa-info"><div class="empresa-name">${esc(e.name)}</div><div class="empresa-email">${esc(e.cnpj||e.email||'—')}</div></div>
-        <span id="plan-badge-${e.id}" style="font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:99px;white-space:nowrap;border:1px solid;${(()=>{const p=e.plano||'free';return p==='business'?'color:#7c3aed;border-color:#7c3aed40;background:rgba(124,58,237,.08)':p==='pro'?'color:#2563eb;border-color:#2563eb40;background:rgba(37,99,235,.08)':'color:#64748b;border-color:#64748b40;background:rgba(100,116,139,.08)'})()}">${(()=>{const p=e.plano||'free';return p==='business'?'💎 Business':p==='pro'?'⭐ Pro':'🆓 Free'})()}</span>
-      </div>
-      <div class="empresa-card-bottom">
-        <span style="font-size:.73rem;color:var(--text-muted)">📇 <strong style="color:var(--accent)">${cnt}</strong>/${(()=>{const lm={free:1,pro:10,business:'∞'};return lm[e.plano||'free']})()}${e.email?` · ✉️ ${esc(e.email)}`:''}</span>
-        <div class="empresa-actions">
-          ${e.slug?`<button class="btn btn-secondary btn-icon btn-sm" onclick="copyWhitelabelLink('${e.slug}')" title="Link exclusivo do cliente">🔗</button>`:''}
-          <button class="btn btn-secondary btn-icon btn-sm" onclick="openEmpresaModal('${e.id}')" title="Editar">✏️</button>
-          <button class="btn btn-secondary btn-icon btn-sm" onclick="renderCartoesPage('${e.id}')" title="Cartões">📇</button>
-          <button class="btn btn-danger btn-icon btn-sm" onclick="showConfirm('Excluir empresa e todos os cartões?',()=>{ deleteEmpresa('${e.id}'); toast('Empresa excluída'); renderDashboard(); })" title="Excluir">🗑️</button>
-        </div>
-      </div>
-    </div>`; }).join('');
-  app.innerHTML=`${buildSidebar('empresas')}
-  <div class="main-content">
-    <div class="topbar">
-      <button class="menu-btn" onclick="openSidebar()">☰</button>
-      <div><div class="topbar-title">🏢 Empresas & Agentes</div><div class="topbar-subtitle">Gerencie seus clientes e cartões digitais</div></div>
-      <div class="topbar-actions">
-        <button class="btn btn-primary" onclick="openEmpresaModal()">➕ Nova Empresa</button>
-      </div>
-    </div>
-    <div class="page-content"><div class="cards-grid">${rows}</div></div>
-  </div>`;
-}
-
-function openEmpresaModal(id){
-  const e=id?getEmpresas().find(x=>x.id===id):null;
-  const ov=openModal(`
-    <div class="modal-header"><h3 class="modal-title">${e?'✏️ Editar':'🏢 Nova'} Empresa</h3><button class="modal-close">×</button></div>
-    <div class="form-group"><label class="form-label">Nome *</label><input class="form-input" id="en" placeholder="Ex: Pastelaria da Vovozinha" value="${esc(e?.name||'')}"></div>
-    <div class="form-grid">
-      <div class="form-group"><label class="form-label">CNPJ</label><input class="form-input" id="ec" placeholder="00.000.000/0001-00" value="${esc(e?.cnpj||'')}"></div>
-      <div class="form-group"><label class="form-label">E-mail</label><input class="form-input" id="ee" type="email" placeholder="email@empresa.com" value="${esc(e?.email||'')}"></div>
-    </div>
-    <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" id="et" placeholder="(11) 9 0000-0000" value="${esc(e?.telefone||'')}"></div>
-    <div class="form-group">
-      <label class="form-label">Logo da Empresa</label>
-      <div style="display:flex;align-items:center;gap:12px">
-        <div id="emp-logo-prev" style="width:64px;height:64px;border-radius:10px;overflow:hidden;border:2px solid var(--border);flex-shrink:0;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;font-size:1.5rem">
-          ${e?.logo?`<img src="${esc(e.logo)}" style="width:100%;height:100%;object-fit:contain;padding:4px">`:'🏢'}
-        </div>
-        <div style="flex:1">
-          <input class="form-input" id="elogo" placeholder="URL da logo ou faça upload" value="${esc(e?.logo||'')}">
-          <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin-top:6px;display:inline-flex">
-            📷 Upload logo
-            <input type="file" accept="image/*" onchange="handleLogoUpload(this)" style="display:none">
-          </label>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer"><button class="btn btn-secondary modal-close">Cancelar</button><button class="btn btn-primary" id="es-save">${e?'💾 Salvar':'➕ Criar'}</button></div>`);
-  ov.querySelector('#ec').addEventListener('input',ev=>{ let v=ev.target.value.replace(/\D/g,'').slice(0,14); v=v.replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d)/,'$1-$2'); ev.target.value=v; });
-  ov.querySelector('#es-save').onclick=()=>{
-    const nome=ov.querySelector('#en').value.trim();
-    if(!nome){ toast('Informe o nome','error'); return; }
-    const eslug=ov.querySelector('#eslug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,40)||'';
-    saveEmpresa({id:e?.id||genId(),name:nome,slug:eslug,logo:ov.querySelector('#elogo')?.value.trim()||'',cnpj:ov.querySelector('#ec').value.trim(),email:ov.querySelector('#ee').value.trim(),telefone:ov.querySelector('#et').value.trim(),plano:ov.querySelector('#ep')?.value||'free',createdAt:e?.createdAt||Date.now()});
-    toast(e?'Empresa atualizada!':'Empresa criada! 🎉'); ov.remove(); renderDashboard();
-  };
-}
-
-// ── CARTOES PAGE ──────────────────────────────────────────
-function renderCartoesPage(empresaId, filterEmpresaId, highlightId){
-  const eid=empresaId||filterEmpresaId;
-  const app=document.getElementById('app'); app.className='';
-  const cartoes=getCartoes(eid); const emp=eid?getEmpresas().find(e=>e.id===eid):null;
-  const rows=cartoes.length===0?`<div class="empty-state"><div class="empty-state-icon">📇</div><div class="empty-state-title">Nenhum cartão ainda</div><p class="empty-state-text">Crie seu primeiro cartão digital</p><button class="btn btn-primary mt-4" onclick="checkPlanAndCreate('${eid||''}')">➕ Criar Cartão</button></div>`:
-    cartoes.map(c=>{ const ce=getEmpresas().find(e=>e.id===c.empresaId); const tipos=[...new Set((c.contatos||[]).map(x=>x.tipo))]; const icons=tipos.slice(0,5).map(t=>typeConfig(t).icon).join(' ');
-    return `<div class="empresa-card">
-      <div class="empresa-card-top">
-        <div class="empresa-avatar" style="background:${c.foto?'#f8faff':c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'}">
-          ${c.foto
-            ?`<img src="${esc(c.foto)}" style="width:100%;height:100%;object-fit:cover">`
-            :ce?.logo
-              ?`<img src="${esc(ce.logo)}" style="width:100%;height:100%;object-fit:contain;padding:4px">`
-              :initials(c.nome||'?')}
-        </div>
-        <div class="empresa-info"><div class="empresa-name">${esc(c.nome||'Sem nome')}</div>
-        <div class="empresa-email">${c.cargo?esc(c.cargo):''}${c.cargo&&ce?' · ':''}${ce?esc(ce.name):''}</div></div>
-        ${c.tipo==='idoso'?'<span class="urgency-badge">🧓</span>':''}
-      </div>
-      <div class="empresa-card-bottom">
-        <span style="font-size:.73rem;color:var(--text-muted)">${icons||'—'} ${(c.contatos||[]).length} contato(s) &nbsp;·&nbsp; 👁️ ${c.scans||0} scan${(c.scans||0)!==1?'s':''}</span>
-        <div class="empresa-actions">
-          <button class="btn btn-secondary btn-sm" style="padding:5px 10px;font-size:.75rem" onclick="openQrModal('${c.id}')">📲 QR</button>
-          <button class="btn btn-secondary btn-icon btn-sm" onclick="renderCartaoEditor('${c.id}','${eid||''}')" title="Editar">✏️</button>
-          <button class="btn btn-secondary btn-icon btn-sm" onclick="window.open('${cardUrl(c.id)}','_blank')" title="Ver">👁️</button>
-          <button class="btn btn-danger btn-icon btn-sm" onclick="showConfirm('Excluir este cartão?',()=>{ deleteCartao('${c.id}'); toast('Cartão excluído'); renderCartoesPage('${eid||''}'); })" title="Excluir">🗑️</button>
-        </div>
-      </div>
-    </div>`; }).join('');
-  app.innerHTML=`${buildSidebar('')}
-  <div class="main-content">
-    <div class="topbar">
-      <button class="menu-btn" onclick="openSidebar()">☰</button>
-      <div><div class="topbar-title">📇 ${emp?esc(emp.name):'Meus Cartões'}</div><div class="topbar-subtitle">${cartoes.length} cartão(ões)</div></div>
-      <div class="topbar-actions">
-        <button class="btn btn-secondary" onclick="renderDashboard()">← Empresas</button>
-        <button class="btn btn-primary" onclick="checkPlanAndCreate('${eid||''}')">➕ Novo Cartão</button>
-      </div>
-    </div>
-    <div class="page-content"><div class="cards-grid">${rows}</div></div>
-  </div>`;
-}
-
-// ── CARTAO EDITOR ─────────────────────────────────────────
-let _contatos=[], _contatos2=[], _urgencia=[], _selectedColor='linear-gradient(135deg,#2563eb,#6366f1)', _editId=null, _editEmpId=null;
-
-function renderCartaoEditor(cartaoId, empresaId){
-  _editId=cartaoId; _editEmpId=empresaId;
-  const ex=cartaoId?getCartao(cartaoId):null;
-  _contatos=ex?(ex.contatos||[]).map(c=>({...c})):[];
-  _contatos2=ex?(ex.contatos2||[]).map(c=>({...c})):[];
-  _urgencia=ex?(ex.urgenciaContatos||[]).map(u=>({...u})):[];
-  _selectedColor=ex?.cor||'linear-gradient(135deg,#2563eb,#6366f1)';
-  const isIdoso=ex?.tipo==='idoso';
-  const empresas=getEmpresas();
-  const empOpts=empresas.map(e=>`<option value="${e.id}" ${ex?.empresaId===e.id?'selected':''}>${esc(e.name)}</option>`).join('');
-  const colors=['linear-gradient(135deg,#2563eb,#6366f1)','linear-gradient(135deg,#16a34a,#15803d)','linear-gradient(135deg,#d97706,#b45309)','linear-gradient(135deg,#dc2626,#b91c1c)','linear-gradient(135deg,#7c3aed,#6d28d9)','linear-gradient(135deg,#0369a1,#0284c7)','linear-gradient(135deg,#db2777,#be185d)','linear-gradient(135deg,#475569,#334155)'];
-  const app=document.getElementById('app'); app.className='';
-  app.innerHTML=`${buildSidebar('')}
-  <div class="main-content">
-    <div class="topbar">
-      <button class="menu-btn" onclick="openSidebar()">☰</button>
-      <div><div class="topbar-title">📝 ${ex?'Editar':'Novo'} Cartão</div><div class="topbar-subtitle">Configure nome, contatos e QR Code</div></div>
-      <div class="topbar-actions">
-        <button class="btn btn-secondary" onclick="renderCartoesPage('${_editEmpId||''}')">← Voltar</button>
-        <button class="btn btn-primary" onclick="saveCartaoForm()">💾 Salvar Cartão</button>
-      </div>
-    </div>
-    <div class="page-content" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
-      <div>
-        <div class="card mb-4">
-          <h3 style="margin-bottom:18px">👤 Dados do Cartão</h3>
-          <div class="form-group">
-            <label class="form-label">Tipo</label>
-            <div style="display:flex;gap:10px">
-              <button id="btn-prof" onclick="setTipo('profissional')" class="btn w-full" style="${!isIdoso?'background:rgba(37,99,235,.1);border:1px solid var(--accent);color:var(--accent)':'background:transparent;border:1px solid var(--border);color:var(--text-secondary)'}">💼 Profissional</button>
-              <button id="btn-idoso" onclick="setTipo('idoso')" class="btn w-full" style="${isIdoso?'background:rgba(220,38,38,.1);border:1px solid var(--danger);color:var(--danger)':'background:transparent;border:1px solid var(--border);color:var(--text-secondary)'}">🧓 Idoso / Emergência</button>
-            </div>
-          </div>
-          <input type="hidden" id="f-tipo" value="${isIdoso?'idoso':'profissional'}">
-          <div class="form-grid">
-            <div class="form-group"><label class="form-label">Nome *</label><input class="form-input" id="f-nome" placeholder="João da Silva" value="${esc(ex?.nome||'')}"></div>
-            <div class="form-group"><label class="form-label">Cargo</label><input class="form-input" id="f-cargo" placeholder="Gerente de Vendas" value="${esc(ex?.cargo||'')}"></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">🔗 Link Personalizado <span style="font-size:.68rem;font-weight:400;color:var(--text-muted)">(opcional — ex: vovozinha)</span></label>
-            <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-size:.78rem;color:var(--text-muted);white-space:nowrap;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm) 0 0 var(--radius-sm);padding:10px 10px 10px 12px">?card=</span>
-              <input class="form-input" id="f-slug" placeholder="vovozinha" style="border-radius:0 var(--radius-sm) var(--radius-sm) 0;border-left:none"
-                value="${esc(ex?.slug||'')}" oninput="validateSlug(this)">
-            </div>
-            <div id="slug-status" style="font-size:.72rem;margin-top:4px"></div>
-          </div>
-          <div class="form-grid">
-            <div class="form-group"><label class="form-label">Empresa vinculada</label><select class="form-select" id="f-eid" onchange="autoFillEmpresa(this)"><option value="">— Nenhuma —</option>${empOpts}</select></div>
-            <div class="form-group"><label class="form-label">Nome (exibição)</label><input class="form-input" id="f-empresa" placeholder="Pastelaria da Vovozinha" value="${esc(ex?.empresa||'')}"></div>
-          </div>
-          <div class="form-group"><label class="form-label">Bio</label><textarea class="form-textarea" id="f-bio" placeholder="Uma breve descrição...">${esc(ex?.bio||'')}</textarea></div>
-          <div class="form-group">
-            <label class="form-label">Foto do Perfil</label>
-            <div style="display:flex;align-items:center;gap:12px">
-              <div id="foto-prev" style="width:64px;height:64px;border-radius:50%;overflow:hidden;border:2px solid var(--border);flex-shrink:0;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;font-size:1.5rem">
-                ${ex?.foto?`<img src="${esc(ex.foto)}" style="width:100%;height:100%;object-fit:cover">`:'📷'}
-              </div>
-              <div style="flex:1">
-                <input class="form-input" id="f-foto" placeholder="URL da foto ou faça upload" value="${esc(ex?.foto||'')}">
-                <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin-top:6px;display:inline-flex">
-                  📷 Upload foto
-                  <input type="file" accept="image/*" onchange="handleFotoUpload('foto')" style="display:none">
-                </label>
-              </div>
-            </div>
-          </div>
-          <div class="form-group"><label class="form-label">Cor</label>
-            <div class="color-picker">${colors.map(bg=>`<div class="color-swatch ${_selectedColor===bg?'selected':''}" style="background:${bg}" onclick="selectColor(this,'${bg}')"></div>`).join('')}</div>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div class="card mb-4">
-          <div class="section-header" style="margin-bottom:10px">
-            <h3>📱 Perfis / Contatos</h3>
-          </div>
-          <div style="display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid var(--border)">
-            <button id="tab-btn-1" onclick="switchEditorTab(1)" style="flex:1;padding:8px;border:none;background:none;font-family:var(--font-body);font-weight:700;font-size:.82rem;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">
-              ✏️ <input id="f-aba1" style="border:none;background:none;font-weight:700;font-size:.82rem;width:90px;color:var(--accent);outline:none;cursor:text" value="${esc(ex?.nomeAba1||'Profissional')}" onclick="event.stopPropagation()">
-            </button>
-            <button id="tab-btn-2" onclick="switchEditorTab(2)" style="flex:1;padding:8px;border:none;background:none;font-family:var(--font-body);font-weight:600;font-size:.82rem;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted)">
-              ✏️ <input id="f-aba2" style="border:none;background:none;font-weight:600;font-size:.82rem;width:80px;color:var(--text-muted);outline:none;cursor:text" value="${esc(ex?.nomeAba2||'Pessoal')}" onclick="event.stopPropagation()">
-            </button>
-          </div>
-          <div id="editor-tab-1">
-            <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn btn-primary btn-sm" onclick="addContato(1)">➕ Adicionar</button></div>
-            <p class="text-sm text-muted" style="margin-bottom:10px">Múltiplos do mesmo tipo. Use o Rótulo para identificar.</p>
-            <div id="contatos-list"></div>
-          </div>
-          <div id="editor-tab-2" style="display:none">
-            <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn btn-primary btn-sm" onclick="addContato(2)">➕ Adicionar</button></div>
-            <p class="text-sm text-muted" style="margin-bottom:10px">Contatos do perfil pessoal.</p>
-            <div id="contatos-list-2"></div>
-          </div>
-        </div>
-        <div class="card" id="urgencia-section" style="${isIdoso?'':'display:none'}">
-          <div class="section-header" style="margin-bottom:14px">
-            <h3 style="color:var(--danger)">🚨 Emergência</h3>
-            <button class="btn btn-sm" style="background:rgba(220,38,38,.1);color:var(--danger);border:1px solid rgba(220,38,38,.25)" onclick="addUrgencia()">➕ Adicionar</button>
-          </div>
-          <div id="urgencia-list"></div>
-        </div>
-      </div>
-    </div>
-  </div>`;
-  renderContatosList(); renderContatosList2(); renderUrgenciaList();
-}
-
-function setTipo(t){
-  document.getElementById('f-tipo').value=t;
-  const isI=t==='idoso';
-  document.getElementById('btn-prof').style.cssText=`background:${isI?'transparent':'rgba(37,99,235,.1)'};border:1px solid ${isI?'var(--border)':'var(--accent)'};color:${isI?'var(--text-secondary)':'var(--accent)'}`;
-  document.getElementById('btn-idoso').style.cssText=`background:${isI?'rgba(220,38,38,.1)':'transparent'};border:1px solid ${isI?'var(--danger)':'var(--border)'};color:${isI?'var(--danger)':'var(--text-secondary)'}`;
-  document.getElementById('urgencia-section').style.display=isI?'':'none';
-}
-function autoFillEmpresa(sel){ const e=getEmpresas().find(x=>x.id===sel.value); if(e) document.getElementById('f-empresa').value=e.name; }
-function selectColor(el,color){ document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected')); el.classList.add('selected'); _selectedColor=color; }
-async function handleFotoUpload(field){
-  const input = event.target;
-  const file = input.files[0]; if(!file) return;
-  const fieldId = field==='banner' ? 'f-banner' : 'f-foto';
-  const prevId  = field==='banner' ? 'banner-prev' : 'foto-prev';
-  const maxW    = field==='banner' ? 800 : 320;
-
-  const reader = new FileReader();
-  reader.onload = async ev => {
-    const inp = document.getElementById(fieldId);
-    if(inp){ inp.value='Comprimindo...'; inp.disabled=true; }
-    // Comprime para caber no Firestore (< 200KB)
-    const compressed = await compressImage(ev.target.result, maxW, 0.75);
-    // Preview
-    const prevEl = document.getElementById(prevId);
-    if(prevEl) prevEl.innerHTML=`<img src="${compressed}" style="width:100%;height:100%;object-fit:cover">`;
-    // Salva no campo
-    if(inp){ inp.value=compressed; inp.disabled=false; }
-    toast('✅ Imagem pronta! ('+Math.round(compressed.length/1024)+'KB)','success');
-  };
-  reader.readAsDataURL(file);
-}
-
-function renderContatosList(){
-  const el=document.getElementById('contatos-list'); if(!el)return;
-  if(_contatos.length===0){ el.innerHTML='<p class="text-sm text-muted" style="padding:12px">Nenhum contato adicionado.</p>'; return; }
-  el.innerHTML=_contatos.map((c,i)=>{
-    const cfg=typeConfig(c.tipo);
-    const opts=Object.entries(CONTACT_TYPES).map(([k,v])=>`<option value="${k}" ${k===c.tipo?'selected':''}>${v.emoji} ${v.label}</option>`).join('');
-    return `<div class="contact-item" id="ci-${c.id}">
-      <div style="display:flex;align-items:center;gap:6px">
-        <div class="contact-type-badge" id="ctb-${c.id}" style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.color};padding:6px 10px"><span id="cti-${c.id}">${cfg.icon}</span></div>
-        <select class="form-select" style="flex:1;padding:7px 8px;font-size:.78rem" onchange="updateContato('${c.id}','tipo',this.value)">${opts}</select>
-      </div>
-      <input class="form-input" placeholder="Rótulo" value="${esc(c.rotulo||cfg.label)}" onchange="updateContato('${c.id}','rotulo',this.value)" style="font-size:.8rem;padding:8px 10px">
-      <input class="form-input" placeholder="Valor" value="${esc(c.valor||'')}" onchange="updateContato('${c.id}','valor',this.value)" style="font-size:.8rem;padding:8px 10px">
-      <button class="contact-remove" onclick="removeContato('${c.id}')">🗑️</button>
-    </div>`;
-  }).join('');
-}
-function updateContato(id,field,val){
-  const c=_contatos.find(x=>x.id===id); if(!c)return; c[field]=val;
-  if(field==='tipo'){ const cfg=typeConfig(val); const el=document.getElementById('cti-'+id); if(el)el.textContent=cfg.emoji;
-    const badge=document.getElementById('ctb-'+id); if(badge){ badge.style.background=cfg.bg; badge.style.borderColor=cfg.border; badge.style.color=cfg.color; } }
-}
-function renderContatosList2(){
-  const el=document.getElementById('contatos-list-2'); if(!el)return;
-  if(_contatos2.length===0){ el.innerHTML='<p class="text-sm text-muted" style="padding:12px">Nenhum contato no perfil pessoal.</p>'; return; }
-  el.innerHTML=_contatos2.map((c)=>{
-    const cfg=typeConfig(c.tipo);
-    const opts=Object.entries(CONTACT_TYPES).map(([k,v])=>`<option value="${k}" ${k===c.tipo?'selected':''}>${v.emoji} ${v.label}</option>`).join('');
-    return `<div class="contact-item" id="ci2-${c.id}">
-      <div style="display:flex;align-items:center;gap:6px">
-        <div class="contact-type-badge" id="ctb2-${c.id}" style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.color};padding:6px 10px"><span id="cti2-${c.id}">${cfg.icon}</span></div>
-        <select class="form-select" style="flex:1;padding:7px 8px;font-size:.78rem" onchange="updateContato2('${c.id}','tipo',this.value)">${opts}</select>
-      </div>
-      <input class="form-input" placeholder="Rótulo" value="${esc(c.rotulo||cfg.label)}" onchange="updateContato2('${c.id}','rotulo',this.value)" style="font-size:.8rem;padding:8px 10px">
-      <input class="form-input" placeholder="Valor" value="${esc(c.valor||'')}" onchange="updateContato2('${c.id}','valor',this.value)" style="font-size:.8rem;padding:8px 10px">
-      <button class="contact-remove" onclick="removeContato2('${c.id}')">🗑️</button>
-    </div>`;
-  }).join('');
-}
-function updateContato2(id,f,v){ const c=_contatos2.find(x=>x.id===id); if(!c)return; c[f]=v; if(f==='tipo'){ const cfg=typeConfig(v); const i=document.getElementById('cti2-'+id); if(i)i.textContent=cfg.emoji; const b=document.getElementById('ctb2-'+id); if(b){b.style.background=cfg.bg;b.style.borderColor=cfg.border;b.style.color=cfg.color;} } }
-function removeContato2(id){ _contatos2=_contatos2.filter(x=>x.id!==id); renderContatosList2(); }
-function addContato(tab=1){
-  if(tab===2){ _contatos2.push({id:genId(),tipo:'whatsapp',rotulo:'WhatsApp',valor:''}); renderContatosList2(); }
-  else { _contatos.push({id:genId(),tipo:'whatsapp',rotulo:'WhatsApp',valor:''}); renderContatosList(); }
-}
-function switchEditorTab(t){
-  document.getElementById('editor-tab-1').style.display=t===1?'':'none';
-  document.getElementById('editor-tab-2').style.display=t===2?'':'none';
-  const btn1=document.getElementById('tab-btn-1'), btn2=document.getElementById('tab-btn-2');
-  if(btn1){ btn1.style.borderBottomColor=t===1?'var(--accent)':'transparent'; btn1.style.color=t===1?'var(--accent)':'var(--text-muted)'; document.getElementById('f-aba1').style.color=t===1?'var(--accent)':'var(--text-muted)'; }
-  if(btn2){ btn2.style.borderBottomColor=t===2?'var(--accent)':'transparent'; btn2.style.color=t===2?'var(--accent)':'var(--text-muted)'; document.getElementById('f-aba2').style.color=t===2?'var(--accent)':'var(--text-muted)'; }
-}
-function removeContato(id){ _contatos=_contatos.filter(x=>x.id!==id); renderContatosList(); }
-
-function renderUrgenciaList(){
-  const el=document.getElementById('urgencia-list'); if(!el)return;
-  if(_urgencia.length===0){ el.innerHTML='<p class="text-sm text-muted" style="padding:12px">Nenhum contato de emergência.</p>'; return; }
-  el.innerHTML=_urgencia.map(u=>`<div class="contact-item" style="grid-template-columns:60px 1fr 1fr auto" id="ui-${u.id}">
-    <input class="form-input" placeholder="🚑" value="${esc(u.icone||'')}" onchange="updateUrgencia('${u.id}','icone',this.value)" style="font-size:.82rem;padding:8px;text-align:center">
-    <input class="form-input" placeholder="Nome (ex: Filho João)" value="${esc(u.nome||'')}" onchange="updateUrgencia('${u.id}','nome',this.value)" style="font-size:.82rem;padding:8px 10px">
-    <input class="form-input" placeholder="Número (11999990000)" value="${esc(u.numero||'')}" onchange="updateUrgencia('${u.id}','numero',this.value)" style="font-size:.82rem;padding:8px 10px">
-    <button class="contact-remove" onclick="removeUrgencia('${u.id}')">🗑️</button>
-  </div>`).join('');
-}
-function updateUrgencia(id,f,v){ const u=_urgencia.find(x=>x.id===id); if(u)u[f]=v; }
-function addUrgencia(){ _urgencia.push({id:genId(),icone:'📞',nome:'',numero:''}); renderUrgenciaList(); }
-function removeUrgencia(id){ _urgencia=_urgencia.filter(x=>x.id!==id); renderUrgenciaList(); }
-
-function saveCartaoForm(){
-  const nome=document.getElementById('f-nome').value.trim();
-  if(!nome){ toast('Informe o nome!','error'); return; }
-  const cartao={
-    id:_editId||genId(),
-    empresaId:document.getElementById('f-eid').value||_editEmpId||null,
-    nome, cargo:document.getElementById('f-cargo').value.trim(),
-    empresa:document.getElementById('f-empresa').value.trim(),
-    bio:document.getElementById('f-bio').value.trim(),
-    foto:document.getElementById('f-foto').value.trim(),
-    cor:_selectedColor,
-    slug:(()=>{ const s=document.getElementById('f-slug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,40); return s||''; })(),
-    tipo:document.getElementById('f-tipo').value,
-    contatos:_contatos.filter(c=>c.valor||c.tipo==='site'),
-    contatos2:_contatos2.filter(c=>c.valor||c.tipo==='site'),
-    nomeAba1:document.getElementById('f-aba1')?.value.trim()||'Profissional',
-    nomeAba2:document.getElementById('f-aba2')?.value.trim()||'Pessoal',
-    urgenciaContatos:_urgencia.filter(u=>u.nome||u.numero),
-    createdAt:_editId?getCartao(_editId)?.createdAt:Date.now()
-  };
-  saveCartao(cartao);
-  toast('Cartão salvo com sucesso! 🎉');
-  renderCartoesPage(_editEmpId||cartao.empresaId||null);
-}
-
-// ── QR MODAL ──────────────────────────────────────────────
-async function openQrModal(cartaoId){
-  const c=getCartao(cartaoId); if(!c){ toast('Cartão não encontrado','error'); return; }
-  const url=cardUrl(cartaoId);
-  const ov=openModal(`
-    <div class="modal-header"><h3 class="modal-title">📲 QR Code</h3><button class="modal-close">×</button></div>
-    <div style="text-align:center">
-      <p style="color:var(--text-secondary);margin-bottom:4px">Cartão de <strong style="color:var(--text-primary)">${esc(c.nome)}</strong></p>
-      <div class="qr-canvas-wrapper"><canvas id="qr-cv"></canvas></div>
-      <div class="qr-url">${esc(url)}</div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-secondary" onclick="copyLink('${esc(url)}')">📋 Copiar Link</button>
-        <button class="btn btn-secondary" onclick="printQr('${esc(c.nome)}','${esc(c.cargo||'')}','${esc(c.empresa||'')}','${esc(url)}')">🖨️ Imprimir</button>
-        <a href="${esc(url)}" target="_blank" class="btn btn-primary">🌐 Abrir</a>
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:16px;font-size:.72rem;color:var(--text-muted)">Escaneie para abrir no celular</div>`);
-  if(typeof QRCode!=='undefined'){
-    await QRCode.toCanvas(document.getElementById('qr-cv'),url,{width:220,margin:2,color:{dark:'#000000',light:'#ffffff'}});
-  }
-}
-async function copyLink(url){ try{ await navigator.clipboard.writeText(url); toast('Link copiado! 📋'); }catch{ toast('Não foi possível copiar','error'); } }
-function printQr(nome,cargo,empresa,url){
-  const cv=document.getElementById('qr-cv'); const img=cv?cv.toDataURL():'';
-  const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><title>QR - ${nome}</title><style>body{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;background:#fff}img{width:240px;height:240px}h2{margin:16px 0 4px}p{color:#555;font-size:.85rem;margin:2px 0}.url{font-size:.7rem;color:#888;margin-top:12px;word-break:break-all;max-width:280px;text-align:center}@media print{body{-webkit-print-color-adjust:exact}}</style></head><body><img src="${img}"><h2>${nome}</h2>${cargo?`<p>${cargo}</p>`:''} ${empresa?`<p style="color:#2563eb">${empresa}</p>`:''}<div class="url">${url}</div><script>window.onload=()=>window.print()<\/script></body></html>`);
-  w.document.close();
-}
-
-// ── PERFIL PAGE ───────────────────────────────────────────
-function renderPerfilPage(){
-  const app=document.getElementById('app'); app.className='';
-  const u=getUser();
-  app.innerHTML=`${buildSidebar('perfil')}
-  <div class="main-content">
-    <div class="topbar">
-      <button class="menu-btn" onclick="openSidebar()">☰</button>
-      <div><div class="topbar-title">👤 Perfil Master</div><div class="topbar-subtitle">Dados do administrador</div></div>
-      <div class="topbar-actions">
-        <button class="btn btn-secondary" onclick="renderDashboard()">← Empresas</button>
-        <button class="btn btn-primary" onclick="savePerfilForm()">💾 Salvar Perfil</button>
-      </div>
-    </div>
-    <div class="page-content" style="max-width:640px">
-      <div class="card">
-        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)">
-          <div id="p-avatar" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#fff;flex-shrink:0">${initials(u.name||'U')}</div>
-          <div><div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700">${esc(u.name||'Usuário WYC')}</div><div style="font-size:.8rem;color:var(--text-muted)">Administrador · Wyc Connect</div></div>
-        </div>
-        <div class="form-grid">
-          <div class="form-group"><label class="form-label">Nome *</label><input class="form-input" id="p-nome" value="${esc(u.name||'')}"></div>
-          <div class="form-group"><label class="form-label">E-mail</label><input class="form-input" id="p-email" type="email" value="${esc(u.email||'')}"></div>
-        </div>
-        <div class="form-grid">
-          <div class="form-group"><label class="form-label">CPF / Documento</label><input class="form-input" id="p-doc" value="${esc(u.documento||'')}"></div>
-          <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" id="p-tel" value="${esc(u.telefone||'')}"></div>
-        </div>
-        <div class="form-grid">
-          <div class="form-group"><label class="form-label">Empresa</label><input class="form-input" id="p-emp" value="${esc(u.empresa||'')}"></div>
-          <div class="form-group"><label class="form-label">CNPJ</label><input class="form-input" id="p-cnpj" value="${esc(u.cnpj||'')}"></div>
-        </div>
-        <div class="form-group"><label class="form-label">Observações</label><textarea class="form-textarea" id="p-obs">${esc(u.obs||'')}</textarea></div>
-      </div>
-      <div class="card" style="margin-top:16px">
-        <h3 style="margin-bottom:16px">🔐 Alterar Senha</h3>
-        <div class="form-grid">
-          <div class="form-group"><label class="form-label">Nova Senha</label><input class="form-input" id="p-nova" type="password" placeholder="Mínimo 6 caracteres"></div>
-          <div class="form-group"><label class="form-label">Confirmar</label><input class="form-input" id="p-conf" type="password" placeholder="Repita a senha"></div>
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="changePassword()">🔑 Alterar Senha</button>
-      </div>
-    </div>
-  </div>`;
-}
-function savePerfilForm(){
-  const nome=document.getElementById('p-nome').value.trim();
-  if(!nome){ toast('Informe seu nome','error'); return; }
-  saveUser({name:nome,email:document.getElementById('p-email').value.trim(),documento:document.getElementById('p-doc').value.trim(),telefone:document.getElementById('p-tel').value.trim(),empresa:document.getElementById('p-emp').value.trim(),cnpj:document.getElementById('p-cnpj').value.trim(),obs:document.getElementById('p-obs').value.trim()});
-  toast('Perfil salvo! ✅');
-  document.getElementById('p-avatar').textContent=initials(nome);
-}
-async function changePassword(){
-  const nova=document.getElementById('p-nova').value;
-  const conf=document.getElementById('p-conf').value;
-  if(!nova||nova.length<6){ toast('Mínimo 6 caracteres','error'); return; }
-  if(nova!==conf){ toast('Senhas não conferem','error'); return; }
-  const hash=await hashPassword(nova);
-  const cfg=getAuthConfig()||{};
-  saveAuthConfig({...cfg,hash});
-  document.getElementById('p-nova').value=''; document.getElementById('p-conf').value='';
-  toast('Senha alterada! 🔐');
-}
-
-// ── PLANOS ────────────────────────────────────────────────
-function renderPlanos(){
-  const app=document.getElementById('app'); app.className='';
-  const cfg=getPlanConfig();
-  const empresas=getEmpresas();
-  const cartoes=getCartoes();
-
-  const PLAN_INFO={
-    free:  {icon:'🆓', color:'#64748b', bg:'rgba(100,116,139,.08)', border:'rgba(100,116,139,.25)', name:'Free'},
-    pro:   {icon:'⭐', color:'#2563eb', bg:'rgba(37,99,235,.08)',   border:'rgba(37,99,235,.25)',   name:'Pro'},
-    business:{icon:'💎',color:'#7c3aed', bg:'rgba(124,58,237,.08)',  border:'rgba(124,58,237,.25)',  name:'Business'}
-  };
-
-  // Count empresas per plan
-  const counts={free:0,pro:0,business:0};
-  empresas.forEach(e=>{ const p=e.plano||'free'; counts[p]=(counts[p]||0)+1; });
-
-  // Build plan config cards
-  const planCards = Object.entries(PLAN_INFO).map(([key,info])=>`
-    <div style="border:2px solid ${info.border};border-radius:var(--radius-lg);padding:24px;background:${info.bg}">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:1.8rem">${info.icon}</span>
-          <div>
-            <div style="font-family:var(--font-display);font-weight:700;font-size:1.1rem;color:var(--text-primary)">${info.name}</div>
-            <div style="font-size:.75rem;color:var(--text-muted)">${counts[key]} empresa(s) neste plano</div>
-          </div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-family:var(--font-display);font-size:1.4rem;font-weight:800;color:${info.color}">
-            ${cfg[key].price===0?'Grátis':'R$ '+cfg[key].price+'/mês'}
-          </div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-        <div>
-          <label style="display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px">Limite de Cartões</label>
-          <div style="display:flex;align-items:center;gap:8px">
-            <input type="number" class="form-input" id="limit-${key}" value="${cfg[key].limit===999?'∞':cfg[key].limit}"
-              style="width:100px;text-align:center;font-size:1rem;font-weight:700"
-              placeholder="999=ilimitado" min="1">
-            ${key==='business'?'<span style="font-size:.72rem;color:var(--text-muted)">999 = ilimitado</span>':''}
-          </div>
-        </div>
-        <div>
-          <label style="display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px">Preço (R$/mês)</label>
-          <input type="number" class="form-input" id="price-${key}" value="${cfg[key].price}"
-            style="width:100px;text-align:center;font-size:1rem;font-weight:700" min="0">
-        </div>
-      </div>
-      <button class="btn btn-sm" style="background:${info.color};color:#fff;border:none;box-shadow:0 2px 8px ${info.border}"
-        onclick="savePlanLimit('${key}')">💾 Salvar alterações</button>
-    </div>`).join('');
-
-  // Build empresa plan table
-  const empRows = empresas.length===0
-    ? '<p class="text-muted text-sm" style="padding:16px">Nenhuma empresa cadastrada.</p>'
-    : empresas.map(e=>{
-        const p=e.plano||'free';
-        const info=PLAN_INFO[p];
-        const cnt=cartoes.filter(c=>c.empresaId===e.id).length;
-        const lim=cfg[p]?.limit||1;
-        const pct=Math.min(100,Math.round((cnt/lim)*100));
-        return `
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
-          <div style="width:36px;height:36px;border-radius:8px;background:${e.logo?'#f8faff':'linear-gradient(135deg,var(--accent),var(--accent-2))'};display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:.8rem;flex-shrink:0;overflow:hidden">${e.logo?`<img src="${esc(e.logo)}" style="width:100%;height:100%;object-fit:contain;padding:3px">`:initials(e.name)}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.name)}</div>
-            <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-              <div style="flex:1;height:5px;background:var(--border);border-radius:99px;overflow:hidden">
-                <div style="width:${pct}%;height:100%;background:${info.color};border-radius:99px;transition:width .3s"></div>
-              </div>
-              <span style="font-size:.68rem;color:var(--text-muted);white-space:nowrap">${cnt}/${lim===999?'∞':lim}</span>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span style="font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:99px;border:1px solid ${info.border};color:${info.color};background:${info.bg}">${info.icon} ${info.name}</span>
-            <select class="form-select" style="padding:5px 8px;font-size:.78rem;width:120px" onchange="changeEmpresaPlan('${e.id}',this.value)">
-              ${Object.entries(PLAN_INFO).map(([k,i])=>`<option value="${k}" ${k===p?'selected':''}>${i.icon} ${i.name}</option>`).join('')}
-            </select>
-          </div>
-        </div>`;
-      }).join('');
-
-  app.innerHTML=`${buildSidebar('planos')}
-  <div class="main-content">
-    <div class="topbar">
-      <button class="menu-btn" onclick="openSidebar()">☰</button>
-      <div><div class="topbar-title">💎 Gestão de Planos</div><div class="topbar-subtitle">Configure limites e preços por plano</div></div>
-      <div class="topbar-actions">
-        <button class="btn btn-secondary" onclick="renderDashboard()">← Empresas</button>
-      </div>
-    </div>
-    <div class="page-content">
-
-      <!-- Plan Config Cards -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-bottom:28px">
-        ${planCards}
+      <div class="hero-benefits">
+        <span>✔ Descubra <span class="tip" data-tip="Licitação = processo oficial onde o governo compra produtos ou serviços de empresas privadas, com regras públicas e transparentes.">licitações</span> abertas automaticamente</span>
+        <span>✔ Evite perder prazos e oportunidades</span>
+        <span>✔ Comece mesmo sem experiência</span>
       </div>
 
-      <!-- Empresa Table -->
-      <div class="card">
-        <h3 style="margin-bottom:4px">🏢 Plano por Empresa</h3>
-        <p class="text-sm text-muted" style="margin-bottom:16px">Altere o plano de cada empresa individualmente.</p>
-        ${empRows}
-      </div>
-
-    </div>
-  </div>`;
-}
-
-function savePlanLimit(key){
-  const cfg = getPlanConfig();
-  const limitVal = parseInt(document.getElementById('limit-'+key)?.value)||1;
-  const priceVal = parseInt(document.getElementById('price-'+key)?.value)||0;
-  cfg[key] = { limit: limitVal, price: priceVal };
-  savePlanConfig(cfg);
-  toast('Plano '+key+' atualizado! 💾');
-  renderPlanos();
-}
-
-function changeEmpresaPlan(empId, newPlan){
-  const d = loadData();
-  const e = d.empresas.find(x=>x.id===empId);
-  if(!e) return;
-  e.plano = newPlan;
-  saveAndSync(d);
-  toast('Plano atualizado para '+newPlan+'! ✅');
-  // Rebuid just the empresa rows without full re-render
-  setTimeout(()=>renderPlanos(), 300);
-}
-
-// ── ANALYTICS ─────────────────────────────────────────────
-function renderAnalytics(){
-  const app=document.getElementById('app'); app.className='';
-  const empresas=getEmpresas();
-  const cartoes=getCartoes();
-  const totalScans=cartoes.reduce((s,c)=>s+(c.scans||0),0);
-  const topCartoes=[...cartoes].sort((a,b)=>(b.scans||0)-(a.scans||0)).slice(0,10);
-
-  // Build per-empresa stats
-  const empStats=empresas.map(e=>{
-    const ec=cartoes.filter(c=>c.empresaId===e.id);
-    const scans=ec.reduce((s,c)=>s+(c.scans||0),0);
-    return {...e, cartoes:ec, totalScans:scans};
-  }).sort((a,b)=>b.totalScans-a.totalScans);
-
-  function fmtDate(ts){ if(!ts)return '—'; return new Date(ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
-
-  // Build scan history chart data (last 14 days)
-  const days=14;
-  const dayLabels=[];
-  const dayData=[];
-  for(let i=days-1;i>=0;i--){
-    const d=new Date(); d.setDate(d.getDate()-i);
-    dayLabels.push(d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}));
-    const start=new Date(d); start.setHours(0,0,0,0);
-    const end=new Date(d); end.setHours(23,59,59,999);
-    let count=0;
-    cartoes.forEach(c=>(c.scanLog||[]).forEach(s=>{ if(s.ts>=start.getTime()&&s.ts<=end.getTime()) count++; }));
-    dayData.push(count);
-  }
-  const maxDay=Math.max(...dayData,1);
-
-  const empresaRows=empStats.length===0?'<p class="text-muted text-sm" style="padding:20px">Nenhuma empresa cadastrada.</p>':
-    empStats.map(e=>`
-    <div style="margin-bottom:16px;padding:16px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-md)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:36px;height:36px;border-radius:8px;background:${e.logo?'#f8faff':'linear-gradient(135deg,var(--accent),var(--accent-2))'};display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:.85rem;overflow:hidden">${e.logo?`<img src="${esc(e.logo)}" style="width:100%;height:100%;object-fit:contain;padding:3px">`:initials(e.name)}</div>
-          <div><div style="font-weight:700;font-size:.92rem">${esc(e.name)}</div><div style="font-size:.72rem;color:var(--text-muted)">${e.cartoes.length} cartão(ões)</div></div>
-        </div>
-        <div style="text-align:right"><div style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--accent)">${e.totalScans}</div><div style="font-size:.68rem;color:var(--text-muted)">scans totais</div></div>
-      </div>
-      ${e.cartoes.map(c=>`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-secondary);border-radius:8px;margin-bottom:6px">
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="width:28px;height:28px;border-radius:50%;background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'};display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0">
-              ${c.foto?`<img src="${esc(c.foto)}" style="width:100%;height:100%;object-fit:cover">`:initials(c.nome||'?')}
-            </div>
-            <div>
-              <div style="font-size:.82rem;font-weight:600">${esc(c.nome||'Sem nome')}</div>
-              <div style="font-size:.68rem;color:var(--text-muted)">Último scan: ${fmtDate(c.lastScan)}</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="text-align:right;min-width:40px">
-              <div style="font-weight:700;font-size:.92rem;color:var(--accent)">${c.scans||0}</div>
-              <div style="font-size:.65rem;color:var(--text-muted)">scans</div>
-            </div>
-            <div style="width:60px;height:6px;background:var(--border);border-radius:99px;overflow:hidden">
-              <div style="width:${totalScans>0?Math.round(((c.scans||0)/totalScans)*100):0}%;height:100%;background:var(--accent);border-radius:99px"></div>
-            </div>
-          </div>
-        </div>`).join('')}
-    </div>`).join('');
-
-  // Mini bar chart SVG
-  const barW=Math.floor(520/days)-2;
-  const bars=dayData.map((v,i)=>{
-    const h=Math.max(4,Math.round((v/maxDay)*60));
-    return `<g><rect x="${i*(barW+2)}" y="${60-h}" width="${barW}" height="${h}" rx="3" fill="${v>0?'#2563eb':'#e2e8f0'}"/>${v>0?`<text x="${i*(barW+2)+barW/2}" y="76" text-anchor="middle" font-size="7" fill="#94a3b8">${dayLabels[i]}</text>`:`<text x="${i*(barW+2)+barW/2}" y="76" text-anchor="middle" font-size="7" fill="#cbd5e1">${dayLabels[i]}</text>`}</g>`;
-  }).join('');
-
-  app.innerHTML=`${buildSidebar('analytics')}
-  <div class="main-content">
-    <div class="topbar">
-      <button class="menu-btn" onclick="openSidebar()">☰</button>
-      <div><div class="topbar-title">📊 Analytics</div><div class="topbar-subtitle">Scans de QR Code por empresa e cartão</div></div>
-      <div class="topbar-actions">
-        <button class="btn btn-secondary" onclick="exportCSV()">⬇️ Exportar CSV</button>
-        <button class="btn btn-secondary" onclick="renderDashboard()">← Empresas</button>
-      </div>
-    </div>
-    <div class="page-content">
-
-      <!-- KPI cards -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-bottom:24px">
-        <div class="card" style="text-align:center;padding:20px 16px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${totalScans}</div>
-          <div style="font-size:.78rem;color:var(--text-muted);margin-top:4px">Total de Scans</div>
-        </div>
-        <div class="card" style="text-align:center;padding:20px 16px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${cartoes.length}</div>
-          <div style="font-size:.78rem;color:var(--text-muted);margin-top:4px">Cartões Ativos</div>
-        </div>
-        <div class="card" style="text-align:center;padding:20px 16px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${empresas.length}</div>
-          <div style="font-size:.78rem;color:var(--text-muted);margin-top:4px">Empresas</div>
-        </div>
-        <div class="card" style="text-align:center;padding:20px 16px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${dayData.slice(-7).reduce((a,b)=>a+b,0)}</div>
-          <div style="font-size:.78rem;color:var(--text-muted);margin-top:4px">Scans (7 dias)</div>
-        </div>
-      </div>
-
-      <!-- Chart -->
-      <div class="card" style="margin-bottom:24px">
-        <h3 style="margin-bottom:16px">📈 Scans por dia (últimos 14 dias)</h3>
-        <div style="overflow-x:auto">
-          <svg viewBox="0 0 ${days*(barW+2)} 80" style="width:100%;min-width:300px;height:90px">${bars}</svg>
-        </div>
-      </div>
-
-      <!-- Per empresa -->
-      <div class="card">
-        <h3 style="margin-bottom:16px">🏢 Detalhamento por Empresa</h3>
-        ${empresaRows}
-      </div>
-
-    </div>
-  </div>`;
-
-  // Wire sidebar nav
-  document.querySelectorAll('[data-page=empresas],[onclick*="renderDashboard"]').forEach(el=>{
-    if(el.getAttribute('onclick')==='renderDashboard()') el.onclick=()=>renderDashboard();
-  });
-}
-
-function exportCSV(){
-  const cartoes=getCartoes();
-  const empresas=getEmpresas();
-  const rows=[['Empresa','Cartão','Cargo','Tipo','Scans','Último Scan']];
-  cartoes.forEach(c=>{
-    const e=empresas.find(x=>x.id===c.empresaId);
-    rows.push([
-      e?.name||'—',
-      c.nome||'—',
-      c.cargo||'—',
-      c.tipo||'profissional',
-      c.scans||0,
-      c.lastScan?new Date(c.lastScan).toLocaleString('pt-BR'):'—'
-    ]);
-  });
-  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='wyc-connect-analytics-'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click();
-  toast('CSV exportado! ⬇️');
-}
-
-// GitHub Setup removido — usando Firebase
-function renderGHSetup(onDone){ if(onDone) onDone(); }
-
-// ── PUBLIC CARD ───────────────────────────────────────────
-function buildVCard(c){
-  const lines=['BEGIN:VCARD','VERSION:3.0'];
-  lines.push('FN:'+( c.nome||''));
-  if(c.cargo) lines.push('TITLE:'+c.cargo);
-  if(c.empresa) lines.push('ORG:'+c.empresa);
-  (c.contatos||[]).forEach(ct=>{
-    if(ct.tipo==='email')    lines.push('EMAIL:'+ct.valor);
-    if(ct.tipo==='telefone') lines.push('TEL:'+ct.valor);
-    if(ct.tipo==='whatsapp') lines.push('TEL;TYPE=CELL:'+ct.valor);
-    if(ct.tipo==='site')     lines.push('URL:'+ct.valor);
-  });
-  if(c.bio) lines.push('NOTE:'+c.bio);
-  lines.push('END:VCARD');
-  return lines.join('\n');
-}
-
-function downloadVCard(cardId){
-  const c=getCartao(cardId); if(!c) return;
-  const blob=new Blob([buildVCard(c)],{type:'text/vcard'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=(c.nome||'contato').replace(/\s+/g,'_')+'.vcf';
-  a.click();
-}
-
-function switchPublicTab(t){
-  document.getElementById('pub-contacts-1').style.display=t===1?'flex':'none';
-  const c2=document.getElementById('pub-contacts-2');
-  if(c2) c2.style.display=t===2?'flex':'none';
-  const t1=document.getElementById('ptab1'), t2=document.getElementById('ptab2');
-  if(t1){t1.classList.toggle('active',t===1);}
-  if(t2){t2.classList.toggle('active',t===2);}
-}
-async function shortenUrl(url){
-  try{
-    const r=await fetchWithTimeout('https://tinyurl.com/api-create.php?url='+encodeURIComponent(url),4000);
-    if(r.ok){const t=await r.text();if(t.startsWith('http'))return t.trim();}
-  }catch{}
-  return url;
-}
-
-async function shareCard(cardId){
-  const c=getCartao(cardId); if(!c) return;
-  const url=await shortenUrl(cardUrl(cardId));
-  const text=(c.nome||'')+(c.empresa?' — '+c.empresa:'');
-  if(navigator.share){
-    try{await navigator.share({title:c.nome,text,url});return;}catch(e){if(e.name==='AbortError')return;}
-  }
-  try{await navigator.clipboard.writeText(url);toast('Link copiado! 📋');}catch{toast('Não foi possível compartilhar','error');}
-}
-
-function maybeShowInstallBanner(){
-  if(sessionStorage.getItem('wyc_nb')) return '';
-  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isAndroid=/android/i.test(navigator.userAgent);
-  const isStandalone=window.matchMedia('(display-mode:standalone)').matches||navigator.standalone;
-  if(isStandalone) return ''; // já é app, não mostra
-  if(!isIOS&&!isAndroid) return ''; // desktop, não mostra
-  const tip=isIOS
-    ?'<strong>💡 Dica:</strong> Toque em <strong>⬆️ Compartilhar</strong> (botão inferior do Safari) → <strong>"Adicionar à Tela de Início"</strong> para abrir sem barra de endereço'
-    :'<strong>💡 Dica:</strong> No Chrome, toque nos <strong>3 pontinhos (⋮)</strong> no canto superior direito → <strong>"Adicionar à tela inicial"</strong> para abrir como app';
-  return `<div class="install-banner"><div class="install-banner-text">${tip}</div><button class="install-banner-close" onclick="sessionStorage.setItem('wyc_nb','1');this.closest('.install-banner').remove()">✕</button></div>`;
-}
-
-function renderPublicCard(cardId){
-  const app=document.getElementById('app'); app.className='fullscreen';
-  document.body.style.margin='0'; document.body.style.padding='0';
-  const c=getCartao(cardId);
-  if(!c){
-    app.innerHTML=`<div class="public-card-wrapper"><div class="public-card"><div class="public-card-header" style="padding:48px 28px"><div style="font-size:4rem;margin-bottom:16px">😕</div><div class="public-card-name">Cartão não encontrado</div><p class="public-card-bio">Este cartão pode ter sido removido ou o link está incorreto.</p></div><div class="public-card-footer"><span>Powered by</span><strong style="color:#60a5fa">Wyc Connect</strong></div></div></div>`;
-    return;
-  }
-
-  // Register scan — fire and forget, nunca bloqueia o render
-  setTimeout(()=>registerScan(cardId), 100);
-
-  const isIdoso=c.tipo==='idoso';
-  const scans=c.scans||0;
-
-  const buildContactBtns = (list) => (list||[]).map(ct=>{
-    const cfg  = typeConfig(ct.tipo);
-    const href = buildHref(ct.tipo, ct.valor);
-    return `<a href="${esc(href)}" target="_blank" rel="noopener" class="public-contact-btn"
-      style="background:${cfg.bg};border:none;color:#fff">
-      <span style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;flex-shrink:0;color:#fff">${BRAND_ICONS[cfg.icon]||''}</span>
-      <span style="font-size:.92rem;font-weight:700;flex:1;color:#fff">${esc(ct.rotulo||cfg.label)}</span>
-      <span style="opacity:.7;font-size:.85rem;color:#fff">→</span>
-    </a>`;
-  }).join('');
-  const contatos=buildContactBtns(c.contatos);
-  const contatos2=buildContactBtns(c.contatos2);
-  const hasMultiProfile = (c.contatos2||[]).length>0;
-  const aba1=c.nomeAba1||'Profissional';
-  const aba2=c.nomeAba2||'Pessoal';
-
-  const urgencia=c.urgenciaContatos||[];
-  const urgHtml=isIdoso?`<div style="padding:0 20px 20px"><div style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f87171;margin-bottom:10px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#f87171;display:inline-block;animation:pulse 1.5s infinite"></span>EMERGÊNCIA</div>${(urgencia.length>0?urgencia:[{icone:'🚑',nome:'SAMU',numero:'192'},{icone:'🚒',nome:'Bombeiros',numero:'193'},{icone:'🚓',nome:'Polícia',numero:'190'}]).map(u=>`<a href="tel:${esc(u.numero)}" class="public-contact-btn" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171;margin-bottom:8px"><span class="public-contact-icon">${esc(u.icone||'📞')}</span><span class="public-contact-label">${esc(u.nome)}<span class="public-contact-sublabel">${esc(u.numero)}</span></span><span style="font-size:.72rem;background:rgba(239,68,68,.2);padding:2px 8px;border-radius:99px;font-weight:700">LIGAR</span></a>`).join('')}</div>`:'';
-
-  const emp = loadData().empresas.find(x=>x.id===c.empresaId);
-  const avatarHtml=c.foto
-    ?`<img src="${esc(c.foto)}" class="public-card-avatar" alt="${esc(c.nome)}">`
-    :emp?.logo
-      ?`<img src="${esc(emp.logo)}" class="public-card-avatar" alt="${esc(emp.name)}" style="object-fit:contain;padding:6px;background:#fff">`
-      :`<div class="public-card-avatar-placeholder" style="background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'}">${initials(c.nome||'?')}</div>`;
-
-  const bannerHtml=c.banner
-    ?`<img src="${esc(c.banner)}" class="public-card-banner" alt="banner">`
-    :`<div class="public-card-banner-placeholder" style="background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'}"></div>`;
-
-  const tag=isIdoso
-    ?`<div class="public-card-tag" style="background:rgba(239,68,68,.2);color:#fca5a5;border-color:rgba(239,68,68,.4)">🧓 IDOSO</div>`
-    :`<div class="public-card-tag">✅ PROFISSIONAL</div>`;
-
-  app.innerHTML=`<div class="public-card-wrapper"><div class="public-card">
-    ${bannerHtml}
-    <div class="public-card-header" style="padding-top:${c.banner?'16px':'36px'}">
-      ${tag}
-      ${scans>0?`<div class="scan-badge">👁️ ${scans} visualização${scans>1?'s':''}</div>`:''}
-      ${avatarHtml}
-      <div class="public-card-name">${esc(c.nome||'Sem nome')}</div>
-      ${c.cargo?`<div class="public-card-company">${esc(c.cargo)}</div>`:''}
-      ${c.empresa?`<div class="public-card-company" style="color:#60a5fa">${esc(c.empresa)}</div>`:''}
-      ${c.bio?`<div class="public-card-bio">${esc(c.bio)}</div>`:''}
-    </div>
-    ${hasMultiProfile?`
-    <div class="profile-tabs">
-      <button class="profile-tab active" id="ptab1" onclick="switchPublicTab(1)">${esc(aba1)}</button>
-      <button class="profile-tab" id="ptab2" onclick="switchPublicTab(2)">${esc(aba2)}</button>
-    </div>`:''}
-    <div class="public-card-contacts" id="pub-contacts-1">${contatos||'<p style="text-align:center;color:#475569;font-size:.82rem">Nenhum contato cadastrado</p>'}</div>
-    ${hasMultiProfile?`<div class="public-card-contacts" id="pub-contacts-2" style="display:none">${contatos2||'<p style="text-align:center;color:#475569;font-size:.82rem">Nenhum contato no perfil pessoal</p>'}</div>`:''}
-    ${urgHtml}
-    <div class="public-card-actions">
-      <button class="public-action-btn" onclick="downloadVCard('${cardId}')">📲 Salvar Contato</button>
-      <button class="public-action-btn" onclick="shareCard('${cardId}')">🔗 Compartilhar</button>
-    </div>
-    ${maybeShowInstallBanner()}
-    <div class="public-card-footer" style="flex-direction:column;gap:8px">
-      <div>🔐 Cartão verificado &nbsp;<strong style="color:#60a5fa">Wyc Connect</strong></div>
-      <a href="https://wa.me/5519990143009" target="_blank" rel="noopener"
-         style="display:inline-flex;align-items:center;gap:6px;color:#4ade80;font-size:.7rem;font-weight:600;text-decoration:none;transition:opacity .2s"
-         onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">
-        💬 Desenvolvido por Wyc Consultoria
+      <a class="btn" href="sistemas.html#extrator">
+        Ver licitações agora
       </a>
     </div>
-  </div></div>`;
+
+    <img src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=900&auto=format&q=80"
+         alt="Equipe analisando documentos">
+
+  </div>
+</header>
+
+<!-- URGÊNCIA -->
+<section style="background:#fff;padding:40px 8%;text-align:center;border-bottom:1px solid #e8f0f7;">
+  <h2 style="font-size:1.6rem;margin-bottom:12px;color:#001450;">
+    Você está perdendo licitações todos os dias sem saber
+  </h2>
+  <p style="max-width:600px;margin:auto;color:#5a7a92;font-size:1rem;line-height:1.7;">
+    Empresas deixam de faturar com o governo por não encontrar editais a tempo.
+    Nós resolvemos isso para você — com tecnologia e consultoria especializada.
+  </p>
+</section>
+
+<!-- ABOUT -->
+<section id="sobre" class="reveal">
+  <div class="about">
+
+    <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=700&auto=format&q=80"
+         alt="Consultor">
+
+    <div>
+      <h2>Consultoria focada em resultados</h2>
+      <p>Nossa metodologia combina análise estratégica, organização documental e acompanhamento
+         especializado para aumentar a competitividade das empresas no mercado público.</p>
+
+      <p style="margin-top:12px">
+        Atuamos lado a lado com a empresa para estruturar participação em licitações com
+        segurança, estratégia e previsibilidade financeira.
+      </p>
+
+      <ul style="margin-top:15px;line-height:1.8">
+        <li>Diagnóstico da empresa para atuação em licitações</li>
+        <li>Mapeamento de oportunidades no mercado público</li>
+        <li>Análise técnica de editais</li>
+        <li>Planejamento estratégico de participação</li>
+        <li>Acompanhamento especializado em processos</li>
+      </ul>
+
+      <div class="stats">
+        <div class="stat">
+          <strong class="counter" data-target="+200">0</strong>
+          editais analisados mensalmente
+        </div>
+        <div class="stat">
+          <strong class="counter" data-target="10">0</strong>
+          empresas atendidas
+        </div>
+        <div class="stat">
+          <strong>R$ 1 milhão</strong>
+          em contratos
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="servicos" class="reveal">
+  <h2>Serviços estratégicos</h2>
+
+  <div style="display:grid;grid-template-columns:1.1fr 1.3fr;gap:50px;align-items:center;margin-top:25px">
+
+    <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=900&auto=format&q=80"
+         style="width:100%;max-width:520px;border-radius:16px;box-shadow:0 18px 45px rgba(0,0,0,.18)"
+         alt="Análise de documentos e estratégia">
+
+    <div style="display:grid;grid-template-columns:1fr;gap:22px">
+
+      <div class="card" style="padding:28px 32px">
+        <h3 style="font-size:1.2rem">Análise de Editais</h3>
+        <p style="line-height:1.7">Estudo técnico completo das regras do edital, identificação de riscos,
+           exigências documentais e oportunidades estratégicas antes da empresa decidir participar
+           do processo licitatório.</p>
+      </div>
+
+      <div class="card" style="padding:28px 32px">
+        <h3 style="font-size:1.2rem">Estruturação Documental</h3>
+        <p style="line-height:1.7">Organização e revisão da documentação jurídica, fiscal e técnica
+           necessária para habilitação em licitações públicas, reduzindo riscos de desclassificação.</p>
+      </div>
+
+      <div class="card" style="padding:28px 32px">
+        <h3 style="font-size:1.2rem">Estratégia de Participação</h3>
+        <p style="line-height:1.7">Definição da melhor estratégia de participação no certame, incluindo
+           análise de concorrência, posicionamento e planejamento de lances para aumentar
+           chances de vitória.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- AUTHORITY -->
+<section id="autoridade" class="authority reveal">
+
+  <div style="text-align:center;max-width:900px;margin:auto">
+
+    <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=900&auto=format&q=80"
+         style="width:100%;max-width:500px;border-radius:16px;margin-bottom:20px;box-shadow:0 20px 40px rgba(0,0,0,.15)"
+         alt="Equipe profissional">
+
+    <h2>Especialistas em licitações públicas</h2>
+
+    <p style="margin-top:10px;color:#5a7a92">
+      Atuação técnica e estratégica em processos licitatórios com foco em segurança jurídica
+      e competitividade empresarial.
+    </p>
+
+  </div>
+
+  <div class="authority-list" style="margin-top:35px">
+    <div class="badge">Lei 14.133 — Nova Lei de Licitações</div>
+    <div class="badge">Pregão Eletrônico</div>
+    <div class="badge">Estratégia de Lances</div>
+    <div class="badge">Documentação e Habilitação</div>
+    <div class="badge">Análise Técnica de Editais</div>
+    <div class="badge">Planejamento de Participação</div>
+    <div class="badge">Gestão de Riscos</div>
+    <div class="badge">Estratégia Comercial em Licitações</div>
+  </div>
+
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="resultados" class="testimonials reveal">
+  <h2>Resultados reais</h2>
+
+  <div class="carousel-wrap">
+    <div class="grid3 carousel" id="carousel">
+      <div class="card testimonial">
+        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="João Silva">
+        <p>"Conseguimos vencer nossa primeira licitação em poucos meses."</p>
+        <strong>João Silva</strong>
+      </div>
+      <div class="card testimonial">
+        <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Maria Oliveira">
+        <p>"A consultoria mudou completamente nossa estratégia."</p>
+        <strong>Maria Oliveira</strong>
+      </div>
+      <div class="card testimonial">
+        <img src="https://randomuser.me/api/portraits/men/51.jpg" alt="Carlos Mendes">
+        <p>"Hoje participamos de editais em todo o Brasil."</p>
+        <strong>Carlos Mendes</strong>
+      </div>
+    </div>
+
+    <!-- dots de navegação (só visíveis em mobile) -->
+    <div class="carousel-dots" id="carouselDots">
+      <span class="active" onclick="scrollToSlide(0)"></span>
+      <span onclick="scrollToSlide(1)"></span>
+      <span onclick="scrollToSlide(2)"></span>
+    </div>
+  </div>
+</section>
+
+<!-- EXTRATOR DE LICITAÇÕES -->
+<section id="sistemas" class="reveal" style="background:linear-gradient(135deg,#001450,#0a2a7a);color:white;padding:70px 8%;">
+  <h2 style="color:white;text-align:center;margin-bottom:10px;">⚡ Tecnologia que encontra licitações por você</h2>
+  <p class="sistemas-sub">Pare de buscar manualmente. Nossa ferramenta acessa o <span class="tip" data-tip="PNCP = Portal Nacional de Contratações Públicas — site oficial do governo onde todas as licitações do Brasil são publicadas.">PNCP</span> automaticamente e entrega os editais organizados em minutos.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1.1fr;gap:40px;align-items:center;margin-top:30px;">
+
+    <div>
+      <span class="sistema-badge extrator-badge" style="background:rgba(0,201,167,.2);color:#00c9a7;border:1px solid rgba(0,201,167,.3);font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:20px;display:inline-block;margin-bottom:16px;">Busca Automática</span>
+      <h3 style="font-family:'Syne';font-size:1.6rem;margin-bottom:12px;color:white;">Extrator de Licitações</h3>
+      <p style="font-size:0.95rem;color:rgba(255,255,255,.75);line-height:1.75;margin-bottom:20px;">
+        Encontre automaticamente <span class="tip" data-tip="Licitações = processo oficial onde o governo compra de empresas privadas. Qualquer empresa pode participar e ganhar contratos públicos.">licitações</span> abertas em todo o Brasil. Sem acessar múltiplos portais, sem perder horas procurando <span class="tip" data-tip="Edital = documento oficial com todas as regras da licitação: o que o governo quer, quanto paga e quais documentos a empresa precisa.">editais</span>.
+      </p>
+      <ul class="sistema-features">
+        <li>Busca automática de licitações atualizadas no PNCP</li>
+        <li>Exportação pronta para análise em Excel</li>
+        <li>Evita perda de prazos importantes</li>
+        <li>Ideal para quem está começando no mercado público</li>
+      </ul>
+      <a href="sistemas.html#extrator" class="btn" style="margin-top:10px;display:inline-block;">Ver como funciona →</a>
+    </div>
+
+    <div style="background:rgba(255,255,255,.05);border:1px solid rgba(0,201,167,.2);border-radius:16px;padding:28px;font-size:0.88rem;color:rgba(255,255,255,.7);line-height:1.8;">
+      <div style="font-family:'Syne';color:#00c9a7;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">Como funciona na prática</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="background:rgba(0,201,167,.2);color:#00c9a7;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:0.8rem;">1</span>
+          <span>Você abre o programa e escolhe o período de busca</span>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="background:rgba(0,201,167,.2);color:#00c9a7;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:0.8rem;">2</span>
+          <span>O sistema acessa o PNCP automaticamente e varre todos os editais</span>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="background:rgba(0,201,167,.2);color:#00c9a7;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:0.8rem;">3</span>
+          <span>Em minutos, você recebe tudo organizado em planilha Excel — pronto para analisar</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- GLOSSÁRIO -->
+<section class="glossario reveal" id="glossario">
+  <h2>📖 Entenda os Termos</h2>
+  <p class="glossario-intro">Nunca trabalhou com licitações ou tecnologia? Sem problema. Aqui explicamos, em linguagem simples, as palavras que você vai encontrar nas nossas páginas.</p>
+  <div class="glossario-grid">
+
+    <div class="glossario-item">
+      <div class="termo">PNCP <span class="sigla">Sigla</span></div>
+      <p><strong>Portal Nacional de Contratações Públicas.</strong> É o site oficial do governo federal onde todas as licitações do Brasil são publicadas. Pense nele como um "shopping de oportunidades" para empresas que querem vender para o governo.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">Licitação</div>
+      <p>Processo oficial pelo qual o governo compra produtos ou contrata serviços de empresas privadas. As regras são públicas e transparentes — qualquer empresa pode participar e ganhar contratos com prefeituras, estados e órgãos federais.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">Edital</div>
+      <p>O "manual de regras" de cada licitação. Nele o governo descreve o que quer comprar, quanto pode pagar, quais documentos a empresa precisa ter e como será feita a disputa. Nossa consultoria analisa esse documento por você.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">Pregão Eletrônico</div>
+      <p>A modalidade mais comum de licitação. É uma disputa de preços feita pela internet — as empresas fazem seus lances em um sistema online, como um leilão ao contrário: quem oferecer o menor preço (dentro das regras) vence.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">NFC <span class="sigla">Tecnologia</span></div>
+      <p><strong>Near Field Communication</strong> — comunicação por aproximação. É a mesma tecnologia do pagamento por aproximação do cartão de crédito. No Cartão Digital WYC Connect, basta encostar o celular no chip para abrir seu perfil de contatos instantaneamente.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">QR Code <span class="sigla">Tecnologia</span></div>
+      <p>Aquela imagem quadrada cheia de pontinhos que qualquer câmera de celular consegue ler. Ao escanear, o celular abre automaticamente um link — no caso do WYC Connect, abre seu cartão digital com todos os seus contatos.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">Habilitação</div>
+      <p>Etapa da licitação em que o governo verifica se a empresa está "apta" para participar — certidões, documentos fiscais, registros e certidões negativas de dívida. Nossa equipe organiza tudo isso para você não ser desclassificado.</p>
+    </div>
+
+    <div class="glossario-item">
+      <div class="termo">Lei 14.133 <span class="sigla">Lei</span></div>
+      <p><strong>Nova Lei de Licitações</strong>, publicada em 2021. Modernizou as regras para compras públicas no Brasil. Toda empresa que quer participar de licitações precisa se adaptar a ela — e nós ajudamos nesse processo.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- WYC CONNECT — seção separada no final -->
+<section id="connect" class="reveal" style="background:#edf5fa;padding:70px 8%;border-top:3px solid #38b6e8;">
+
+  <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:50px;align-items:center;">
+
+    <div>
+      <span style="background:rgba(56,182,232,.15);color:#0a7aa8;border:1px solid rgba(56,182,232,.35);font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;padding:4px 14px;border-radius:20px;display:inline-block;margin-bottom:16px;">Presença Digital</span>
+      <h2 style="font-size:2rem;margin-bottom:14px;color:#001450;">WYC Connect — Cartão Digital Inteligente</h2>
+      <p style="font-size:1rem;color:#4b6a82;line-height:1.75;margin-bottom:20px;">
+        Transforme seu cartão de visita em uma experiência digital moderna. Compartilhe todos os seus contatos em segundos — usando <span class="tip" data-tip="QR Code = imagem que qualquer câmera de celular lê automaticamente e abre um link, sem precisar digitar nada.">QR Code</span> ou aproximação <span class="tip" data-tip="NFC = tecnologia de aproximação. Basta encostar o celular no chip para abrir seu cartão digital, exatamente como o pagamento por aproximação do cartão de crédito.">NFC</span>.
+      </p>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:28px;">
+        <li style="display:flex;gap:10px;align-items:flex-start;color:#2c4a65;font-size:0.93rem;"><span style="color:#38b6e8;flex-shrink:0;">→</span> Compartilhe WhatsApp, Instagram, LinkedIn, site e muito mais em 1 clique</li>
+        <li style="display:flex;gap:10px;align-items:flex-start;color:#2c4a65;font-size:0.93rem;"><span style="color:#38b6e8;flex-shrink:0;">→</span> Imagem profissional moderna — sem cartão físico para perder</li>
+        <li style="display:flex;gap:10px;align-items:flex-start;color:#2c4a65;font-size:0.93rem;"><span style="color:#38b6e8;flex-shrink:0;">→</span> Atualize seus dados a qualquer momento, sem reimprimir nada</li>
+        <li style="display:flex;gap:10px;align-items:flex-start;color:#2c4a65;font-size:0.93rem;"><span style="color:#38b6e8;flex-shrink:0;">→</span> Ideal para vendas, networking, recepções e eventos</li>
+      </ul>
+      <a href="sistemas.html#connect" class="btn">Conhecer o WYC Connect →</a>
+    </div>
+
+    <div style="background:white;border-radius:20px;box-shadow:0 15px 45px rgba(0,0,0,.1);padding:36px;text-align:center;border:1px solid #d9e7f2;">
+      <div style="font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:#38b6e8;margin-bottom:18px;">Como compartilhar</div>
+      <div style="display:flex;gap:20px;justify-content:center;margin-bottom:24px;">
+        <div style="flex:1;background:#f4f8fb;border-radius:12px;padding:20px 14px;text-align:center;">
+          <div style="font-size:2rem;margin-bottom:8px;">📷</div>
+          <div style="font-weight:700;color:#001450;font-size:0.9rem;margin-bottom:4px;">QR Code</div>
+          <div style="font-size:0.78rem;color:#5a7a92;line-height:1.5;">Aponte a câmera do celular e pronto — abre na hora</div>
+        </div>
+        <div style="flex:1;background:#f4f8fb;border-radius:12px;padding:20px 14px;text-align:center;">
+          <div style="font-size:2rem;margin-bottom:8px;">📡</div>
+          <div style="font-weight:700;color:#001450;font-size:0.9rem;margin-bottom:4px;">NFC</div>
+          <div style="font-size:0.78rem;color:#5a7a92;line-height:1.5;">Encoste o celular no chip e o cartão abre automaticamente</div>
+        </div>
+      </div>
+      <div style="font-size:0.8rem;color:#5a7a92;border-top:1px solid #e8f0f7;padding-top:16px;">
+        ✓ Sem baixar app &nbsp;·&nbsp; ✓ Funciona em qualquer celular &nbsp;·&nbsp; ✓ Atualização remota
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta reveal" id="contato">
+  <h2>Comece agora a encontrar licitações ou modernizar sua empresa</h2>
+  <p style="margin-top:10px;opacity:.85;font-size:1rem;">
+    Teste nossas soluções e veja na prática como podemos acelerar seus resultados.
+  </p>
+  <br>
+  <a class="btn" href="https://wa.me/5519990143009?text=Quero+testar+as+soluções+da+WYC">
+    Falar no WhatsApp
+  </a>
+</section>
+
+<footer>
+  <div><strong>WYC Consultoria</strong><br>Especialistas em licitações</div>
+  <div>© 2026 WYC Consultoria</div>
+</footer>
+
+<a class="whatsapp"
+   href="https://wa.me/5519990143009?text=Quero+ver+como+funciona+o+sistema+de+licitações"
+   aria-label="WhatsApp">💬</a>
+
+<script>
+
+/* ── HAMBURGER MENU ── */
+function toggleMenu(){
+  const menu = document.getElementById('navMenu');
+  const btn  = document.getElementById('hamburger');
+  menu.classList.toggle('open');
+  btn.classList.toggle('open');
 }
 
-// ── START ─────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', init);
+function closeMenu(){
+  document.getElementById('navMenu').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+}
+
+/* fecha menu ao clicar fora */
+document.addEventListener('click', e => {
+  const nav = document.querySelector('nav');
+  if(!nav.contains(e.target)) closeMenu();
+});
+
+/* ── CARROSSEL DOTS ── */
+const carousel = document.getElementById('carousel');
+const dots     = document.querySelectorAll('.carousel-dots span');
+
+function scrollToSlide(index){
+  if(!carousel) return;
+  const card = carousel.children[index];
+  carousel.scrollTo({left: card.offsetLeft, behavior:'smooth'});
+}
+
+if(carousel){
+  carousel.addEventListener('scroll', () => {
+    const index = Math.round(carousel.scrollLeft / carousel.offsetWidth);
+    dots.forEach((d,i) => d.classList.toggle('active', i === index));
+  }, {passive:true});
+}
+const reveals = document.querySelectorAll('.reveal');
+
+function revealSections(){
+  reveals.forEach(el => {
+    if(el.getBoundingClientRect().top < window.innerHeight - 80){
+      el.classList.add('visible');
+    }
+  });
+}
+
+window.addEventListener('load', revealSections);
+window.addEventListener('scroll', revealSections, {passive:true});
+
+
+/* ── COUNTER — dispara só quando visível ── */
+const counters = document.querySelectorAll('.counter');
+const counted  = new Set();
+
+function startCounter(counter){
+  if(counted.has(counter)) return;
+  counted.add(counter);
+
+  const target = +counter.getAttribute('data-target');
+  let count = 0;
+  const inc = target / 80;
+
+  const tick = () => {
+    count = Math.min(count + inc, target);
+    counter.innerText = Math.ceil(count);
+    if(count < target) setTimeout(tick, 25);
+  };
+
+  tick();
+}
+
+function checkCounters(){
+  counters.forEach(counter => {
+    if(counter.getBoundingClientRect().top < window.innerHeight - 80){
+      startCounter(counter);
+    }
+  });
+}
+
+window.addEventListener('load',   checkCounters);
+window.addEventListener('scroll', checkCounters, {passive:true});
+
 </script>
+
 </body>
 </html>
