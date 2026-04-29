@@ -178,15 +178,17 @@
       padding: 14px 16px 14px 46px;
       outline: none;
       transition: border-color 0.2s, box-shadow 0.2s;
-      -moz-appearance: textfield;
     }
-    .field input::-webkit-outer-spin-button,
-    .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .field input.no-prefix {
+      padding-left: 16px;
+      font-size: 1.1rem;
+    }
     .field input:focus {
       border-color: var(--orange);
       box-shadow: 0 0 0 3px rgba(232,98,10,0.15);
     }
     .field input::placeholder { color: #555; font-weight: 400; font-size: 1rem; }
+    .field-full { margin-top: 20px; }
 
     .calc-btn {
       margin-top: 28px;
@@ -344,7 +346,6 @@
     manabi
     <span>educação corporativa</span>
   </div>
-  <div class="badge">Ferramenta da Palestra</div>
 </header>
 
 <section class="hero">
@@ -364,15 +365,22 @@
           <label>Sua Renda Mensal</label>
           <div class="input-wrap">
             <span class="input-prefix">R$</span>
-            <input type="number" id="renda" placeholder="6.000" min="0" step="any"/>
+            <input type="text" id="renda" placeholder="6.000,00" inputmode="numeric" autocomplete="off"/>
           </div>
         </div>
         <div class="field">
           <label>Preço do Produto</label>
           <div class="input-wrap">
             <span class="input-prefix">R$</span>
-            <input type="number" id="preco" placeholder="5.000" min="0" step="any"/>
+            <input type="text" id="preco" placeholder="5.000,00" inputmode="numeric" autocomplete="off"/>
           </div>
+        </div>
+      </div>
+
+      <div class="field field-full">
+        <label>Qual é o produto?</label>
+        <div class="input-wrap">
+          <input type="text" id="produto" class="no-prefix" placeholder="Ex: iPhone 16 Pro, TV 85 polegadas..." autocomplete="off" maxlength="60"/>
         </div>
       </div>
 
@@ -431,10 +439,26 @@
     return v.toLocaleString('pt-BR', { maximumFractionDigits: dec });
   }
 
+  function parseBR(str) {
+    // Remove pontos de milhar, troca vírgula por ponto
+    return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+  }
+
+  function maskCurrency(el) {
+    let v = el.value.replace(/\D/g, '');
+    if (!v) { el.value = ''; return; }
+    v = (parseInt(v, 10) / 100).toFixed(2);
+    el.value = parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  document.getElementById('renda').addEventListener('input', function(){ maskCurrency(this); });
+  document.getElementById('preco').addEventListener('input', function(){ maskCurrency(this); });
+
   function calcular() {
-    const renda = parseFloat(document.getElementById('renda').value);
-    const preco = parseFloat(document.getElementById('preco').value);
-    const err   = document.getElementById('error');
+    const renda   = parseBR(document.getElementById('renda').value);
+    const preco   = parseBR(document.getElementById('preco').value);
+    const produto = document.getElementById('produto').value.trim();
+    const err     = document.getElementById('error');
 
     if (!renda || !preco || renda <= 0 || preco <= 0) {
       err.classList.add('show');
@@ -450,7 +474,7 @@
     // Preenche resultado
     document.getElementById('res-dias').textContent = fmtNum(diasNec, 1);
     document.getElementById('res-sub').textContent  =
-      `— ou seja, ${fmtNum(horasNec, 0)} horas do seu tempo de trabalho`;
+      (produto ? `para comprar: ${produto}` : `para conquistar este produto`) + ` — ${fmtNum(horasNec, 0)} horas de trabalho`;
     document.getElementById('res-horas-total').textContent = fmtNum(horasNec, 0) + 'h';
     document.getElementById('res-valor-hora').textContent  = fmtBRL(valorHora);
     document.getElementById('res-pct-renda').textContent   = fmtNum(pctRenda, 1) + '%';
@@ -483,6 +507,7 @@
   function resetar() {
     document.getElementById('renda').value = '';
     document.getElementById('preco').value = '';
+    document.getElementById('produto').value = '';
     document.getElementById('resultado').classList.remove('visible');
     document.getElementById('error').classList.remove('show');
     document.getElementById('renda').focus();
