@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculadora do Supérfluo · Manabi Educação</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --orange: #E8620A;
+      --orange-light: #ff7a1f;
+      --orange-dim: rgba(232,98,10,0.15);
+      --dark: #141414;
+      --dark2: #1e1e1e;
+      --dark3: #292929;
+      --white: #f5f3ef;
+      --muted: #888;
+      --radius: 12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: var(--dark);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 48px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1.6rem;
+      color: var(--orange);
+      letter-spacing: -0.5px;
+    }
+    .logo span { color: var(--white); font-size: 0.65rem; font-style: normal; font-family: 'Barlow', sans-serif; letter-spacing: 3px; text-transform: uppercase; display: block; margin-top: -4px; opacity: 0.5; }
+    .badge {
+      background: var(--orange);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 4px;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 72px 24px 40px;
+      position: relative;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 600px; height: 300px;
+      background: radial-gradient(ellipse, rgba(232,98,10,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .eyebrow {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 18px;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .eyebrow::before, .eyebrow::after {
+      content: '';
+      display: inline-block;
+      width: 32px; height: 1px;
+      background: var(--orange);
+      opacity: 0.6;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      font-weight: 900;
+      line-height: 1.1;
+      max-width: 720px;
+      margin: 0 auto 20px;
+    }
+    h1 em {
+      font-style: italic;
+      color: var(--orange);
+    }
+    .subtitle {
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: #aaa;
+      max-width: 480px;
+      margin: 0 auto 52px;
+      line-height: 1.7;
+    }
+
+    /* ── CARD PRINCIPAL ── */
+    .card-wrapper {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+    .card {
+      background: var(--dark2);
+      border: 1px solid #2f2f2f;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+    }
+
+    /* ── INPUTS ── */
+    .inputs-section {
+      padding: 40px 40px 32px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 24px;
+    }
+    .field-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 520px) { .field-group { grid-template-columns: 1fr; } }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .field label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #999;
+      text-transform: uppercase;
+    }
+    .input-wrap {
+      position: relative;
+    }
+    .input-prefix {
+      position: absolute;
+      left: 14px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--orange);
+      pointer-events: none;
+    }
+    .field input {
+      width: 100%;
+      background: var(--dark3);
+      border: 1.5px solid #383838;
+      border-radius: 10px;
+      color: var(--white);
+      font-family: 'Barlow', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 600;
+      padding: 14px 16px 14px 46px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -moz-appearance: textfield;
+    }
+    .field input::-webkit-outer-spin-button,
+    .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .field input:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(232,98,10,0.15);
+    }
+    .field input::placeholder { color: #555; font-weight: 400; font-size: 1rem; }
+
+    .calc-btn {
+      margin-top: 28px;
+      width: 100%;
+      background: var(--orange);
+      color: #fff;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 10px;
+      padding: 18px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .calc-btn:hover { background: var(--orange-light); }
+    .calc-btn:active { transform: scale(0.98); }
+
+    /* ── RESULTADO ── */
+    .result-section {
+      padding: 36px 40px 40px;
+      display: none;
+      animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+    .result-section.visible { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .result-hero {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .result-number {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3rem, 10vw, 5.5rem);
+      font-weight: 900;
+      color: var(--orange);
+      line-height: 1;
+    }
+    .result-unit {
+      font-size: 1.2rem;
+      font-weight: 300;
+      color: #aaa;
+    }
+
+    .result-sub {
+      font-size: 0.92rem;
+      color: #777;
+      margin-bottom: 28px;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: 1fr 1fr; } }
+
+    .metric {
+      background: var(--dark3);
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 16px 14px;
+    }
+    .metric-val {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+    .metric-lbl {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .insight-box {
+      background: var(--orange-dim);
+      border-left: 3px solid var(--orange);
+      border-radius: 0 10px 10px 0;
+      padding: 18px 20px;
+    }
+    .insight-box p {
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: #ccc;
+    }
+    .insight-box strong { color: var(--orange); }
+
+    /* ── RESET ── */
+    .reset-btn {
+      margin-top: 20px;
+      background: transparent;
+      border: 1px solid #333;
+      color: #666;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      width: 100%;
+    }
+    .reset-btn:hover { border-color: #555; color: #aaa; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      border-top: 1px solid #222;
+      font-size: 0.78rem;
+      color: #444;
+    }
+    footer a { color: #555; text-decoration: none; }
+    footer a:hover { color: var(--orange); }
+
+    /* ── ERROR ── */
+    .error-msg {
+      display: none;
+      color: #e05c5c;
+      font-size: 0.8rem;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+    .error-msg.show { display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    manabi
+    <span>educação corporativa</span>
+  </div>
+  <div class="badge">Ferramenta da Palestra</div>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">Quanto custa de verdade?</div>
+  <h1>Seu dinheiro vale<br/><em>horas da sua vida.</em></h1>
+  <p class="subtitle">Descubra quantos dias de trabalho você entrega em troca de algo que talvez não precise.</p>
+</section>
+
+<div class="card-wrapper">
+  <div class="card">
+
+    <div class="inputs-section">
+      <div class="section-label">Preencha os campos abaixo</div>
+
+      <div class="field-group">
+        <div class="field">
+          <label>Sua Renda Mensal</label>
+          <div class="input-wrap">
+            <span class="input-prefix">R$</span>
+            <input type="number" id="renda" placeholder="6.000" min="0" step="any"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Preço do Produto</label>
+          <div class="input-wrap">
+            <span class="input-prefix">R$</span>
+            <input type="number" id="preco" placeholder="5.000" min="0" step="any"/>
+          </div>
+        </div>
+      </div>
+
+      <p class="error-msg" id="error">⚠ Preencha os dois campos com valores maiores que zero.</p>
+      <button class="calc-btn" onclick="calcular()">Calcular o custo real →</button>
+    </div>
+
+    <div class="result-section" id="resultado">
+      <div class="result-label">Resultado</div>
+
+      <div class="result-hero">
+        <span class="result-number" id="res-dias">—</span>
+        <span class="result-unit">dias de trabalho</span>
+      </div>
+      <p class="result-sub" id="res-sub">para conquistar este produto</p>
+
+      <div class="metrics-grid">
+        <div class="metric">
+          <div class="metric-val" id="res-horas-total">—</div>
+          <div class="metric-lbl">Horas trabalhadas</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="res-valor-hora">—</div>
+          <div class="metric-lbl">Valor por hora</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="res-pct-renda">—</div>
+          <div class="metric-lbl">% da renda mensal</div>
+        </div>
+      </div>
+
+      <div class="insight-box">
+        <p id="res-insight">—</p>
+      </div>
+
+      <button class="reset-btn" onclick="resetar()">↺ Calcular novamente</button>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Desenvolvido por <a href="https://wa.me/5519990143009" target="_blank">WYC Consultoria</a> &nbsp;·&nbsp;
+  <a href="https://www.manabieducacao.com.br" target="_blank">manabieducacao.com.br</a>
+</footer>
+
+<script>
+  const HORAS_MES   = 220;
+  const DIAS_MES    = 22;
+  const HORAS_DIA   = 10;
+
+  function fmtBRL(v) {
+    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+  function fmtNum(v, dec = 1) {
+    return v.toLocaleString('pt-BR', { maximumFractionDigits: dec });
+  }
+
+  function calcular() {
+    const renda = parseFloat(document.getElementById('renda').value);
+    const preco = parseFloat(document.getElementById('preco').value);
+    const err   = document.getElementById('error');
+
+    if (!renda || !preco || renda <= 0 || preco <= 0) {
+      err.classList.add('show');
+      return;
+    }
+    err.classList.remove('show');
+
+    const valorHora   = renda / HORAS_MES;
+    const diasNec     = preco / (valorHora * HORAS_DIA);
+    const horasNec    = diasNec * HORAS_DIA;
+    const pctRenda    = (preco / renda) * 100;
+
+    // Preenche resultado
+    document.getElementById('res-dias').textContent = fmtNum(diasNec, 1);
+    document.getElementById('res-sub').textContent  =
+      `— ou seja, ${fmtNum(horasNec, 0)} horas do seu tempo de trabalho`;
+    document.getElementById('res-horas-total').textContent = fmtNum(horasNec, 0) + 'h';
+    document.getElementById('res-valor-hora').textContent  = fmtBRL(valorHora);
+    document.getElementById('res-pct-renda').textContent   = fmtNum(pctRenda, 1) + '%';
+
+    // Insight dinâmico
+    let insight = '';
+    if (diasNec < 1) {
+      insight = `Isso representa <strong>menos de um dia</strong> de trabalho — ${fmtNum(horasNec,1)} horas. Parece pouco, mas multiplique por todos os supérfluos do mês.`;
+    } else if (diasNec <= 5) {
+      insight = `São <strong>${fmtNum(diasNec,1)} dias de trabalho</strong> — quase uma semana inteira. Antes de comprar, pergunte-se: isso vai me trazer valor real ou só satisfação momentânea?`;
+    } else if (diasNec <= DIAS_MES) {
+      insight = `Você precisaria trabalhar <strong>${fmtNum(diasNec,1)} dias</strong> — mais de uma semana — só para pagar por isso. Vale a pena?`;
+    } else {
+      const meses = diasNec / DIAS_MES;
+      insight = `Isso exigiria <strong>${fmtNum(meses,1)} meses</strong> de trabalho inteiros. Uma decisão desse tamanho merece ser bem pensada.`;
+    }
+    document.getElementById('res-insight').innerHTML = insight;
+
+    // Mostra seção
+    const res = document.getElementById('resultado');
+    res.classList.remove('visible');
+    // força reflow para reanimar
+    void res.offsetWidth;
+    res.classList.add('visible');
+
+    // Scroll suave até o resultado
+    setTimeout(() => res.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+  }
+
+  function resetar() {
+    document.getElementById('renda').value = '';
+    document.getElementById('preco').value = '';
+    document.getElementById('resultado').classList.remove('visible');
+    document.getElementById('error').classList.remove('show');
+    document.getElementById('renda').focus();
+  }
+
+  // Permitir Enter para calcular
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') calcular();
+  });
+</script>
+</body>
+</html>
