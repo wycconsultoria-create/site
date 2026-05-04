@@ -1375,7 +1375,7 @@ function changeEmpresaPlan(empId, newPlan){
 }
 
 // ── ANALYTICS ─────────────────────────────────────────────
-function renderAnalytics(filtroEmpresaId=''){
+function renderAnalytics(filtroEmpresaId='', periodo=14){
   const app=document.getElementById('app'); app.className='';
   const empresas=getEmpresas();
   const todosCartoes=getCartoes();
@@ -1387,7 +1387,7 @@ function renderAnalytics(filtroEmpresaId=''){
 
   const totalScans=cartoesFiltrados.reduce((s,c)=>s+(c.scans||0),0);
 
-  // Stats por empresa (sempre mostra todas para o filtro, mas detalha só a selecionada)
+  // Stats por empresa
   const empStats=empresas.map(e=>{
     const ec=cartoesFiltrados.filter(c=>c.empresaId===e.id);
     const scans=ec.reduce((s,c)=>s+(c.scans||0),0);
@@ -1397,8 +1397,8 @@ function renderAnalytics(filtroEmpresaId=''){
 
   function fmtDate(ts){ if(!ts)return '—'; return new Date(ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
 
-  // Chart — últimos 14 dias (filtrado por empresa)
-  const days=14;
+  // Chart — período selecionado
+  const days=periodo;
   const dayLabels=[];
   const dayData=[];
   for(let i=days-1;i>=0;i--){
@@ -1412,14 +1412,26 @@ function renderAnalytics(filtroEmpresaId=''){
     }));
     dayData.push(count);
   }
+
+  // KPIs do período
+  const totalNoPeriodo = dayData.reduce((a,b)=>a+b,0);
+  const diasComScans   = dayData.filter(v=>v>0).length;
+  const mediaDia       = diasComScans > 0
+    ? (totalNoPeriodo / diasComScans).toFixed(1)  // média só nos dias com scan
+    : '0';
+
   const maxDay=Math.max(...dayData,1);
-  const barW=Math.floor(520/days)-2;
+  // barras mais finas para períodos maiores
+  const svgW = days <= 14 ? 520 : days <= 30 ? 700 : 900;
+  const barW=Math.max(4, Math.floor(svgW/days)-2);
   const bars=dayData.map((v,i)=>{
     const h=Math.max(4,Math.round((v/maxDay)*60));
     const lbl=dayLabels[i];
+    // Mostra label de data só a cada 7 dias para períodos grandes
+    const showLbl = days<=14 || i===0 || i===days-1 || i%7===0;
     return `<g>
-      <rect x="${i*(barW+2)}" y="${60-h}" width="${barW}" height="${h}" rx="3" fill="${v>0?'#2563eb':'#e2e8f0'}"/>
-      <text x="${i*(barW+2)+barW/2}" y="76" text-anchor="middle" font-size="7" fill="${v>0?'#94a3b8':'#cbd5e1'}">${lbl}</text>
+      <rect x="${i*(barW+2)}" y="${60-h}" width="${barW}" height="${h}" rx="2" fill="${v>0?'#2563eb':'#e2e8f0'}"/>
+      ${showLbl?`<text x="${i*(barW+2)+barW/2}" y="76" text-anchor="middle" font-size="7" fill="${v>0?'#94a3b8':'#cbd5e1'}">${lbl}</text>`:''}
       ${v>0?`<text x="${i*(barW+2)+barW/2}" y="${60-h-4}" text-anchor="middle" font-size="7" font-weight="bold" fill="#2563eb">${v}</text>`:''}
     </g>`;
   }).join('');
@@ -1510,18 +1522,30 @@ function renderAnalytics(filtroEmpresaId=''){
           <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Cartões</div>
         </div>
         <div class="card" style="text-align:center;padding:18px 12px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${dayData.slice(-7).reduce((a,b)=>a+b,0)}</div>
-          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Últimos 7 dias</div>
+          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${totalNoPeriodo}</div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">No período</div>
         </div>
         <div class="card" style="text-align:center;padding:18px 12px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${dayData.slice(-1)[0]||0}</div>
-          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Hoje</div>
+          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${mediaDia}</div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Média/dia ativo</div>
         </div>
       </div>
 
-      <!-- Chart -->
+      <!-- Seletor período + Chart -->
       <div class="card" style="margin-bottom:20px">
-        <h3 style="margin-bottom:14px">📈 Scans por dia (14 dias)</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <h3 style="margin:0">📈 Scans por dia</h3>
+          <div style="display:flex;gap:6px">
+            ${[7,14,30,90].map(p=>`
+              <button onclick="renderAnalytics('${filtroEmpresaId}',${p})"
+                style="padding:5px 12px;border-radius:99px;border:1px solid ${p===periodo?'var(--accent)':'var(--border)'};
+                background:${p===periodo?'var(--accent)':'transparent'};
+                color:${p===periodo?'#fff':'var(--text-secondary)'};
+                font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s">
+                ${p}d
+              </button>`).join('')}
+          </div>
+        </div>
         <div style="overflow-x:auto">
           <svg viewBox="0 0 ${days*(barW+2)} 84" style="width:100%;min-width:300px;height:90px">${bars}</svg>
         </div>
