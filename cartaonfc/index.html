@@ -1420,19 +1420,31 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
     ? (totalNoPeriodo / diasComScans).toFixed(1)  // média só nos dias com scan
     : '0';
 
-  const maxDay=Math.max(...dayData,1);
-  // barras mais finas para períodos maiores
-  const svgW = days <= 14 ? 520 : days <= 30 ? 700 : 900;
-  const barW=Math.max(4, Math.floor(svgW/days)-2);
-  const bars=dayData.map((v,i)=>{
-    const h=Math.max(4,Math.round((v/maxDay)*60));
-    const lbl=dayLabels[i];
-    // Mostra label de data só a cada 7 dias para períodos grandes
-    const showLbl = days<=14 || i===0 || i===days-1 || i%7===0;
+  // Remove o dia de hoje do gráfico se ainda não terminou
+  // (hoje parcial distorce a escala e aparece vazio)
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const chartLabels = dayLabels.slice(0, -1); // sem hoje
+  const chartData   = dayData.slice(0, -1);   // sem hoje
+
+  const maxDay = Math.max(...chartData, 1);
+  const chartDays = chartLabels.length;
+
+  // Altura da área de barras — maior para escala mais visível
+  const BAR_H = 80;
+  const svgW  = chartDays <= 14 ? 520 : chartDays <= 30 ? 700 : 900;
+  const barW  = Math.max(6, Math.floor(svgW / chartDays) - 2);
+
+  const bars = chartData.map((v, i) => {
+    const h      = v > 0 ? Math.max(8, Math.round((v / maxDay) * BAR_H)) : 3;
+    const x      = i * (barW + 2);
+    const xMid   = x + barW / 2;
+    const lbl    = chartLabels[i];
+    const showLbl= chartDays <= 14 || i === 0 || i === chartDays-1 || i % 7 === 0;
+    const barColor = v > 0 ? '#2563eb' : '#e2e8f0';
     return `<g>
-      <rect x="${i*(barW+2)}" y="${60-h}" width="${barW}" height="${h}" rx="2" fill="${v>0?'#2563eb':'#e2e8f0'}"/>
-      ${showLbl?`<text x="${i*(barW+2)+barW/2}" y="76" text-anchor="middle" font-size="7" fill="${v>0?'#94a3b8':'#cbd5e1'}">${lbl}</text>`:''}
-      ${v>0?`<text x="${i*(barW+2)+barW/2}" y="${60-h-4}" text-anchor="middle" font-size="7" font-weight="bold" fill="#2563eb">${v}</text>`:''}
+      <rect x="${x}" y="${BAR_H - h}" width="${barW}" height="${h}" rx="3" fill="${barColor}"/>
+      ${showLbl ? `<text x="${xMid}" y="${BAR_H + 10}" text-anchor="middle" font-size="7" fill="${v>0?'#94a3b8':'#cbd5e1'}">${lbl}</text>` : ''}
+      ${v > 0 ? `<text x="${xMid}" y="${BAR_H - h - 4}" text-anchor="middle" font-size="8" font-weight="bold" fill="#2563eb">${v}</text>` : ''}
     </g>`;
   }).join('');
 
@@ -1522,11 +1534,11 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
           <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Cartões</div>
         </div>
         <div class="card" style="text-align:center;padding:18px 12px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${totalNoPeriodo}</div>
+          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${chartData.reduce((a,b)=>a+b,0)}</div>
           <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">No período</div>
         </div>
         <div class="card" style="text-align:center;padding:18px 12px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${mediaDia}</div>
+          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${(()=>{ const ativ=chartData.filter(v=>v>0).length; return ativ>0?(chartData.reduce((a,b)=>a+b,0)/ativ).toFixed(1):'0'; })()}</div>
           <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Média/dia ativo</div>
         </div>
       </div>
@@ -1547,7 +1559,7 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
           </div>
         </div>
         <div style="overflow-x:auto">
-          <svg viewBox="0 0 ${days*(barW+2)} 84" style="width:100%;min-width:300px;height:90px">${bars}</svg>
+          <svg viewBox="0 0 ${chartDays*(barW+2)} 96" style="width:100%;min-width:300px;height:110px">${bars}</svg>
         </div>
       </div>
 
