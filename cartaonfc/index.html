@@ -1449,8 +1449,12 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
     return `<g>
       ${barRect}
       ${showLbl ? `<text x="${xMid}" y="${BAR_H + 12}" text-anchor="middle" font-size="8" fill="${v>0?'#94a3b8':isHoje?'#2563eb':'#cbd5e1'}">${lbl}${isHoje?' ◉':''}</text>` : ''}
-      ${v > 0 ? `<text x="${xMid}" y="${BAR_H - h - 4}" text-anchor="middle" font-size="8" font-weight="bold" fill="#2563eb">${v}</text>` : ''}
-      ${isHoje && v === 0 ? `<text x="${xMid}" y="${BAR_H - h - 4}" text-anchor="middle" font-size="7" fill="#94a3b8">0</text>` : ''}
+      ${v > 0
+          ? h >= 22
+            ? `<text x="${xMid}" y="${BAR_H - h/2 + 4}" text-anchor="middle" font-size="9" font-weight="bold" fill="white">${v}</text>`
+            : `<text x="${xMid}" y="${BAR_H - h - 5}" text-anchor="middle" font-size="9" font-weight="bold" fill="#1d4ed8">${v}</text>`
+          : ''}
+      ${isHoje && v === 0 ? `<text x="${xMid}" y="${BAR_H - 8}" text-anchor="middle" font-size="8" fill="#94a3b8">0</text>` : ''}
     </g>`;
   }).join('');
 
