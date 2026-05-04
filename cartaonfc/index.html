@@ -1428,7 +1428,7 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
   const maxDay = Math.max(...chartData, 1);
 
   // Altura proporcional — mínimo 100px para boa visualização
-  const BAR_H = 100;
+  const BAR_H = 180;
   const svgW  = chartDays <= 14 ? 520 : chartDays <= 30 ? 700 : 900;
   const barW  = Math.max(6, Math.floor(svgW / chartDays) - 2);
 
@@ -1448,7 +1448,7 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
       : `<rect x="${x}" y="${BAR_H - h}" width="${barW}" height="${h}" rx="3" fill="${barFill}"/>`;
     return `<g>
       ${barRect}
-      ${showLbl ? `<text x="${xMid}" y="${BAR_H + 12}" text-anchor="middle" font-size="7" fill="${v>0?'#94a3b8':isHoje?'#2563eb':'#cbd5e1'}">${lbl}${isHoje?' ◉':''}</text>` : ''}
+      ${showLbl ? `<text x="${xMid}" y="${BAR_H + 12}" text-anchor="middle" font-size="8" fill="${v>0?'#94a3b8':isHoje?'#2563eb':'#cbd5e1'}">${lbl}${isHoje?' ◉':''}</text>` : ''}
       ${v > 0 ? `<text x="${xMid}" y="${BAR_H - h - 4}" text-anchor="middle" font-size="8" font-weight="bold" fill="#2563eb">${v}</text>` : ''}
       ${isHoje && v === 0 ? `<text x="${xMid}" y="${BAR_H - h - 4}" text-anchor="middle" font-size="7" fill="#94a3b8">0</text>` : ''}
     </g>`;
@@ -1464,8 +1464,8 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
     :empStats.map(e=>{
       const empScans=e.totalScans;
       return `
-      <div style="margin-bottom:16px;padding:16px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-md)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="margin-bottom:10px;padding:12px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-md)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:10px">
             <div style="width:40px;height:40px;border-radius:8px;background:${e.logo?'#f8faff':'linear-gradient(135deg,var(--accent),var(--accent-2))'};display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:.85rem;overflow:hidden;flex-shrink:0">
               ${e.logo?`<img src="${esc(e.logo)}" style="width:100%;height:100%;object-fit:contain;padding:3px">`:initials(e.name)}
@@ -1476,13 +1476,13 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
             </div>
           </div>
           <div style="text-align:right">
-            <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;color:var(--accent)">${empScans}</div>
-            <div style="font-size:.68rem;color:var(--text-muted)">scans totais</div>
+            <div style="font-family:var(--font-display);font-size:1.2rem;font-weight:800;color:var(--accent)">${empScans}</div>
+            <div style="font-size:.65rem;color:var(--text-muted)">scans totais</div>
           </div>
         </div>
         ${e.cartoes.length===0?'<p style="font-size:.78rem;color:var(--text-muted);padding:4px 0">Nenhum cartão nesta empresa.</p>':
           e.cartoes.map(c=>`
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-secondary);border-radius:8px;margin-bottom:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg-secondary);border-radius:8px;margin-bottom:5px">
             <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
               <div style="width:32px;height:32px;border-radius:50%;background:${c.cor||'linear-gradient(135deg,#2563eb,#6366f1)'};display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0">
                 ${c.foto?`<img src="${esc(c.foto)}" style="width:100%;height:100%;object-fit:cover">`:e.logo?`<img src="${esc(e.logo)}" style="width:100%;height:100%;object-fit:contain;padding:3px">`:initials(c.nome||'?')}
@@ -1529,23 +1529,23 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
         </div>
       </div>
 
-      <!-- KPIs -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:20px">
-        <div class="card" style="text-align:center;padding:18px 12px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${totalScans}</div>
-          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Total de Scans</div>
+      <!-- KPIs compactos -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+        <div class="card" style="text-align:center;padding:12px 8px">
+          <div style="font-size:1.5rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${totalScans}</div>
+          <div style="font-size:.68rem;color:var(--text-muted);margin-top:2px">Total Scans</div>
         </div>
-        <div class="card" style="text-align:center;padding:18px 12px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${cartoesFiltrados.length}</div>
-          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Cartões</div>
+        <div class="card" style="text-align:center;padding:12px 8px">
+          <div style="font-size:1.5rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${cartoesFiltrados.length}</div>
+          <div style="font-size:.68rem;color:var(--text-muted);margin-top:2px">Cartões</div>
         </div>
-        <div class="card" style="text-align:center;padding:18px 12px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${dayData.reduce((a,b)=>a+b,0)}</div>
-          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">No período</div>
+        <div class="card" style="text-align:center;padding:12px 8px">
+          <div style="font-size:1.5rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${dayData.reduce((a,b)=>a+b,0)}</div>
+          <div style="font-size:.68rem;color:var(--text-muted);margin-top:2px">No período</div>
         </div>
-        <div class="card" style="text-align:center;padding:18px 12px">
-          <div style="font-size:2rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${(()=>{ const ativ=dayData.filter(v=>v>0).length; return ativ>0?(dayData.reduce((a,b)=>a+b,0)/ativ).toFixed(1):'0'; })()}</div>
-          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Média/dia ativo</div>
+        <div class="card" style="text-align:center;padding:12px 8px">
+          <div style="font-size:1.5rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${(()=>{ const ativ=dayData.filter(v=>v>0).length; return ativ>0?(dayData.reduce((a,b)=>a+b,0)/ativ).toFixed(1):'0'; })()}</div>
+          <div style="font-size:.68rem;color:var(--text-muted);margin-top:2px">Média/dia</div>
         </div>
       </div>
 
@@ -1565,14 +1565,14 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
           </div>
         </div>
         <div style="overflow-x:auto">
-          <svg viewBox="0 0 ${chartDays*(barW+2)} 116" style="width:100%;min-width:300px;height:130px">${bars}</svg>
+          <svg viewBox="0 0 ${chartDays*(barW+2)} 200" style="width:100%;min-width:300px;height:220px">${bars}</svg>
         </div>
       </div>
 
       <!-- Detalhamento -->
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <h3>🏢 ${filtroEmpresaId?'Detalhamento':'Por Empresa'}</h3>
+      <div class="card" style="padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h3 style="font-size:1rem;margin:0">🏢 ${filtroEmpresaId?'Detalhamento':'Por Empresa'}</h3>
         </div>
         ${empresaRows}
       </div>
