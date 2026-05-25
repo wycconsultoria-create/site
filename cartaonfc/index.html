@@ -268,20 +268,24 @@ async function fbLoad(){
   try{
     const db = await initFirebase(); if(!db) return null;
     const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    // Carrega 3 documentos separados para evitar limite de 1MB
-    const [snapCfg, snapEmp, snapCart] = await Promise.all([
+    // 4 documentos: config, empresas, cartoes + stats (contadores atômicos)
+    const [snapCfg, snapEmp, snapCart, snapStats] = await Promise.all([
       getDoc(doc(db,'wyc','config')),
       getDoc(doc(db,'wyc','empresas')),
       getDoc(doc(db,'wyc','cartoes')),
+      getDoc(doc(db,'wyc','stats')),
     ]);
     const cfg   = snapCfg.exists()   ? snapCfg.data()   : {};
     const emps  = snapEmp.exists()   ? snapEmp.data()   : {};
     const carts = snapCart.exists()  ? snapCart.data()  : {};
-    return {
-      ...cfg,
-      empresas: emps.list  || [],
-      cartoes:  carts.list || [],
-    };
+    const stats = snapStats.exists() ? snapStats.data() : { counters:{} };
+    // Mescla contadores atômicos nos cartões (fonte da verdade = wyc/stats)
+    const cartoes = (carts.list||[]).map(c=>({
+      ...c,
+      scans:    stats.counters?.[c.id]?.scans    ?? c.scans    ?? 0,
+      lastScan: stats.counters?.[c.id]?.lastScan ?? c.lastScan ?? null,
+    }));
+    return { ...cfg, empresas: emps.list||[], cartoes };
   }catch(e){
     console.error('fbLoad error:', e.code, e.message);
     return null;
@@ -325,8 +329,8 @@ async function fbSave(data){
     });
     // doc 2: empresas (com logos) — médio
     const empData = cleanForFirestore({ list: data.empresas || [] });
-    // doc 3: cartoes (com fotos) — maior
-    const cartData = cleanForFirestore({ list: data.cartoes || [] });
+    // doc 3: cartoes (com fotos) — sem scanLog (dados de scan ficam na coleção "scans")
+    const cartData = cleanForFirestore({ list: (data.cartoes||[]).map(({scanLog,...c})=>c) });
 
     await Promise.all([
       setDoc(doc(db,'wyc','config'),  cfgData),
@@ -390,24 +394,50 @@ function genId(){ return Math.random().toString(36).slice(2)+Date.now().toString
 
 async function registerScan(cartaoId){
   try{
-    // Carrega dados frescos do Firebase para garantir que temos o cartão
+    const db = await initFirebase();
+    if(!db){ console.warn('registerScan: Firebase indisponível'); return; }
+
+    // Descobre o empresaId do cartão via cache local (sem ler Firestore aqui)
     let d = loadData();
     let c = d.cartoes.find(x=>x.id===cartaoId||x.slug===cartaoId);
     if(!c){
-      // Tenta buscar do Firebase (celular sem localStorage)
       const remote = await fbLoad();
       if(remote){ saveData(remote); d = remote; }
       c = d.cartoes.find(x=>x.id===cartaoId||x.slug===cartaoId);
       if(!c){ console.warn('registerScan: cartão não encontrado', cartaoId); return; }
     }
-    c.scans = (c.scans||0) + 1;
-    c.lastScan = Date.now();
-    if(!c.scanLog) c.scanLog=[];
-    c.scanLog.push({ts:Date.now()});
-    if(c.scanLog.length>500) c.scanLog=c.scanLog.slice(-500);
+    const cardId    = c.id;
+    const empresaId = c.empresaId||'';
+    const ts        = Date.now();
+
+    const { collection, addDoc, doc, updateDoc, setDoc, increment }
+      = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+    // ── Operação 1: grava evento de scan como documento independente ──
+    // addDoc é sempre uma escrita nova — sem read-before-write, sem race condition
+    await addDoc(collection(db, 'scans'), { cartaoId: cardId, empresaId, ts });
+
+    // ── Operação 2: incrementa contador atomicamente via FieldValue.increment ──
+    // increment() é nativo do Firestore: nunca sobrescreve, só soma
+    const statsRef = doc(db, 'wyc', 'stats');
+    try{
+      await updateDoc(statsRef, {
+        [`counters.${cardId}.scans`]:    increment(1),
+        [`counters.${cardId}.lastScan`]: ts
+      });
+    }catch(e2){
+      if(e2.code==='not-found'){
+        // Primeira vez: cria o documento de stats
+        await setDoc(statsRef, { counters:{ [cardId]:{ scans:1, lastScan:ts } } });
+      }
+    }
+
+    // ── Cache local (otimista, não bloqueia) ──
+    c.scans    = (c.scans||0) + 1;
+    c.lastScan = ts;
     saveData(d);
-    await fbSave(d);
-  }catch(e){ console.warn('registerScan error',e); }
+
+  }catch(e){ console.warn('registerScan error', e); }
 }
 
 function cardUrl(idOrSlug){
@@ -565,6 +595,8 @@ async function init(){
       if(remote.auth) localStorage.setItem(AUTH_KEY, JSON.stringify(remote.auth));
       // Dados: Firebase é a fonte da verdade
       saveData(remote);
+      // Migração única: move scanLog legado para coleção "scans" (roda em background)
+      migrateScanLogs().catch(e=>console.warn('migrate error',e));
     }
   }catch(e){ console.warn('Firebase load failed, using local cache'); }
 
@@ -1374,8 +1406,88 @@ function changeEmpresaPlan(empId, newPlan){
   setTimeout(()=>renderPlanos(), 300);
 }
 
+// ── SCANS COLLECTION HELPERS ──────────────────────────────
+// Busca eventos de scan da coleção Firestore "scans" (fonte da verdade)
+async function loadScansFromFirestore(days, filtroEmpresaId=''){
+  try{
+    const db = await initFirebase(); if(!db) return [];
+    const { collection, query, where, getDocs }
+      = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const since = Date.now() - (days * 24 * 60 * 60 * 1000);
+    // Índice simples em "ts" — sem composite index necessário
+    const q = query(collection(db, 'scans'), where('ts', '>=', since));
+    const snap = await getDocs(q);
+    let scans = snap.docs.map(d => d.data());
+    if(filtroEmpresaId) scans = scans.filter(s => s.empresaId === filtroEmpresaId);
+    return scans;
+  }catch(e){
+    console.warn('loadScansFromFirestore error', e);
+    return [];
+  }
+}
+
+// Migração única: move scanLog dos cartões para a coleção "scans"
+async function migrateScanLogs(){
+  try{
+    const db = await initFirebase(); if(!db) return;
+    const { doc, getDoc, setDoc, collection, writeBatch }
+      = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+    // Verifica se já foi migrado
+    const cfgSnap = await getDoc(doc(db,'wyc','config'));
+    const cfg = cfgSnap.exists() ? cfgSnap.data() : {};
+    if(cfg.scansMigrated){ return; }
+
+    const cartsSnap = await getDoc(doc(db,'wyc','cartoes'));
+    if(!cartsSnap.exists()){ return; }
+    const cartoes = cartsSnap.data().list || [];
+
+    let totalEntries = 0;
+    const statsCounters = {};
+
+    // Coleta todos os eventos de scanLog
+    const entries = [];
+    for(const c of cartoes){
+      const log = c.scanLog || [];
+      for(const s of log){
+        if(s && s.ts) entries.push({ cartaoId: c.id, empresaId: c.empresaId||'', ts: s.ts });
+      }
+      // Contadores para wyc/stats
+      if(c.scans > 0 || c.lastScan){
+        const maxTs = log.length > 0 ? Math.max(...log.map(s=>s.ts||0)) : (c.lastScan||0);
+        statsCounters[c.id] = {
+          scans:    c.scans    || log.length,
+          lastScan: c.lastScan || maxTs || null,
+        };
+      }
+    }
+
+    // Grava em lotes de 499 (limite do Firestore writeBatch)
+    for(let i = 0; i < entries.length; i += 499){
+      const batch = writeBatch(db);
+      const chunk = entries.slice(i, i + 499);
+      for(const entry of chunk){
+        batch.set(doc(collection(db, 'scans')), entry);
+      }
+      await batch.commit();
+      totalEntries += chunk.length;
+    }
+
+    // Salva contadores em wyc/stats
+    if(Object.keys(statsCounters).length > 0){
+      await setDoc(doc(db,'wyc','stats'), { counters: statsCounters }, { merge: true });
+    }
+
+    // Marca como migrado
+    await setDoc(doc(db,'wyc','config'), { ...cfg, scansMigrated: true }, { merge: true });
+    console.log(`[WYC] Migração concluída: ${totalEntries} scans históricos preservados.`);
+    if(totalEntries > 0) toast(`✅ ${totalEntries} scans históricos migrados para novo sistema.`);
+
+  }catch(e){ console.warn('migrateScanLogs error', e); }
+}
+
 // ── ANALYTICS ─────────────────────────────────────────────
-function renderAnalytics(filtroEmpresaId='', periodo=14){
+async function renderAnalytics(filtroEmpresaId='', periodo=14){
   const app=document.getElementById('app'); app.className='';
   const empresas=getEmpresas();
   const todosCartoes=getCartoes();
@@ -1385,9 +1497,10 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
     ? todosCartoes.filter(c=>c.empresaId===filtroEmpresaId)
     : todosCartoes;
 
+  // Total histórico (do contador atômico em wyc/stats, já mesclado nos cartões)
   const totalScans=cartoesFiltrados.reduce((s,c)=>s+(c.scans||0),0);
 
-  // Stats por empresa
+  // Stats por empresa (do contador atômico)
   const empStats=empresas.map(e=>{
     const ec=cartoesFiltrados.filter(c=>c.empresaId===e.id);
     const scans=ec.reduce((s,c)=>s+(c.scans||0),0);
@@ -1397,72 +1510,11 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
 
   function fmtDate(ts){ if(!ts)return '—'; return new Date(ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
 
-  // Chart — período selecionado
-  const days=periodo;
-  const dayLabels=[];
-  const dayData=[];
-  for(let i=days-1;i>=0;i--){
-    const d=new Date(); d.setDate(d.getDate()-i);
-    dayLabels.push(d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}));
-    const start=new Date(d); start.setHours(0,0,0,0);
-    const end=new Date(d); end.setHours(23,59,59,999);
-    let count=0;
-    cartoesFiltrados.forEach(c=>(c.scanLog||[]).forEach(s=>{
-      if(s.ts>=start.getTime()&&s.ts<=end.getTime()) count++;
-    }));
-    dayData.push(count);
-  }
-
-  // KPIs do período
-  const totalNoPeriodo = dayData.reduce((a,b)=>a+b,0);
-  const diasComScans   = dayData.filter(v=>v>0).length;
-  const mediaDia       = diasComScans > 0
-    ? (totalNoPeriodo / diasComScans).toFixed(1)  // média só nos dias com scan
-    : '0';
-
-  // Usa todos os dias incluindo hoje (zerado = sem scan ainda hoje)
-  const chartLabels = dayLabels;
-  const chartData   = dayData;
-  const chartDays   = days;
-
-  const maxDay = Math.max(...chartData, 1);
-
-  // Altura proporcional — mínimo 100px para boa visualização
-  const BAR_H = 180;
-  const svgW  = chartDays <= 14 ? 520 : chartDays <= 30 ? 700 : 900;
-  const barW  = Math.max(6, Math.floor(svgW / chartDays) - 2);
-
-  const bars = chartData.map((v, i) => {
-    // Dia de hoje: barra tracejada se zerado
-    const isHoje = i === chartDays - 1;
-    const h      = v > 0 ? Math.max(10, Math.round((v / maxDay) * BAR_H)) : 4;
-    const x      = i * (barW + 2);
-    const xMid   = x + barW / 2;
-    const lbl    = chartLabels[i];
-    const showLbl= chartDays <= 14 || i === 0 || i === chartDays-1 || i % 7 === 0;
-    // Hoje sem scan = cinza claro com borda tracejada; hoje com scan = azul mais vivo
-    const barFill  = v > 0 ? '#2563eb' : (isHoje ? 'none' : '#e2e8f0');
-    const barStroke= isHoje && v === 0 ? 'stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,2"' : '';
-    const barRect  = isHoje && v === 0
-      ? `<rect x="${x}" y="${BAR_H - h}" width="${barW}" height="${h}" rx="3" fill="#f1f5f9" ${barStroke}/>`
-      : `<rect x="${x}" y="${BAR_H - h}" width="${barW}" height="${h}" rx="3" fill="${barFill}"/>`;
-    return `<g>
-      ${barRect}
-      ${showLbl ? `<text x="${xMid}" y="${BAR_H + 12}" text-anchor="middle" font-size="8" fill="${v>0?'#94a3b8':isHoje?'#2563eb':'#cbd5e1'}">${lbl}${isHoje?' ◉':''}</text>` : ''}
-      ${v > 0
-          ? h >= 22
-            ? `<text x="${xMid}" y="${BAR_H - h/2 + 4}" text-anchor="middle" font-size="9" font-weight="bold" fill="white">${v}</text>`
-            : `<text x="${xMid}" y="${BAR_H - h - 5}" text-anchor="middle" font-size="9" font-weight="bold" fill="#1d4ed8">${v}</text>`
-          : ''}
-      ${isHoje && v === 0 ? `<text x="${xMid}" y="${BAR_H - 8}" text-anchor="middle" font-size="8" fill="#94a3b8">0</text>` : ''}
-    </g>`;
-  }).join('');
-
   // Filtro select options
   const empOptions=`<option value="">🌐 Todas as empresas</option>`+
     empresas.map(e=>`<option value="${e.id}" ${e.id===filtroEmpresaId?'selected':''}>${esc(e.name)}</option>`).join('');
 
-  // Empresa rows
+  // Empresa rows (usa contador atômico — sempre preciso)
   const empresaRows=empStats.length===0
     ?'<p class="text-muted text-sm" style="padding:20px">Nenhum dado encontrado.</p>'
     :empStats.map(e=>{
@@ -1509,6 +1561,17 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
       </div>`;
     }).join('');
 
+  // Botões de período
+  const periodBtns = [7,14,30,90].map(p=>`
+    <button onclick="renderAnalytics('${filtroEmpresaId}',${p})"
+      style="padding:5px 12px;border-radius:99px;border:1px solid ${p===periodo?'var(--accent)':'var(--border)'};
+      background:${p===periodo?'var(--accent)':'transparent'};
+      color:${p===periodo?'#fff':'var(--text-secondary)'};
+      font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s">
+      ${p}d
+    </button>`).join('');
+
+  // Renderiza shell da página imediatamente (sem esperar Firestore)
   app.innerHTML=`${buildSidebar('analytics')}
   <div class="main-content">
     <div class="topbar">
@@ -1533,7 +1596,7 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
         </div>
       </div>
 
-      <!-- KPIs compactos -->
+      <!-- KPIs -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
         <div class="card" style="text-align:center;padding:12px 8px">
           <div style="font-size:1.5rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${totalScans}</div>
@@ -1544,36 +1607,27 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
           <div style="font-size:.68rem;color:var(--text-muted);margin-top:2px">Cartões</div>
         </div>
         <div class="card" style="text-align:center;padding:12px 8px">
-          <div style="font-size:1.5rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${dayData.reduce((a,b)=>a+b,0)}</div>
+          <div id="kpi-periodo" style="font-size:1.5rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">…</div>
           <div style="font-size:.68rem;color:var(--text-muted);margin-top:2px">No período</div>
         </div>
         <div class="card" style="text-align:center;padding:12px 8px">
-          <div style="font-size:1.5rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">${(()=>{ const ativ=dayData.filter(v=>v>0).length; return ativ>0?(dayData.reduce((a,b)=>a+b,0)/ativ).toFixed(1):'0'; })()}</div>
+          <div id="kpi-media" style="font-size:1.5rem;font-weight:800;font-family:var(--font-display);color:var(--accent)">…</div>
           <div style="font-size:.68rem;color:var(--text-muted);margin-top:2px">Média/dia</div>
         </div>
       </div>
 
-      <!-- Seletor período + Chart -->
+      <!-- Chart — carrega do Firestore -->
       <div class="card" style="margin-bottom:20px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
           <h3 style="margin:0">📈 Scans por dia</h3>
-          <div style="display:flex;gap:6px">
-            ${[7,14,30,90].map(p=>`
-              <button onclick="renderAnalytics('${filtroEmpresaId}',${p})"
-                style="padding:5px 12px;border-radius:99px;border:1px solid ${p===periodo?'var(--accent)':'var(--border)'};
-                background:${p===periodo?'var(--accent)':'transparent'};
-                color:${p===periodo?'#fff':'var(--text-secondary)'};
-                font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s">
-                ${p}d
-              </button>`).join('')}
-          </div>
+          <div style="display:flex;gap:6px">${periodBtns}</div>
         </div>
-        <div style="overflow-x:auto">
-          <svg viewBox="0 0 ${chartDays*(barW+2)} 200" style="width:100%;min-width:300px;height:220px">${bars}</svg>
+        <div id="chart-area" style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--text-muted);font-size:.85rem">
+          ⏳ Carregando dados do Firebase...
         </div>
       </div>
 
-      <!-- Detalhamento -->
+      <!-- Detalhamento por empresa -->
       <div class="card" style="padding:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <h3 style="font-size:1rem;margin:0">🏢 ${filtroEmpresaId?'Detalhamento':'Por Empresa'}</h3>
@@ -1583,8 +1637,70 @@ function renderAnalytics(filtroEmpresaId='', periodo=14){
 
     </div>
   </div>`;
-}
 
+  // ── Fase 2: carrega scans do Firestore e renderiza gráfico ──
+  try{
+    const allScans = await loadScansFromFirestore(periodo, filtroEmpresaId);
+
+    // Agrupa por dia
+    const days = periodo;
+    const dayLabels=[], dayData=[];
+    for(let i=days-1;i>=0;i--){
+      const d=new Date(); d.setDate(d.getDate()-i);
+      dayLabels.push(d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}));
+      const start=new Date(d); start.setHours(0,0,0,0);
+      const end=new Date(d);   end.setHours(23,59,59,999);
+      dayData.push(allScans.filter(s=>s.ts>=start.getTime()&&s.ts<=end.getTime()).length);
+    }
+
+    // Atualiza KPIs de período
+    const totalNoPeriodo = dayData.reduce((a,b)=>a+b,0);
+    const diasComScans   = dayData.filter(v=>v>0).length;
+    const mediaDia       = diasComScans>0?(totalNoPeriodo/diasComScans).toFixed(1):'0';
+    const kpiP = document.getElementById('kpi-periodo');
+    const kpiM = document.getElementById('kpi-media');
+    if(kpiP) kpiP.textContent = totalNoPeriodo;
+    if(kpiM) kpiM.textContent = mediaDia;
+
+    // Monta gráfico SVG
+    const chartDays = days;
+    const maxDay    = Math.max(...dayData, 1);
+    const BAR_H     = 180;
+    const barW      = chartDays<=14 ? Math.max(20,Math.floor(560/chartDays)-2) : chartDays<=30 ? 18 : 10;
+    const svgTotalW = chartDays*(barW+2);
+
+    const bars = dayData.map((v,i)=>{
+      const isHoje  = i===chartDays-1;
+      const h       = v>0 ? Math.max(10,Math.round((v/maxDay)*BAR_H)) : 4;
+      const x       = i*(barW+2);
+      const xMid    = x+barW/2;
+      const lbl     = dayLabels[i];
+      const showLbl = chartDays<=14||i===0||i===chartDays-1||i%7===0
+        ||(chartDays>=30&&i>=chartDays-7&&v>0);
+      const barFill   = v>0?'#2563eb':(isHoje?'none':'#e2e8f0');
+      const barStroke = isHoje&&v===0?'stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,2"':'';
+      const barRect   = isHoje&&v===0
+        ? `<rect x="${x}" y="${BAR_H-h}" width="${barW}" height="${h}" rx="3" fill="#f1f5f9" ${barStroke}/>`
+        : `<rect x="${x}" y="${BAR_H-h}" width="${barW}" height="${h}" rx="3" fill="${barFill}"/>`;
+      return `<g>
+        ${barRect}
+        ${showLbl?`<text x="${xMid}" y="${BAR_H+12}" text-anchor="middle" font-size="${chartDays<=30?9:8}" fill="${v>0?'#94a3b8':isHoje?'#2563eb':'#cbd5e1'}">${lbl}${isHoje?' ◉':''}</text>`:''}
+        ${v>0?(h>=22?`<text x="${xMid}" y="${BAR_H-h/2+4}" text-anchor="middle" font-size="9" font-weight="bold" fill="white">${v}</text>`:`<text x="${xMid}" y="${BAR_H-h-5}" text-anchor="middle" font-size="9" font-weight="bold" fill="#1d4ed8">${v}</text>`):''}
+        ${isHoje&&v===0?`<text x="${xMid}" y="${BAR_H-8}" text-anchor="middle" font-size="8" fill="#94a3b8">0</text>`:''}
+      </g>`;
+    }).join('');
+
+    const chartArea = document.getElementById('chart-area');
+    if(chartArea) chartArea.innerHTML=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;width:100%">
+      <svg viewBox="0 0 ${svgTotalW} 200" style="width:${svgTotalW<600?'100%':svgTotalW+'px'};min-width:${Math.min(svgTotalW,300)}px;height:220px">${bars}</svg>
+    </div>`;
+
+  }catch(e){
+    const chartArea = document.getElementById('chart-area');
+    if(chartArea) chartArea.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">⚠️ Erro ao carregar gráfico. Tente novamente.</p>';
+    console.warn('renderAnalytics chart error', e);
+  }
+}
 function exportCSV(filtroEmpresaId=''){
   const allCartoes=getCartoes();
   const cartoes=filtroEmpresaId?allCartoes.filter(c=>c.empresaId===filtroEmpresaId):allCartoes;
