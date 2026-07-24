@@ -1353,6 +1353,8 @@ async function fazerLogin(ev) {
     btn.innerHTML = '<i class="fas fa-right-to-bracket mr-2"></i>Entrar';
 
     if (error) {
+        console.error('Erro de login Supabase:', error);
+        erro.innerHTML = '<i class="fas fa-circle-exclamation mr-1"></i>' + (error.message || 'Senha incorreta.') + ' <span class="text-gray-400">(' + (error.status || '') + ')</span>';
         erro.classList.remove('hidden');
         return false;
     }
