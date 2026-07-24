@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Migração SCL → Supabase</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-100 min-h-screen p-6">
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold text-gray-800 mb-2"><i class="fas fa-cloud-arrow-up mr-2 text-blue-600"></i>Migração do SCL para o Supabase</h1>
+    <p class="text-sm text-gray-600 mb-6">
+        Use esta página <strong>uma única vez</strong> para trazer os dados que estavam salvos no navegador (localStorage) para o banco online.
+        Depois de migrar com sucesso, pode apagar este arquivo do servidor (ele expõe suas chaves do Supabase e não deve ficar publicado).
+    </p>
+
+    <div class="bg-white rounded-xl shadow p-5 mb-4">
+        <h2 class="font-semibold text-gray-700 mb-2">Passo 1 — Copie os dados do arquivo antigo</h2>
+        <p class="text-sm text-gray-500 mb-2">
+            Abra o <code>licitacoes.html</code> antigo no navegador, aperte <kbd class="px-1.5 py-0.5 bg-gray-100 border rounded text-xs">F12</kbd> para abrir o Console e cole este comando (copia automaticamente):
+        </p>
+        <pre class="bg-gray-900 text-green-400 text-xs p-3 rounded-lg overflow-x-auto mb-2">copy(localStorage.getItem('licitacoes'))</pre>
+        <p class="text-sm text-gray-500">Depois cole (Ctrl+V) no campo abaixo:</p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-5 mb-4">
+        <label class="block font-semibold text-gray-700 mb-2">JSON das licitações</label>
+        <textarea id="json-licitacoes" rows="8" class="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-xs" placeholder="Cole aqui o resultado de localStorage.getItem('licitacoes')"></textarea>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-5 mb-4">
+        <label class="block font-semibold text-gray-700 mb-2">JSON do histórico <span class="text-gray-400 font-normal text-sm">(opcional — repita o comando trocando 'licitacoes' por 'historico')</span></label>
+        <textarea id="json-historico" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-xs" placeholder="Cole aqui o resultado de localStorage.getItem('historico') (opcional)"></textarea>
+    </div>
+
+    <button onclick="importar()" id="btn-importar" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition mb-4">
+        <i class="fas fa-upload mr-2"></i>Importar para o Supabase
+    </button>
+
+    <div id="resultado" class="hidden bg-white rounded-xl shadow p-5"></div>
+</div>
+
+<script>
+// Mesma lógica de normalização usada no app principal, para garantir que
+// registros antigos (de versões anteriores do sistema) fiquem no formato certo.
+function migrarRegistro(r) {
+    if (!r.estagio) {
+        const s = (r.status || '').toLowerCase();
+        if (s.includes('homolog') || s.includes('conclu')) r.estagio = 'ganhamos';
+        else if (s.includes('cancel')) r.estagio = 'perdemos';
+        else r.estagio = 'pendentes';
+    }
+    if (!r.observacoes) r.observacoes = Array.isArray(r.acompanhamento) ? r.acompanhamento : [];
+    if (!Array.isArray(r.links)) r.links = (r.link ? [{ titulo: 'Link', url: r.link }] : []);
+    if (!Array.isArray(r.ganhadores)) r.ganhadores = [];
+    if (!r.posicao) r.posicao = '';
+    if (!r.dataPregao) r.dataPregao = '';
+    if (!r.dataCriacao) r.dataCriacao = new Date().toISOString();
+    if (r.lembrete && r.lembrete.ativo && !r.lembrete.dataHora && r.lembrete.data) {
+        r.lembrete = { ativo: true, dataHora: new Date(r.lembrete.data).toISOString(), anotacao: r.lembrete.nota || '', disparado: false };
+    }
+    return r;
+}
+
+function paraLinhaSupabase(r) {
+    return {
+        id: r.id,
+        orgao: r.orgao || null,
+        produto: r.produto || null,
+        item: r.item || null,
+        controle: r.controle || null,
+        posicao: r.posicao || null,
+        estagio: r.estagio || 'pendentes',
+        data_pregao: r.dataPregao || null,
+        data_ganhamos: r.dataGanhamos || null,
+        data_perdemos: r.dataPerdemos || null,
+        ganhador: r.ganhador || null,
+        motivo: r.motivo || null,
+        links: r.links || [],
+        ganhadores: r.ganhadores || [],
+        observacoes: r.observacoes || [],
+        lembrete: r.lembrete || null,
+        origem_boletim: r.origemBoletim || null,
+        boletim_produto: r.boletimProduto || null,
+        data_criacao: r.dataCriacao || new Date().toISOString(),
+        data_atualizacao: r.dataAtualizacao || new Date().toISOString()
+    };
+}
+
+async function importar() {
+    const resultado = document.getElementById('resultado');
+    const btn = document.getElementById('btn-importar');
+    resultado.classList.remove('hidden');
+    resultado.innerHTML = '<p class="text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Importando...</p>';
+    btn.disabled = true;
+
+    let mensagens = [];
+
+    // Licitações
+    const textoLicitacoes = document.getElementById('json-licitacoes').value.trim();
+    if (textoLicitacoes) {
+        try {
+            const lista = JSON.parse(textoLicitacoes).map(migrarRegistro).map(paraLinhaSupabase);
+            const { error } = await supabaseClient.from('licitacoes').upsert(lista);
+            if (error) throw error;
+            mensagens.push(`<p class="text-green-700"><i class="fas fa-check-circle mr-2"></i>${lista.length} licitações importadas com sucesso.</p>`);
+        } catch (e) {
+            console.error(e);
+            mensagens.push(`<p class="text-red-700"><i class="fas fa-circle-exclamation mr-2"></i>Erro ao importar licitações: ${e.message || e}</p>`);
+        }
+    } else {
+        mensagens.push('<p class="text-gray-400">Nenhum JSON de licitações informado — pulado.</p>');
+    }
+
+    // Histórico
+    const textoHistorico = document.getElementById('json-historico').value.trim();
+    if (textoHistorico) {
+        try {
+            const lista = JSON.parse(textoHistorico);
+            const { error } = await supabaseClient.from('historico').upsert(lista);
+            if (error) throw error;
+            mensagens.push(`<p class="text-green-700"><i class="fas fa-check-circle mr-2"></i>${lista.length} eventos de histórico importados.</p>`);
+        } catch (e) {
+            console.error(e);
+            mensagens.push(`<p class="text-red-700"><i class="fas fa-circle-exclamation mr-2"></i>Erro ao importar histórico: ${e.message || e}</p>`);
+        }
+    }
+
+    resultado.innerHTML = mensagens.join('');
+    btn.disabled = false;
+}
+</script>
+</body>
+</html>
