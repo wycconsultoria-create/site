@@ -239,6 +239,15 @@ const STATUS_LABEL = {
   ficou_indaiatuba: 'Ficou em Indaiatuba', faltou: 'Faltou', outro: 'Outro'
 };
 
+// Data de hoje no fuso local (evita virar o dia errado por causa do UTC)
+function dataLocalHoje(){
+  const d = new Date();
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
 // ============================================================
 // LOGIN
 // ============================================================
@@ -292,7 +301,7 @@ document.querySelectorAll('.op-btn').forEach(btn => {
 });
 
 async function carregarOuCriarOperacao(tipo){
-  const hoje = new Date().toISOString().slice(0,10);
+  const hoje = dataLocalHoje();
 
   let { data: op, error } = await sb
     .from('operacoes')
@@ -311,20 +320,29 @@ async function carregarOuCriarOperacao(tipo){
       .single();
     if (errCriar) { alert('Erro ao criar operação: ' + errCriar.message); return; }
     op = novaOp;
-    await garantirPresencas(op);
   }
+
+  // Roda sempre (não só na criação): garante que colaboradores novos/editados
+  // na planilha entrem na lista de uma operação já aberta.
+  await garantirPresencas(op);
 
   operacaoAtual = op;
   await carregarPresencas();
 }
 
 // Cria uma linha de presença "pendente" para cada colaborador ativo elegível
+// que ainda não tem registro nesta operação (não duplica quem já está).
 async function garantirPresencas(op){
-  let query = sb.from('colaboradores').select('id, loja').eq('ativo', true);
-  const { data: colaboradores, error } = await query;
+  const { data: colaboradores, error } = await sb
+    .from('colaboradores').select('id, loja').eq('ativo', true);
   if (error) { alert('Erro ao buscar colaboradores: ' + error.message); return; }
 
-  const elegiveis = colaboradores.filter(c => elegivelParaOperacao(c, op.tipo));
+  const { data: jaExistentes, error: errExist } = await sb
+    .from('presencas').select('colaborador_id').eq('operacao_id', op.id);
+  if (errExist) { alert('Erro ao checar presenças existentes: ' + errExist.message); return; }
+  const idsExistentes = new Set((jaExistentes || []).map(p => p.colaborador_id));
+
+  const elegiveis = colaboradores.filter(c => elegivelParaOperacao(c, op.tipo) && !idsExistentes.has(c.id));
   if (elegiveis.length === 0) return;
 
   const linhas = elegiveis.map(c => ({
@@ -338,11 +356,17 @@ async function garantirPresencas(op){
 }
 
 // Saída Indaiatuba: todo mundo. Retorno: só quem tem aquela loja como destino.
+// Reconhece nome completo ou siglas comuns (ex: SBO, CPS).
 function elegivelParaOperacao(colaborador, tipo){
   if (tipo === 'saida_indaiatuba') return true;
-  const loja = (colaborador.loja || '').toLowerCase();
-  if (tipo === 'retorno_campinas') return loja.includes('campinas');
-  if (tipo === 'retorno_santa_barbara') return loja.includes('santa') || loja.includes('bárbara') || loja.includes('barbara');
+  const loja = (colaborador.loja || '').toLowerCase().trim();
+  if (tipo === 'retorno_campinas') {
+    return loja.includes('campinas') || loja === 'cps' || loja === 'cam';
+  }
+  if (tipo === 'retorno_santa_barbara') {
+    return loja.includes('santa') || loja.includes('bárbara') || loja.includes('barbara')
+      || loja === 'sbo' || loja === 'sb' || loja === 'stbo';
+  }
   return false;
 }
 
