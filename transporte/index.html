@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Transporte - Paulistão Atacadista</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="supabase-config.js"></script>
+<style>
+  :root{
+    --primary:#1a1a2e;
+    --accent:#e63946;
+    --accent2:#2a9d8f;
+    --bg:#f4f5f7;
+  }
+  body{ background:var(--bg); font-family:'Segoe UI',system-ui,sans-serif; }
+  .navbar-brand{ font-weight:700; letter-spacing:.5px; }
+  .app-navbar{ background:var(--primary); }
+  .card-colab{ border:none; border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,.06); transition:.15s; }
+  .card-colab:hover{ box-shadow:0 4px 16px rgba(0,0,0,.1); }
+  .status-badge{ font-size:.72rem; padding:.35em .7em; border-radius:20px; font-weight:600; }
+  .st-pendente{ background:#fff3cd; color:#856404; }
+  .st-confirmado{ background:#d1f5ea; color:#0f6b58; }
+  .st-atestado{ background:#e2d9f3; color:#4b2e83; }
+  .st-ficou_indaiatuba{ background:#dbe9ff; color:#1d4f9e; }
+  .st-faltou{ background:#f8d7da; color:#842029; }
+  .st-outro{ background:#e2e3e5; color:#41464b; }
+  .kpi-card{ border-radius:14px; border:none; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+  .kpi-num{ font-size:1.6rem; font-weight:700; }
+  .login-wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--primary),#0f3460); }
+  .login-card{ border-radius:18px; border:none; box-shadow:0 10px 40px rgba(0,0,0,.35); }
+  .btn-accent{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn-accent:hover{ background:#c62839; border-color:#c62839; color:#fff; }
+  .op-btn{ border-radius:14px; padding:1.1rem; font-weight:600; }
+  .op-btn.active{ box-shadow:0 0 0 3px var(--accent2) inset; }
+  .hidden{ display:none !important; }
+  .loja-chip{ font-size:.7rem; background:#eef0f4; border-radius:8px; padding:.1em .5em; }
+  #searchBox{ max-width:320px; }
+  .list-empty{ opacity:.6; padding:3rem 0; text-align:center; }
+</style>
+</head>
+<body>
+
+<!-- ===================== TELA DE LOGIN ===================== -->
+<div id="loginScreen" class="login-wrap">
+  <div class="card login-card p-2" style="width:100%;max-width:380px;">
+    <div class="card-body p-4">
+      <div class="text-center mb-4">
+        <i class="bi bi-bus-front" style="font-size:2.5rem;color:var(--accent);"></i>
+        <h5 class="mt-2 mb-0 fw-bold">Controle de Transporte</h5>
+        <small class="text-muted">Paulistão Atacadista</small>
+      </div>
+      <form id="loginForm">
+        <label class="form-label small">Senha de acesso</label>
+        <div class="input-group mb-3">
+          <input type="password" id="senhaInput" class="form-control" placeholder="••••••••" required>
+          <button class="btn btn-outline-secondary" type="button" id="toggleSenha"><i class="bi bi-eye"></i></button>
+        </div>
+        <div id="loginErro" class="text-danger small mb-2 hidden">Senha incorreta.</div>
+        <button type="submit" class="btn btn-accent w-100">Entrar</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app" class="hidden">
+  <nav class="navbar app-navbar navbar-dark px-3">
+    <span class="navbar-brand mb-0"><i class="bi bi-bus-front-fill me-2"></i>Controle de Transporte</span>
+    <div>
+      <button class="btn btn-sm btn-outline-light me-2" id="btnImportar"><i class="bi bi-upload"></i> Importar planilha</button>
+      <button class="btn btn-sm btn-outline-light me-2" id="btnHistorico"><i class="bi bi-clock-history"></i> Histórico</button>
+      <button class="btn btn-sm btn-outline-light" id="btnSair"><i class="bi bi-box-arrow-right"></i> Sair</button>
+    </div>
+  </nav>
+
+  <div class="container py-4">
+
+    <!-- Seleção de operação -->
+    <div class="row g-2 mb-4">
+      <div class="col-md-4">
+        <button class="btn btn-light w-100 op-btn" data-tipo="saida_indaiatuba">
+          <i class="bi bi-arrow-up-right-circle me-1"></i> Saída Indaiatuba
+        </button>
+      </div>
+      <div class="col-md-4">
+        <button class="btn btn-light w-100 op-btn" data-tipo="retorno_campinas">
+          <i class="bi bi-arrow-down-left-circle me-1"></i> Retorno Campinas
+        </button>
+      </div>
+      <div class="col-md-4">
+        <button class="btn btn-light w-100 op-btn" data-tipo="retorno_santa_barbara">
+          <i class="bi bi-arrow-down-left-circle me-1"></i> Retorno Santa Bárbara
+        </button>
+      </div>
+    </div>
+
+    <div id="operacaoArea" class="hidden">
+
+      <!-- Dashboard -->
+      <div class="row g-2 mb-3" id="kpiRow">
+        <div class="col-6 col-md-2"><div class="card kpi-card p-3 text-center"><div class="kpi-num" id="kpiTotal">0</div><small class="text-muted">Total</small></div></div>
+        <div class="col-6 col-md-2"><div class="card kpi-card p-3 text-center"><div class="kpi-num text-success" id="kpiConfirmados">0</div><small class="text-muted">Confirmados</small></div></div>
+        <div class="col-6 col-md-2"><div class="card kpi-card p-3 text-center"><div class="kpi-num text-purple" id="kpiAtestados">0</div><small class="text-muted">Atestados</small></div></div>
+        <div class="col-6 col-md-2"><div class="card kpi-card p-3 text-center"><div class="kpi-num text-danger" id="kpiFaltaram">0</div><small class="text-muted">Faltaram</small></div></div>
+        <div class="col-6 col-md-2"><div class="card kpi-card p-3 text-center"><div class="kpi-num text-primary" id="kpiFicaram">0</div><small class="text-muted">Ficaram Indaiatuba</small></div></div>
+        <div class="col-6 col-md-2"><div class="card kpi-card p-3 text-center"><div class="kpi-num text-warning" id="kpiPendentes">0</div><small class="text-muted">Pendentes</small></div></div>
+      </div>
+
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div class="d-flex gap-2 align-items-center">
+          <input type="text" id="searchBox" class="form-control form-control-sm" placeholder="Buscar por nome...">
+          <div class="btn-group btn-group-sm" role="group">
+            <button class="btn btn-outline-secondary active" data-filtro="todos">Todos</button>
+            <button class="btn btn-outline-secondary" data-filtro="pendente">Pendentes</button>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-file-earmark-arrow-down"></i> Exportar</button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="#" id="exportXlsx">Excel (.xlsx)</a></li>
+              <li><a class="dropdown-item" href="#" id="exportPdf">PDF</a></li>
+            </ul>
+          </div>
+          <button class="btn btn-sm btn-accent" id="btnFinalizar" disabled>
+            <i class="bi bi-check2-circle"></i> Finalizar Operação
+          </button>
+        </div>
+      </div>
+
+      <div id="listaColaboradores" class="row g-3"></div>
+      <div id="listaVazia" class="list-empty hidden">
+        <i class="bi bi-inbox" style="font-size:2rem;"></i>
+        <p class="mt-2">Nenhum colaborador nesta lista. Importe a planilha para começar.</p>
+      </div>
+    </div>
+
+    <div id="semOperacao" class="text-center text-muted py-5">
+      <i class="bi bi-hand-index" style="font-size:2rem;"></i>
+      <p class="mt-2">Selecione uma operação acima para começar o check de presença.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: IMPORTAR PLANILHA ===================== -->
+<div class="modal fade" id="modalImportar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title">Importar colaboradores</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted">A planilha deve conter as colunas: <strong>ID, Nome, Equipe, Loja</strong>.</p>
+        <input type="file" class="form-control" id="fileInput" accept=".xlsx,.xls,.csv">
+        <div id="importStatus" class="small mt-2"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar</button>
+        <button class="btn btn-accent btn-sm" id="btnConfirmarImport">Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: APONTAMENTO ===================== -->
+<div class="modal fade" id="modalApontamento" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title">Apontamento - <span id="apontNome"></span></h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label small">Motivo</label>
+        <select class="form-select mb-3" id="apontMotivo">
+          <option value="atestado">Atestado</option>
+          <option value="ficou_indaiatuba">Ficou em Indaiatuba</option>
+          <option value="faltou">Faltou</option>
+          <option value="outro">Outro</option>
+        </select>
+        <label class="form-label small">Observação (opcional)</label>
+        <textarea class="form-control" id="apontObs" rows="2" placeholder="Detalhes adicionais..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-accent btn-sm" id="btnSalvarApontamento">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: HISTÓRICO ===================== -->
+<div class="modal fade" id="modalHistorico" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title">Histórico de operações</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <table class="table table-sm">
+          <thead><tr><th>Data</th><th>Operação</th><th>Status</th><th>Confirmados</th><th>Pendências</th><th></th></tr></thead>
+          <tbody id="historicoBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ============================================================
+// Estado global
+// ============================================================
+let supabase = null;
+let operacaoAtual = null;   // registro da operação aberta
+let tipoAtual = null;
+let presencasAtuais = [];   // join colaborador + presenca
+let filtroAtual = 'todos';
+let colaboradorApontamentoAtual = null;
+
+const TIPO_LABEL = {
+  saida_indaiatuba: 'Saída Indaiatuba',
+  retorno_campinas: 'Retorno Campinas',
+  retorno_santa_barbara: 'Retorno Santa Bárbara'
+};
+const STATUS_LABEL = {
+  pendente: 'Pendente', confirmado: 'Confirmado', atestado: 'Atestado',
+  ficou_indaiatuba: 'Ficou em Indaiatuba', faltou: 'Faltou', outro: 'Outro'
+};
+
+// ============================================================
+// LOGIN
+// ============================================================
+document.getElementById('toggleSenha').addEventListener('click', () => {
+  const i = document.getElementById('senhaInput');
+  i.type = i.type === 'password' ? 'text' : 'password';
+});
+
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const senha = document.getElementById('senhaInput').value;
+  if (senha === SENHA_ACESSO) {
+    sessionStorage.setItem('transporte_logado', '1');
+    iniciarApp();
+  } else {
+    document.getElementById('loginErro').classList.remove('hidden');
+  }
+});
+
+document.getElementById('btnSair').addEventListener('click', () => {
+  sessionStorage.removeItem('transporte_logado');
+  location.reload();
+});
+
+function iniciarApp(){
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  if (!supabase) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      db: { schema: SUPABASE_SCHEMA }
+    });
+  }
+}
+
+if (sessionStorage.getItem('transporte_logado') === '1') {
+  iniciarApp();
+}
+
+// ============================================================
+// SELEÇÃO DE OPERAÇÃO
+// ============================================================
+document.querySelectorAll('.op-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    tipoAtual = btn.dataset.tipo;
+    document.getElementById('semOperacao').classList.add('hidden');
+    document.getElementById('operacaoArea').classList.remove('hidden');
+    await carregarOuCriarOperacao(tipoAtual);
+  });
+});
+
+async function carregarOuCriarOperacao(tipo){
+  const hoje = new Date().toISOString().slice(0,10);
+
+  let { data: op, error } = await supabase
+    .from('operacoes')
+    .select('*')
+    .eq('tipo', tipo)
+    .eq('data', hoje)
+    .maybeSingle();
+
+  if (error) { alert('Erro ao carregar operação: ' + error.message); return; }
+
+  if (!op) {
+    const { data: novaOp, error: errCriar } = await supabase
+      .from('operacoes')
+      .insert({ tipo, data: hoje })
+      .select()
+      .single();
+    if (errCriar) { alert('Erro ao criar operação: ' + errCriar.message); return; }
+    op = novaOp;
+    await garantirPresencas(op);
+  }
+
+  operacaoAtual = op;
+  await carregarPresencas();
+}
+
+// Cria uma linha de presença "pendente" para cada colaborador ativo elegível
+async function garantirPresencas(op){
+  let query = supabase.from('colaboradores').select('id, loja').eq('ativo', true);
+  const { data: colaboradores, error } = await query;
+  if (error) { alert('Erro ao buscar colaboradores: ' + error.message); return; }
+
+  const elegiveis = colaboradores.filter(c => elegivelParaOperacao(c, op.tipo));
+  if (elegiveis.length === 0) return;
+
+  const linhas = elegiveis.map(c => ({
+    operacao_id: op.id,
+    colaborador_id: c.id,
+    status: 'pendente'
+  }));
+
+  const { error: errInsert } = await supabase.from('presencas').insert(linhas);
+  if (errInsert) console.warn('Aviso ao gerar presenças:', errInsert.message);
+}
+
+// Saída Indaiatuba: todo mundo. Retorno: só quem tem aquela loja como destino.
+function elegivelParaOperacao(colaborador, tipo){
+  if (tipo === 'saida_indaiatuba') return true;
+  const loja = (colaborador.loja || '').toLowerCase();
+  if (tipo === 'retorno_campinas') return loja.includes('campinas');
+  if (tipo === 'retorno_santa_barbara') return loja.includes('santa') || loja.includes('bárbara') || loja.includes('barbara');
+  return false;
+}
+
+// ============================================================
+// CARREGAR LISTA DE PRESENÇAS
+// ============================================================
+async function carregarPresencas(){
+  const { data, error } = await supabase
+    .from('presencas')
+    .select('id, status, observacao, atualizado_em, colaboradores(id, nome, equipe, loja)')
+    .eq('operacao_id', operacaoAtual.id);
+
+  if (error) { alert('Erro ao carregar lista: ' + error.message); return; }
+
+  presencasAtuais = (data || [])
+    .filter(p => p.colaboradores)
+    .sort((a,b) => a.colaboradores.nome.localeCompare(b.colaboradores.nome, 'pt-BR'));
+
+  renderizarLista();
+  atualizarKpis();
+  atualizarBotaoFinalizar();
+}
+
+function renderizarLista(){
+  const container = document.getElementById('listaColaboradores');
+  const busca = document.getElementById('searchBox').value.trim().toLowerCase();
+
+  let lista = presencasAtuais;
+  if (filtroAtual === 'pendente') lista = lista.filter(p => p.status === 'pendente');
+  if (busca) lista = lista.filter(p => p.colaboradores.nome.toLowerCase().includes(busca));
+
+  container.innerHTML = '';
+  document.getElementById('listaVazia').classList.toggle('hidden', lista.length > 0);
+
+  lista.forEach(p => {
+    const c = p.colaboradores;
+    const col = document.createElement('div');
+    col.className = 'col-12 col-md-6 col-lg-4';
+    col.innerHTML = `
+      <div class="card card-colab p-3 h-100">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <div class="fw-semibold">${escapeHtml(c.nome)}</div>
+            <div class="small text-muted">${escapeHtml(c.equipe || '-')}</div>
+            <span class="loja-chip">${escapeHtml(c.loja || '-')}</span>
+          </div>
+          <span class="status-badge st-${p.status}">${STATUS_LABEL[p.status]}</span>
+        </div>
+        ${p.observacao ? `<div class="small text-muted mb-2"><i class="bi bi-chat-left-text me-1"></i>${escapeHtml(p.observacao)}</div>` : ''}
+        <div class="d-flex gap-2 mt-auto">
+          <button class="btn btn-sm btn-success flex-grow-1 btn-confirmar" data-id="${p.id}" ${p.status==='confirmado'?'disabled':''}>
+            <i class="bi bi-check-lg"></i> Confirmar
+          </button>
+          <button class="btn btn-sm btn-outline-secondary btn-apontamento"
+                  data-id="${p.id}" data-nome="${escapeHtml(c.nome)}">
+            <i class="bi bi-three-dots"></i>
+          </button>
+        </div>
+      </div>`;
+    container.appendChild(col);
+  });
+
+  container.querySelectorAll('.btn-confirmar').forEach(b =>
+    b.addEventListener('click', () => atualizarStatus(b.dataset.id, 'confirmado')));
+  container.querySelectorAll('.btn-apontamento').forEach(b =>
+    b.addEventListener('click', () => abrirApontamento(b.dataset.id, b.dataset.nome)));
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+document.getElementById('searchBox').addEventListener('input', renderizarLista);
+document.querySelectorAll('[data-filtro]').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('[data-filtro]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    filtroAtual = b.dataset.filtro;
+    renderizarLista();
+  });
+});
+
+// ============================================================
+// CONFIRMAR / APONTAMENTO
+// ============================================================
+async function atualizarStatus(presencaId, status, observacao = null){
+  const { error } = await supabase
+    .from('presencas')
+    .update({ status, observacao, atualizado_em: new Date().toISOString() })
+    .eq('id', presencaId);
+  if (error) { alert('Erro ao salvar: ' + error.message); return; }
+  await carregarPresencas();
+}
+
+function abrirApontamento(presencaId, nome){
+  colaboradorApontamentoAtual = presencaId;
+  document.getElementById('apontNome').textContent = nome;
+  document.getElementById('apontObs').value = '';
+  document.getElementById('apontMotivo').value = 'atestado';
+  new bootstrap.Modal(document.getElementById('modalApontamento')).show();
+}
+
+document.getElementById('btnSalvarApontamento').addEventListener('click', async () => {
+  const motivo = document.getElementById('apontMotivo').value;
+  const obs = document.getElementById('apontObs').value.trim() || null;
+  await atualizarStatus(colaboradorApontamentoAtual, motivo, obs);
+  bootstrap.Modal.getInstance(document.getElementById('modalApontamento')).hide();
+});
+
+// ============================================================
+// DASHBOARD / KPIs
+// ============================================================
+function atualizarKpis(){
+  const total = presencasAtuais.length;
+  const conta = st => presencasAtuais.filter(p => p.status === st).length;
+  document.getElementById('kpiTotal').textContent = total;
+  document.getElementById('kpiConfirmados').textContent = conta('confirmado');
+  document.getElementById('kpiAtestados').textContent = conta('atestado');
+  document.getElementById('kpiFaltaram').textContent = conta('faltou');
+  document.getElementById('kpiFicaram').textContent = conta('ficou_indaiatuba');
+  document.getElementById('kpiPendentes').textContent = conta('pendente');
+}
+
+function atualizarBotaoFinalizar(){
+  const pendentes = presencasAtuais.filter(p => p.status === 'pendente').length;
+  const btn = document.getElementById('btnFinalizar');
+  btn.disabled = pendentes > 0 || presencasAtuais.length === 0 || operacaoAtual.status === 'finalizada';
+  btn.innerHTML = operacaoAtual.status === 'finalizada'
+    ? '<i class="bi bi-check2-circle"></i> Operação finalizada'
+    : '<i class="bi bi-check2-circle"></i> Finalizar Operação';
+}
+
+document.getElementById('btnFinalizar').addEventListener('click', async () => {
+  if (!confirm('Finalizar esta operação? Não será possível alterar os registros depois.')) return;
+  const { error } = await supabase
+    .from('operacoes')
+    .update({ status: 'finalizada', finalizada_em: new Date().toISOString() })
+    .eq('id', operacaoAtual.id);
+  if (error) { alert('Erro ao finalizar: ' + error.message); return; }
+  operacaoAtual.status = 'finalizada';
+  atualizarBotaoFinalizar();
+  alert('Operação finalizada com sucesso.');
+});
+
+// ============================================================
+// IMPORTAR PLANILHA (ID, Nome, Equipe, Loja)
+// ============================================================
+document.getElementById('btnImportar').addEventListener('click', () => {
+  document.getElementById('importStatus').textContent = '';
+  new bootstrap.Modal(document.getElementById('modalImportar')).show();
+});
+
+document.getElementById('btnConfirmarImport').addEventListener('click', async () => {
+  const fileInput = document.getElementById('fileInput');
+  const status = document.getElementById('importStatus');
+  if (!fileInput.files.length) { status.textContent = 'Selecione um arquivo.'; return; }
+
+  status.textContent = 'Lendo planilha...';
+  const file = fileInput.files[0];
+  const buffer = await file.arrayBuffer();
+  const wb = XLSX.read(buffer, { type: 'array' });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+  if (!rows.length) { status.textContent = 'Planilha vazia.'; return; }
+
+  // Normaliza nomes de coluna (aceita variações de maiúsculas/acentos)
+  const norm = s => String(s).trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+
+  const linhas = rows.map(r => {
+    const obj = {};
+    Object.keys(r).forEach(k => obj[norm(k)] = r[k]);
+    return {
+      id: String(obj['id'] ?? '').trim(),
+      nome: String(obj['nome'] ?? '').trim(),
+      equipe: String(obj['equipe'] ?? '').trim(),
+      loja: String(obj['loja'] ?? '').trim()
+    };
+  }).filter(r => r.id && r.nome);
+
+  if (!linhas.length) {
+    status.textContent = 'Não encontrei colunas ID e Nome válidas na planilha.';
+    return;
+  }
+
+  status.textContent = `Importando ${linhas.length} colaboradores...`;
+
+  const { error } = await supabase
+    .from('colaboradores')
+    .upsert(linhas.map(l => ({ ...l, atualizado_em: new Date().toISOString() })), { onConflict: 'id' });
+
+  if (error) {
+    status.textContent = 'Erro ao importar: ' + error.message;
+    return;
+  }
+
+  status.textContent = `${linhas.length} colaboradores importados/atualizados com sucesso.`;
+  fileInput.value = '';
+
+  // Se já existe uma operação aberta, garante presenças para os novos colaboradores
+  if (operacaoAtual) {
+    await garantirPresencas(operacaoAtual);
+    await carregarPresencas();
+  }
+});
+
+// ============================================================
+// EXPORTAR (Excel / PDF)
+// ============================================================
+function montarLinhasExport(){
+  return presencasAtuais.map(p => ({
+    Nome: p.colaboradores.nome,
+    Equipe: p.colaboradores.equipe || '',
+    Loja: p.colaboradores.loja || '',
+    Status: STATUS_LABEL[p.status],
+    Observacao: p.observacao || ''
+  }));
+}
+
+document.getElementById('exportXlsx').addEventListener('click', (e) => {
+  e.preventDefault();
+  const linhas = montarLinhasExport();
+  const ws = XLSX.utils.json_to_sheet(linhas);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Relatorio');
+  const nomeArquivo = `transporte_${TIPO_LABEL[tipoAtual].replace(/\s/g,'_')}_${operacaoAtual.data}.xlsx`;
+  XLSX.writeFile(wb, nomeArquivo);
+});
+
+document.getElementById('exportPdf').addEventListener('click', (e) => {
+  e.preventDefault();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(14);
+  doc.text('Controle de Transporte - Paulistão Atacadista', 14, 16);
+  doc.setFontSize(10);
+  doc.text(`${TIPO_LABEL[tipoAtual]}  |  Data: ${operacaoAtual.data}`, 14, 23);
+
+  const linhas = montarLinhasExport().map(l => [l.Nome, l.Equipe, l.Loja, l.Status, l.Observacao]);
+  doc.autoTable({
+    head: [['Nome', 'Equipe', 'Loja', 'Status', 'Observação']],
+    body: linhas,
+    startY: 28,
+    styles: { fontSize: 8 }
+  });
+
+  doc.save(`transporte_${TIPO_LABEL[tipoAtual].replace(/\s/g,'_')}_${operacaoAtual.data}.pdf`);
+});
+
+// ============================================================
+// HISTÓRICO
+// ============================================================
+document.getElementById('btnHistorico').addEventListener('click', async () => {
+  const { data: operacoes, error } = await supabase
+    .from('operacoes')
+    .select('*')
+    .order('data', { ascending: false })
+    .limit(50);
+  if (error) { alert('Erro ao carregar histórico: ' + error.message); return; }
+
+  const tbody = document.getElementById('historicoBody');
+  tbody.innerHTML = '';
+
+  for (const op of operacoes) {
+    const { data: pres } = await supabase
+      .from('presencas')
+      .select('status')
+      .eq('operacao_id', op.id);
+    const confirmados = (pres || []).filter(p => p.status === 'confirmado').length;
+    const pendentes = (pres || []).filter(p => p.status === 'pendente').length;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${op.data}</td>
+      <td>${TIPO_LABEL[op.tipo] || op.tipo}</td>
+      <td><span class="badge ${op.status === 'finalizada' ? 'bg-success' : 'bg-warning text-dark'}">${op.status}</span></td>
+      <td>${confirmados}/${(pres||[]).length}</td>
+      <td>${pendentes}</td>
+      <td><button class="btn btn-sm btn-outline-primary btn-abrir-hist" data-tipo="${op.tipo}" data-data="${op.data}">Abrir</button></td>`;
+    tbody.appendChild(tr);
+  }
+
+  tbody.querySelectorAll('.btn-abrir-hist').forEach(b => {
+    b.addEventListener('click', async () => {
+      bootstrap.Modal.getInstance(document.getElementById('modalHistorico')).hide();
+      document.querySelectorAll('.op-btn').forEach(x => x.classList.remove('active'));
+      document.querySelector(`.op-btn[data-tipo="${b.dataset.tipo}"]`).classList.add('active');
+      tipoAtual = b.dataset.tipo;
+      document.getElementById('semOperacao').classList.add('hidden');
+      document.getElementById('operacaoArea').classList.remove('hidden');
+
+      const { data: op } = await supabase.from('operacoes').select('*')
+        .eq('tipo', b.dataset.tipo).eq('data', b.dataset.data).single();
+      operacaoAtual = op;
+      await carregarPresencas();
+    });
+  });
+
+  new bootstrap.Modal(document.getElementById('modalHistorico')).show();
+});
+</script>
+</body>
+</html>
