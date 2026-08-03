@@ -51,7 +51,7 @@
   <div class="card login-card p-2" style="width:100%;max-width:380px;">
     <div class="card-body p-4">
       <div class="text-center mb-4">
-        <i class="bi bi-bus-front" style="font-size:2.5rem;color:var(--accent);"></i>
+        <img src="logo.png" alt="Paulistão Atacadista" style="height:60px;">
         <h5 class="mt-2 mb-0 fw-bold">Controle de Transporte</h5>
         <small class="text-muted">Paulistão Atacadista</small>
       </div>
@@ -71,7 +71,10 @@
 <!-- ===================== APP ===================== -->
 <div id="app" class="hidden">
   <nav class="navbar app-navbar navbar-dark px-3">
-    <span class="navbar-brand mb-0"><i class="bi bi-bus-front-fill me-2"></i>Controle de Transporte</span>
+    <span class="navbar-brand mb-0 d-flex align-items-center gap-2">
+      <img src="logo.png" alt="Paulistão Atacadista" style="height:32px;background:#fff;border-radius:6px;padding:2px 4px;">
+      Controle de Transporte
+    </span>
     <div>
       <button class="btn btn-sm btn-outline-light me-2" id="btnImportar"><i class="bi bi-upload"></i> Importar planilha</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnHistorico"><i class="bi bi-clock-history"></i> Histórico</button>
@@ -219,7 +222,7 @@
 // ============================================================
 // Estado global
 // ============================================================
-let supabase = null;
+let sb = null;
 let operacaoAtual = null;   // registro da operação aberta
 let tipoAtual = null;
 let presencasAtuais = [];   // join colaborador + presenca
@@ -263,8 +266,8 @@ document.getElementById('btnSair').addEventListener('click', () => {
 function iniciarApp(){
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  if (!supabase) {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  if (!sb) {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       db: { schema: SUPABASE_SCHEMA }
     });
   }
@@ -291,7 +294,7 @@ document.querySelectorAll('.op-btn').forEach(btn => {
 async function carregarOuCriarOperacao(tipo){
   const hoje = new Date().toISOString().slice(0,10);
 
-  let { data: op, error } = await supabase
+  let { data: op, error } = await sb
     .from('operacoes')
     .select('*')
     .eq('tipo', tipo)
@@ -301,7 +304,7 @@ async function carregarOuCriarOperacao(tipo){
   if (error) { alert('Erro ao carregar operação: ' + error.message); return; }
 
   if (!op) {
-    const { data: novaOp, error: errCriar } = await supabase
+    const { data: novaOp, error: errCriar } = await sb
       .from('operacoes')
       .insert({ tipo, data: hoje })
       .select()
@@ -317,7 +320,7 @@ async function carregarOuCriarOperacao(tipo){
 
 // Cria uma linha de presença "pendente" para cada colaborador ativo elegível
 async function garantirPresencas(op){
-  let query = supabase.from('colaboradores').select('id, loja').eq('ativo', true);
+  let query = sb.from('colaboradores').select('id, loja').eq('ativo', true);
   const { data: colaboradores, error } = await query;
   if (error) { alert('Erro ao buscar colaboradores: ' + error.message); return; }
 
@@ -330,7 +333,7 @@ async function garantirPresencas(op){
     status: 'pendente'
   }));
 
-  const { error: errInsert } = await supabase.from('presencas').insert(linhas);
+  const { error: errInsert } = await sb.from('presencas').insert(linhas);
   if (errInsert) console.warn('Aviso ao gerar presenças:', errInsert.message);
 }
 
@@ -347,7 +350,7 @@ function elegivelParaOperacao(colaborador, tipo){
 // CARREGAR LISTA DE PRESENÇAS
 // ============================================================
 async function carregarPresencas(){
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('presencas')
     .select('id, status, observacao, atualizado_em, colaboradores(id, nome, equipe, loja)')
     .eq('operacao_id', operacaoAtual.id);
@@ -426,7 +429,7 @@ document.querySelectorAll('[data-filtro]').forEach(b => {
 // CONFIRMAR / APONTAMENTO
 // ============================================================
 async function atualizarStatus(presencaId, status, observacao = null){
-  const { error } = await supabase
+  const { error } = await sb
     .from('presencas')
     .update({ status, observacao, atualizado_em: new Date().toISOString() })
     .eq('id', presencaId);
@@ -474,7 +477,7 @@ function atualizarBotaoFinalizar(){
 
 document.getElementById('btnFinalizar').addEventListener('click', async () => {
   if (!confirm('Finalizar esta operação? Não será possível alterar os registros depois.')) return;
-  const { error } = await supabase
+  const { error } = await sb
     .from('operacoes')
     .update({ status: 'finalizada', finalizada_em: new Date().toISOString() })
     .eq('id', operacaoAtual.id);
@@ -528,7 +531,7 @@ document.getElementById('btnConfirmarImport').addEventListener('click', async ()
 
   status.textContent = `Importando ${linhas.length} colaboradores...`;
 
-  const { error } = await supabase
+  const { error } = await sb
     .from('colaboradores')
     .upsert(linhas.map(l => ({ ...l, atualizado_em: new Date().toISOString() })), { onConflict: 'id' });
 
@@ -594,7 +597,7 @@ document.getElementById('exportPdf').addEventListener('click', (e) => {
 // HISTÓRICO
 // ============================================================
 document.getElementById('btnHistorico').addEventListener('click', async () => {
-  const { data: operacoes, error } = await supabase
+  const { data: operacoes, error } = await sb
     .from('operacoes')
     .select('*')
     .order('data', { ascending: false })
@@ -605,7 +608,7 @@ document.getElementById('btnHistorico').addEventListener('click', async () => {
   tbody.innerHTML = '';
 
   for (const op of operacoes) {
-    const { data: pres } = await supabase
+    const { data: pres } = await sb
       .from('presencas')
       .select('status')
       .eq('operacao_id', op.id);
@@ -632,7 +635,7 @@ document.getElementById('btnHistorico').addEventListener('click', async () => {
       document.getElementById('semOperacao').classList.add('hidden');
       document.getElementById('operacaoArea').classList.remove('hidden');
 
-      const { data: op } = await supabase.from('operacoes').select('*')
+      const { data: op } = await sb.from('operacoes').select('*')
         .eq('tipo', b.dataset.tipo).eq('data', b.dataset.data).single();
       operacaoAtual = op;
       await carregarPresencas();
