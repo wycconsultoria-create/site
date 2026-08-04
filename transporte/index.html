@@ -42,6 +42,16 @@
   .loja-chip{ font-size:.7rem; background:#eef0f4; border-radius:8px; padding:.1em .5em; }
   #searchBox{ max-width:320px; }
   .list-empty{ opacity:.6; padding:3rem 0; text-align:center; }
+  .dash-calendar{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .dash-day-header{ text-align:center; font-weight:700; font-size:.72rem; color:#888; padding:.3rem 0; text-transform:uppercase; }
+  .dash-day-cell{ background:#f8f9fa; border-radius:10px; min-height:74px; padding:.4rem; }
+  .dash-day-blank{ background:transparent; }
+  .dash-day-has-data{ background:#eef6ff; border:1px solid #d3e6ff; }
+  .dash-day-num{ font-weight:700; font-size:.8rem; margin-bottom:.25rem; }
+  .dash-day-stats{ display:flex; flex-direction:column; gap:2px; font-size:.65rem; }
+  .dash-stat-total{ color:#495057; }
+  .dash-stat-confirmados{ color:#0f6b58; font-weight:600; }
+  .dash-stat-apontamentos{ color:#856404; font-weight:600; }
 </style>
 </head>
 <body>
@@ -77,6 +87,7 @@
     </span>
     <div>
       <button class="btn btn-sm btn-outline-light me-2" id="btnImportar"><i class="bi bi-upload"></i> Importar planilha</button>
+      <button class="btn btn-sm btn-outline-light me-2" id="btnDashboard"><i class="bi bi-calendar3"></i> Dashboard</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnHistorico"><i class="bi bi-clock-history"></i> Histórico</button>
       <button class="btn btn-sm btn-outline-light" id="btnSair"><i class="bi bi-box-arrow-right"></i> Sair</button>
     </div>
@@ -121,6 +132,7 @@
           <div class="btn-group btn-group-sm" role="group">
             <button class="btn btn-outline-secondary active" data-filtro="todos">Todos</button>
             <button class="btn btn-outline-secondary" data-filtro="pendente">Pendentes</button>
+            <button class="btn btn-outline-secondary" data-filtro="desativado">Desativados</button>
           </div>
         </div>
         <div class="d-flex gap-2">
@@ -170,6 +182,78 @@
       <div class="modal-footer">
         <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar</button>
         <button class="btn btn-accent btn-sm" id="btnConfirmarImport">Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: DASHBOARD (CALENDÁRIO) ===================== -->
+<div class="modal fade" id="modalDashboard" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title"><i class="bi bi-calendar3 me-1"></i> Dashboard - Saída Indaiatuba por dia</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <button class="btn btn-sm btn-outline-secondary" id="dashMesAnterior"><i class="bi bi-chevron-left"></i></button>
+          <h6 class="mb-0" id="dashMesLabel">-</h6>
+          <button class="btn btn-sm btn-outline-secondary" id="dashMesProximo"><i class="bi bi-chevron-right"></i></button>
+        </div>
+        <div class="d-flex gap-3 small mb-2">
+          <span><span class="dash-stat-total">■</span> Total</span>
+          <span><span class="dash-stat-confirmados">■</span> Confirmados</span>
+          <span><span class="dash-stat-apontamentos">■</span> Apontamentos</span>
+        </div>
+        <div class="dash-calendar" id="dashCalendarGrid"></div>
+        <p class="small text-muted mt-3 mb-0">
+          Os números consideram apenas a operação de Saída Indaiatuba de cada dia
+          (contagem cheia de quem estava previsto pra sair).
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: EDITAR COLABORADOR ===================== -->
+<div class="modal fade" id="modalEditarColab" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title"><i class="bi bi-pencil me-1"></i> Editar cadastro</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editColabId">
+        <div class="mb-2">
+          <label class="form-label small">Nome</label>
+          <input type="text" class="form-control" id="editColabNome">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small">Equipe</label>
+          <input type="text" class="form-control" id="editColabEquipe" list="listaEquipes">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small">Loja / Cidade</label>
+          <input type="text" class="form-control" id="editColabLoja" list="listaLojas">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small">Status</label>
+          <select class="form-select" id="editColabAtivo">
+            <option value="true">Ativo</option>
+            <option value="false">Desativado</option>
+          </select>
+        </div>
+        <div id="editColabStatus" class="small mt-2 text-muted">
+          Alterar a loja pode mudar em quais operações de retorno essa pessoa aparece a partir de agora.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-accent btn-sm" id="btnSalvarEditarColab">
+          <i class="bi bi-check-lg"></i> Salvar
+        </button>
       </div>
     </div>
   </div>
@@ -378,6 +462,8 @@ async function carregarOuCriarOperacao(tipo){
 
 // Cria uma linha de presença "pendente" para cada colaborador ativo elegível
 // que ainda não tem registro nesta operação (não duplica quem já está).
+// Nas operações de RETORNO, só entra quem foi CONFIRMADO na Saída Indaiatuba
+// do mesmo dia (quem faltou/ficou em Indaiatuba/atestado não aparece no retorno).
 async function garantirPresencas(op){
   const { data: colaboradores, error } = await sb
     .from('colaboradores').select('id, loja').eq('ativo', true);
@@ -388,7 +474,16 @@ async function garantirPresencas(op){
   if (errExist) { alert('Erro ao checar presenças existentes: ' + errExist.message); return; }
   const idsExistentes = new Set((jaExistentes || []).map(p => p.colaborador_id));
 
-  const elegiveis = colaboradores.filter(c => elegivelParaOperacao(c, op.tipo) && !idsExistentes.has(c.id));
+  let confirmadosSaida = null;
+  if (op.tipo !== 'saida_indaiatuba') {
+    confirmadosSaida = await buscarConfirmadosSaida(op.data);
+  }
+
+  const elegiveis = colaboradores.filter(c =>
+    elegivelParaOperacao(c, op.tipo) &&
+    !idsExistentes.has(c.id) &&
+    (op.tipo === 'saida_indaiatuba' || confirmadosSaida.has(c.id))
+  );
   if (elegiveis.length === 0) return;
 
   const linhas = elegiveis.map(c => ({
@@ -399,6 +494,20 @@ async function garantirPresencas(op){
 
   const { error: errInsert } = await sb.from('presencas').insert(linhas);
   if (errInsert) console.warn('Aviso ao gerar presenças:', errInsert.message);
+}
+
+// Busca quem foi CONFIRMADO na Saída Indaiatuba de uma determinada data.
+// Se não houve saída registrada nesse dia, retorna vazio (ninguém aparece no retorno).
+async function buscarConfirmadosSaida(data){
+  const { data: opSaida } = await sb
+    .from('operacoes').select('id')
+    .eq('tipo', 'saida_indaiatuba').eq('data', data).maybeSingle();
+  if (!opSaida) return new Set();
+
+  const { data: pres } = await sb
+    .from('presencas').select('colaborador_id')
+    .eq('operacao_id', opSaida.id).eq('status', 'confirmado');
+  return new Set((pres || []).map(p => p.colaborador_id));
 }
 
 // Saída Indaiatuba: todo mundo. Retorno: só quem tem aquela loja como destino.
@@ -422,14 +531,23 @@ function elegivelParaOperacao(colaborador, tipo){
 async function carregarPresencas(){
   const { data, error } = await sb
     .from('presencas')
-    .select('id, status, observacao, atualizado_em, colaboradores(id, nome, equipe, loja)')
+    .select('id, status, observacao, atualizado_em, colaboradores(id, nome, equipe, loja, ativo)')
     .eq('operacao_id', operacaoAtual.id);
 
   if (error) { alert('Erro ao carregar lista: ' + error.message); return; }
 
-  presencasAtuais = (data || [])
-    .filter(p => p.colaboradores)
-    .sort((a,b) => a.colaboradores.nome.localeCompare(b.colaboradores.nome, 'pt-BR'));
+  let lista = (data || []).filter(p => p.colaboradores);
+
+  // Nas operações de retorno, esconde quem ainda está "pendente" mas não foi
+  // confirmado na saída (ex: status mudou pra "faltou" depois da lista criada).
+  // Registros que já têm um status definido no retorno (confirmado, atestado etc.)
+  // continuam aparecendo normalmente.
+  if (operacaoAtual.tipo !== 'saida_indaiatuba') {
+    const confirmadosSaida = await buscarConfirmadosSaida(operacaoAtual.data);
+    lista = lista.filter(p => p.status !== 'pendente' || confirmadosSaida.has(p.colaboradores.id));
+  }
+
+  presencasAtuais = lista.sort((a,b) => a.colaboradores.nome.localeCompare(b.colaboradores.nome, 'pt-BR'));
 
   renderizarLista();
   atualizarKpis();
@@ -442,6 +560,7 @@ function renderizarLista(){
 
   let lista = presencasAtuais;
   if (filtroAtual === 'pendente') lista = lista.filter(p => p.status === 'pendente');
+  if (filtroAtual === 'desativado') lista = lista.filter(p => p.colaboradores.ativo === false);
   if (busca) lista = lista.filter(p => p.colaboradores.nome.toLowerCase().includes(busca));
 
   container.innerHTML = '';
@@ -449,26 +568,38 @@ function renderizarLista(){
 
   lista.forEach(p => {
     const c = p.colaboradores;
+    const inativo = c.ativo === false;
     const col = document.createElement('div');
     col.className = 'col-12 col-md-6 col-lg-4';
     col.innerHTML = `
-      <div class="card card-colab p-3 h-100">
+      <div class="card card-colab p-3 h-100 ${inativo ? 'opacity-75' : ''}">
         <div class="d-flex justify-content-between align-items-start mb-2">
           <div>
             <div class="fw-semibold">${escapeHtml(c.nome)}</div>
             <div class="small text-muted">${escapeHtml(c.equipe || '-')}</div>
             <span class="loja-chip">${escapeHtml(c.loja || '-')}</span>
           </div>
-          <span class="status-badge st-${p.status}">${STATUS_LABEL[p.status]}</span>
+          <div class="d-flex flex-column align-items-end gap-1">
+            <span class="status-badge st-${p.status}">${STATUS_LABEL[p.status]}</span>
+            ${inativo ? '<span class="status-badge st-faltou">Desativado</span>' : ''}
+          </div>
         </div>
         ${p.observacao ? `<div class="small text-muted mb-2"><i class="bi bi-chat-left-text me-1"></i>${escapeHtml(p.observacao)}</div>` : ''}
         <div class="d-flex gap-2 mt-auto">
-          <button class="btn btn-sm btn-success flex-grow-1 btn-confirmar" data-id="${p.id}" ${p.status==='confirmado'?'disabled':''}>
+          <button class="btn btn-sm btn-success flex-grow-1 btn-confirmar" data-id="${p.id}"
+                  ${(p.status==='confirmado' || inativo) ? 'disabled' : ''}
+                  ${inativo ? 'title="Colaborador desativado"' : ''}>
             <i class="bi bi-check-lg"></i> Confirmar
           </button>
           <button class="btn btn-sm btn-outline-secondary btn-apontamento"
                   data-id="${p.id}" data-nome="${escapeHtml(c.nome)}">
             <i class="bi bi-three-dots"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-secondary btn-editar-colab"
+                  data-colid="${escapeHtml(c.id)}" data-nome="${escapeHtml(c.nome)}"
+                  data-equipe="${escapeHtml(c.equipe || '')}" data-loja="${escapeHtml(c.loja || '')}"
+                  data-ativo="${c.ativo !== false}">
+            <i class="bi bi-pencil"></i>
           </button>
         </div>
       </div>`;
@@ -479,6 +610,8 @@ function renderizarLista(){
     b.addEventListener('click', () => atualizarStatus(b.dataset.id, 'confirmado')));
   container.querySelectorAll('.btn-apontamento').forEach(b =>
     b.addEventListener('click', () => abrirApontamento(b.dataset.id, b.dataset.nome)));
+  container.querySelectorAll('.btn-editar-colab').forEach(b =>
+    b.addEventListener('click', () => abrirEditarColab(b.dataset.colid, b.dataset.nome, b.dataset.equipe, b.dataset.loja, b.dataset.ativo === 'true')));
 }
 
 function escapeHtml(str){
@@ -521,6 +654,96 @@ document.getElementById('btnSalvarApontamento').addEventListener('click', async 
   await atualizarStatus(colaboradorApontamentoAtual, motivo, obs);
   bootstrap.Modal.getInstance(document.getElementById('modalApontamento')).hide();
 });
+
+// ============================================================
+// EDITAR CADASTRO DO COLABORADOR (nome / equipe / loja)
+// ============================================================
+let editColabLojaAnterior = '';
+
+function abrirEditarColab(colaboradorId, nome, equipe, loja, ativo){
+  document.getElementById('editColabId').value = colaboradorId;
+  document.getElementById('editColabNome').value = nome;
+  document.getElementById('editColabEquipe').value = equipe;
+  document.getElementById('editColabLoja').value = loja;
+  document.getElementById('editColabAtivo').value = ativo ? 'true' : 'false';
+  editColabLojaAnterior = loja;
+  document.getElementById('editColabStatus').textContent =
+    'Se mudar a loja, a pessoa é movida automaticamente entre as listas de retorno de hoje.';
+  document.getElementById('editColabStatus').classList.remove('text-danger');
+  document.getElementById('editColabStatus').classList.add('text-muted');
+  new bootstrap.Modal(document.getElementById('modalEditarColab')).show();
+}
+
+document.getElementById('btnSalvarEditarColab').addEventListener('click', async () => {
+  const id = document.getElementById('editColabId').value;
+  const nome = document.getElementById('editColabNome').value.trim();
+  const equipe = document.getElementById('editColabEquipe').value.trim();
+  const loja = document.getElementById('editColabLoja').value.trim();
+  const ativo = document.getElementById('editColabAtivo').value === 'true';
+  const status = document.getElementById('editColabStatus');
+
+  if (!nome) { status.textContent = 'Nome não pode ficar em branco.'; status.classList.add('text-danger'); return; }
+
+  const { error } = await sb.from('colaboradores')
+    .update({ nome, equipe: equipe || null, loja: loja || null, ativo, atualizado_em: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) {
+    status.textContent = 'Erro ao salvar: ' + error.message;
+    status.classList.add('text-danger');
+    return;
+  }
+
+  // Se a loja mudou, tenta mover a pessoa entre as listas de retorno de hoje
+  if (loja !== editColabLojaAnterior) {
+    await resincronizarRetornoAposEdicao(id, loja);
+  }
+
+  bootstrap.Modal.getInstance(document.getElementById('modalEditarColab')).hide();
+  await carregarPresencas();
+});
+
+// Move o colaborador entre as operações de retorno do dia quando a loja muda.
+// Só mexe em quem já foi confirmado na Saída Indaiatuba hoje (quem não foi
+// não deveria estar em nenhum retorno de qualquer forma). Se a pessoa já tinha
+// um status marcado (ex: confirmado) no retorno antigo, esse status é levado
+// junto pra lista nova, em vez de voltar como pendente.
+async function resincronizarRetornoAposEdicao(colaboradorId, novaLoja){
+  const hoje = dataLocalHoje();
+  const confirmadosSaida = await buscarConfirmadosSaida(hoje);
+  if (!confirmadosSaida.has(colaboradorId)) return;
+
+  const tipos = ['retorno_campinas', 'retorno_santa_barbara'];
+  const infos = [];
+
+  for (const tipo of tipos) {
+    const { data: op } = await sb.from('operacoes').select('*')
+      .eq('tipo', tipo).eq('data', hoje).maybeSingle();
+    let presenca = null;
+    if (op) {
+      const { data: p } = await sb.from('presencas').select('*')
+        .eq('operacao_id', op.id).eq('colaborador_id', colaboradorId).maybeSingle();
+      presenca = p;
+    }
+    infos.push({ tipo, op, presenca, elegivel: elegivelParaOperacao({ loja: novaLoja }, tipo) });
+  }
+
+  const existente = infos.find(i => i.presenca);
+  const statusCarry = existente?.presenca?.status || 'pendente';
+  const obsCarry = existente?.presenca?.observacao || null;
+
+  for (const info of infos) {
+    if (!info.op) continue; // operação ainda não foi aberta hoje, nada a mover agora
+    if (info.elegivel && !info.presenca) {
+      await sb.from('presencas').insert({
+        operacao_id: info.op.id, colaborador_id: colaboradorId,
+        status: statusCarry, observacao: obsCarry
+      });
+    } else if (!info.elegivel && info.presenca) {
+      await sb.from('presencas').delete().eq('id', info.presenca.id);
+    }
+  }
+}
 
 // ============================================================
 // DASHBOARD / KPIs
@@ -724,6 +947,100 @@ document.getElementById('exportPdf').addEventListener('click', (e) => {
 
   doc.save(`transporte_${TIPO_LABEL[tipoAtual].replace(/\s/g,'_')}_${operacaoAtual.data}.pdf`);
 });
+
+// ============================================================
+// DASHBOARD (CALENDÁRIO MENSAL)
+// ============================================================
+let dashAno, dashMes; // mes: 0-11
+
+const NOMES_MES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+document.getElementById('btnDashboard').addEventListener('click', async () => {
+  const hoje = new Date();
+  dashAno = hoje.getFullYear();
+  dashMes = hoje.getMonth();
+  new bootstrap.Modal(document.getElementById('modalDashboard')).show();
+  await atualizarDashboard();
+});
+
+document.getElementById('dashMesAnterior').addEventListener('click', async () => {
+  dashMes--; if (dashMes < 0) { dashMes = 11; dashAno--; }
+  await atualizarDashboard();
+});
+
+document.getElementById('dashMesProximo').addEventListener('click', async () => {
+  dashMes++; if (dashMes > 11) { dashMes = 0; dashAno++; }
+  await atualizarDashboard();
+});
+
+async function atualizarDashboard(){
+  document.getElementById('dashMesLabel').textContent = `${NOMES_MES[dashMes]} ${dashAno}`;
+  const porDia = await buscarEstatisticasMes(dashAno, dashMes);
+  renderizarCalendario(dashAno, dashMes, porDia);
+}
+
+async function buscarEstatisticasMes(ano, mes){
+  const inicio = `${ano}-${String(mes+1).padStart(2,'0')}-01`;
+  const ultimoDia = new Date(ano, mes+1, 0).getDate();
+  const fim = `${ano}-${String(mes+1).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`;
+
+  const { data, error } = await sb
+    .from('presencas')
+    .select('status, operacoes!inner(data, tipo)')
+    .eq('operacoes.tipo', 'saida_indaiatuba')
+    .gte('operacoes.data', inicio)
+    .lte('operacoes.data', fim);
+
+  if (error) { console.error('Erro ao buscar dashboard:', error.message); return {}; }
+
+  const porDia = {};
+  (data || []).forEach(p => {
+    const dia = p.operacoes.data;
+    if (!porDia[dia]) porDia[dia] = { total: 0, confirmados: 0, apontamentos: 0 };
+    porDia[dia].total++;
+    if (p.status === 'confirmado') porDia[dia].confirmados++;
+    else if (p.status !== 'pendente') porDia[dia].apontamentos++;
+  });
+  return porDia;
+}
+
+function renderizarCalendario(ano, mes, porDia){
+  const grid = document.getElementById('dashCalendarGrid');
+  grid.innerHTML = '';
+
+  ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'dash-day-header';
+    h.textContent = d;
+    grid.appendChild(h);
+  });
+
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes+1, 0).getDate();
+
+  for (let i = 0; i < primeiroDiaSemana; i++) {
+    const blank = document.createElement('div');
+    blank.className = 'dash-day-cell dash-day-blank';
+    grid.appendChild(blank);
+  }
+
+  for (let dia = 1; dia <= totalDias; dia++) {
+    const dataStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    const info = porDia[dataStr];
+    const cell = document.createElement('div');
+    cell.className = 'dash-day-cell' + (info ? ' dash-day-has-data' : '');
+    cell.innerHTML = `
+      <div class="dash-day-num">${dia}</div>
+      ${info ? `
+        <div class="dash-day-stats">
+          <span class="dash-stat-total">Total: ${info.total}</span>
+          <span class="dash-stat-confirmados">Conf: ${info.confirmados}</span>
+          <span class="dash-stat-apontamentos">Apont: ${info.apontamentos}</span>
+        </div>` : ''}`;
+    grid.appendChild(cell);
+  }
+}
 
 // ============================================================
 // HISTÓRICO
