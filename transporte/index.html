@@ -124,6 +124,9 @@
           </div>
         </div>
         <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-primary" id="btnAdicionarColab">
+            <i class="bi bi-person-plus"></i> Adicionar colaborador
+          </button>
           <div class="dropdown">
             <button class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-file-earmark-arrow-down"></i> Exportar</button>
             <ul class="dropdown-menu dropdown-menu-end">
@@ -167,6 +170,49 @@
       <div class="modal-footer">
         <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar</button>
         <button class="btn btn-accent btn-sm" id="btnConfirmarImport">Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: ADICIONAR COLABORADOR ===================== -->
+<div class="modal fade" id="modalAdicionarColab" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title"><i class="bi bi-person-plus me-1"></i> Adicionar colaborador</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted mb-3">
+          Uso rápido pra quem entrar hoje sem estar na planilha. O ID é gerado
+          automaticamente e a pessoa já entra na lista desta operação.
+        </p>
+        <div class="mb-2">
+          <label class="form-label small">ID (automático)</label>
+          <input type="text" class="form-control" id="novoColabId" readonly>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small">Nome *</label>
+          <input type="text" class="form-control" id="novoColabNome" placeholder="Nome completo" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small">Equipe</label>
+          <input type="text" class="form-control" id="novoColabEquipe" list="listaEquipes" placeholder="Ex: Lider FCX">
+          <datalist id="listaEquipes"></datalist>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small">Loja</label>
+          <input type="text" class="form-control" id="novoColabLoja" list="listaLojas" placeholder="Ex: Santa Barbara">
+          <datalist id="listaLojas"></datalist>
+        </div>
+        <div id="novoColabStatus" class="small mt-2"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-accent btn-sm" id="btnSalvarNovoColab">
+          <i class="bi bi-check-lg"></i> Adicionar
+        </button>
       </div>
     </div>
   </div>
@@ -509,6 +555,68 @@ document.getElementById('btnFinalizar').addEventListener('click', async () => {
   operacaoAtual.status = 'finalizada';
   atualizarBotaoFinalizar();
   alert('Operação finalizada com sucesso.');
+});
+
+// ============================================================
+// ADICIONAR COLABORADOR MANUALMENTE (uso rápido em campo)
+// ============================================================
+document.getElementById('btnAdicionarColab').addEventListener('click', async () => {
+  document.getElementById('novoColabNome').value = '';
+  document.getElementById('novoColabEquipe').value = '';
+  document.getElementById('novoColabLoja').value = '';
+  document.getElementById('novoColabStatus').textContent = '';
+  document.getElementById('novoColabId').value = 'calculando...';
+
+  // Próximo ID = maior ID numérico existente + 1
+  const { data: todos, error } = await sb.from('colaboradores').select('id');
+  if (error) {
+    document.getElementById('novoColabId').value = '';
+    document.getElementById('novoColabStatus').textContent = 'Erro ao calcular ID: ' + error.message;
+  } else {
+    const maiorId = (todos || [])
+      .map(c => parseInt(c.id, 10))
+      .filter(n => !isNaN(n))
+      .reduce((max, n) => Math.max(max, n), 0);
+    document.getElementById('novoColabId').value = String(maiorId + 1);
+  }
+
+  // Sugestões de equipe e loja com base em quem já está na operação atual
+  const equipes = [...new Set(presencasAtuais.map(p => p.colaboradores.equipe).filter(Boolean))];
+  const lojas = [...new Set(presencasAtuais.map(p => p.colaboradores.loja).filter(Boolean))];
+  document.getElementById('listaEquipes').innerHTML = equipes.map(e => `<option value="${escapeHtml(e)}">`).join('');
+  document.getElementById('listaLojas').innerHTML = lojas.map(l => `<option value="${escapeHtml(l)}">`).join('');
+
+  new bootstrap.Modal(document.getElementById('modalAdicionarColab')).show();
+});
+
+document.getElementById('btnSalvarNovoColab').addEventListener('click', async () => {
+  const id = document.getElementById('novoColabId').value.trim();
+  const nome = document.getElementById('novoColabNome').value.trim();
+  const equipe = document.getElementById('novoColabEquipe').value.trim();
+  const loja = document.getElementById('novoColabLoja').value.trim();
+  const status = document.getElementById('novoColabStatus');
+
+  if (!id || !nome) { status.textContent = 'Preencha ao menos o nome.'; return; }
+  if (!operacaoAtual) { status.textContent = 'Nenhuma operação aberta.'; return; }
+
+  status.textContent = 'Salvando...';
+
+  const { error: errColab } = await sb.from('colaboradores').insert({
+    id, nome, equipe: equipe || null, loja: loja || null, ativo: true
+  });
+  if (errColab) { status.textContent = 'Erro ao salvar colaborador: ' + errColab.message; return; }
+
+  const { error: errPresenca } = await sb.from('presencas').insert({
+    operacao_id: operacaoAtual.id,
+    colaborador_id: id,
+    status: 'pendente'
+  });
+  if (errPresenca) { status.textContent = 'Colaborador criado, mas erro ao incluir na operação: ' + errPresenca.message; return; }
+
+  bootstrap.Modal.getInstance(document.getElementById('modalAdicionarColab')).hide();
+  await carregarPresencas();
+  document.getElementById('searchBox').value = nome;
+  renderizarLista();
 });
 
 // ============================================================
