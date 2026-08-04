@@ -197,10 +197,11 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h6 class="modal-title"><i class="bi bi-calendar3 me-1"></i> Dashboard - Saída Indaiatuba por dia</h6>
+        <h6 class="modal-title"><i class="bi bi-calendar3 me-1"></i> Dashboard por dia</h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
+        <div class="d-flex flex-wrap gap-2 mb-3" id="dashTipoFiltro"></div>
         <div class="d-flex justify-content-between align-items-center mb-3">
           <button class="btn btn-sm btn-outline-secondary" id="dashMesAnterior"><i class="bi bi-chevron-left"></i></button>
           <h6 class="mb-0" id="dashMesLabel">-</h6>
@@ -212,7 +213,7 @@
           <span><span class="dash-stat-apontamentos">■</span> Apontamentos</span>
         </div>
         <div class="dash-calendar" id="dashCalendarGrid"></div>
-        <p class="small text-muted mt-3 mb-0">
+        <p class="small text-muted mt-3 mb-0" id="dashLegenda">
           Os números consideram apenas a operação de Saída Indaiatuba de cada dia
           (contagem cheia de quem estava previsto pra sair).
         </p>
@@ -986,6 +987,7 @@ document.getElementById('exportPdf').addEventListener('click', (e) => {
 // DASHBOARD (CALENDÁRIO MENSAL)
 // ============================================================
 let dashAno, dashMes; // mes: 0-11
+let dashTipoAtual = 'saida_indaiatuba';
 
 const NOMES_MES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -994,9 +996,27 @@ document.getElementById('btnDashboard').addEventListener('click', async () => {
   const hoje = new Date();
   dashAno = hoje.getFullYear();
   dashMes = hoje.getMonth();
+  dashTipoAtual = 'saida_indaiatuba';
+  renderizarChipsTipoDash();
   new bootstrap.Modal(document.getElementById('modalDashboard')).show();
   await atualizarDashboard();
 });
+
+function renderizarChipsTipoDash(){
+  const container = document.getElementById('dashTipoFiltro');
+  container.innerHTML = Object.entries(TIPO_LABEL).map(([tipo, label]) => `
+    <button class="loja-chip-btn ${tipo === dashTipoAtual ? 'active' : ''}" data-tipo-dash="${tipo}">
+      ${label}
+    </button>`).join('');
+
+  container.querySelectorAll('[data-tipo-dash]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      dashTipoAtual = btn.dataset.tipoDash;
+      renderizarChipsTipoDash();
+      await atualizarDashboard();
+    });
+  });
+}
 
 document.getElementById('dashMesAnterior').addEventListener('click', async () => {
   dashMes--; if (dashMes < 0) { dashMes = 11; dashAno--; }
@@ -1010,11 +1030,13 @@ document.getElementById('dashMesProximo').addEventListener('click', async () => 
 
 async function atualizarDashboard(){
   document.getElementById('dashMesLabel').textContent = `${NOMES_MES[dashMes]} ${dashAno}`;
-  const porDia = await buscarEstatisticasMes(dashAno, dashMes);
+  document.getElementById('dashLegenda').textContent =
+    `Os números consideram apenas a operação de ${TIPO_LABEL[dashTipoAtual]} de cada dia.`;
+  const porDia = await buscarEstatisticasMes(dashAno, dashMes, dashTipoAtual);
   renderizarCalendario(dashAno, dashMes, porDia);
 }
 
-async function buscarEstatisticasMes(ano, mes){
+async function buscarEstatisticasMes(ano, mes, tipo){
   const inicio = `${ano}-${String(mes+1).padStart(2,'0')}-01`;
   const ultimoDia = new Date(ano, mes+1, 0).getDate();
   const fim = `${ano}-${String(mes+1).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`;
@@ -1022,7 +1044,7 @@ async function buscarEstatisticasMes(ano, mes){
   const { data, error } = await sb
     .from('presencas')
     .select('status, operacoes!inner(data, tipo)')
-    .eq('operacoes.tipo', 'saida_indaiatuba')
+    .eq('operacoes.tipo', tipo)
     .gte('operacoes.data', inicio)
     .lte('operacoes.data', fim);
 
