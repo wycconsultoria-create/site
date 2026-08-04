@@ -55,6 +55,13 @@
   .loja-chip-btn{ border-radius:20px; padding:.3rem .9rem; font-size:.8rem; border:1px solid #ced4da; background:#fff; color:#495057; cursor:pointer; transition:.15s; }
   .loja-chip-btn:hover{ background:#f1f3f5; }
   .loja-chip-btn.active{ background:var(--accent2); border-color:var(--accent2); color:#fff; }
+  .dash-day-cell.dash-day-has-data{ cursor:pointer; }
+  .dash-detalhe-card{ background:#fff; border:1px solid #e9ecef; border-radius:12px; padding:1rem; }
+  .dash-detalhe-linha{ display:flex; align-items:center; gap:.6rem; margin-bottom:.5rem; }
+  .dash-detalhe-label{ min-width:150px; font-size:.82rem; }
+  .dash-detalhe-barra-bg{ flex:1; background:#eee; border-radius:20px; height:10px; overflow:hidden; }
+  .dash-detalhe-barra{ height:100%; border-radius:20px; }
+  .dash-detalhe-valor{ min-width:80px; text-align:right; font-size:.78rem; font-weight:600; }
 </style>
 </head>
 <body>
@@ -213,6 +220,7 @@
           <span><span class="dash-stat-apontamentos">■</span> Apontamentos</span>
         </div>
         <div class="dash-calendar" id="dashCalendarGrid"></div>
+        <div id="dashDetalheDia" class="mt-3 hidden"></div>
         <p class="small text-muted mt-3 mb-0" id="dashLegenda">
           Os números consideram apenas a operação de Saída Indaiatuba de cada dia
           (contagem cheia de quem estava previsto pra sair).
@@ -1053,10 +1061,12 @@ async function buscarEstatisticasMes(ano, mes, tipo){
   const porDia = {};
   (data || []).forEach(p => {
     const dia = p.operacoes.data;
-    if (!porDia[dia]) porDia[dia] = { total: 0, confirmados: 0, apontamentos: 0 };
+    if (!porDia[dia]) porDia[dia] = {
+      total: 0, confirmado: 0, pendente: 0,
+      atestado: 0, ficou_indaiatuba: 0, faltou: 0, outro: 0
+    };
     porDia[dia].total++;
-    if (p.status === 'confirmado') porDia[dia].confirmados++;
-    else if (p.status !== 'pendente') porDia[dia].apontamentos++;
+    porDia[dia][p.status] = (porDia[dia][p.status] || 0) + 1;
   });
   return porDia;
 }
@@ -1064,6 +1074,7 @@ async function buscarEstatisticasMes(ano, mes, tipo){
 function renderizarCalendario(ano, mes, porDia){
   const grid = document.getElementById('dashCalendarGrid');
   grid.innerHTML = '';
+  document.getElementById('dashDetalheDia').classList.add('hidden');
 
   ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].forEach(d => {
     const h = document.createElement('div');
@@ -1084,6 +1095,7 @@ function renderizarCalendario(ano, mes, porDia){
   for (let dia = 1; dia <= totalDias; dia++) {
     const dataStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
     const info = porDia[dataStr];
+    const apontamentos = info ? (info.atestado + info.ficou_indaiatuba + info.faltou + info.outro) : 0;
     const cell = document.createElement('div');
     cell.className = 'dash-day-cell' + (info ? ' dash-day-has-data' : '');
     cell.innerHTML = `
@@ -1091,11 +1103,46 @@ function renderizarCalendario(ano, mes, porDia){
       ${info ? `
         <div class="dash-day-stats">
           <span class="dash-stat-total">Total: ${info.total}</span>
-          <span class="dash-stat-confirmados">Conf: ${info.confirmados}</span>
-          <span class="dash-stat-apontamentos">Apont: ${info.apontamentos}</span>
+          <span class="dash-stat-confirmados">Conf: ${info.confirmado}</span>
+          <span class="dash-stat-apontamentos">Apont: ${apontamentos}</span>
         </div>` : ''}`;
+    if (info) cell.addEventListener('click', () => mostrarDetalheDia(dataStr, info));
     grid.appendChild(cell);
   }
+}
+
+// Mostra o detalhe do dia clicado: total, confirmados e cada motivo de
+// apontamento separado, com quantidade e % em relação ao total do dia.
+function mostrarDetalheDia(dataStr, info){
+  const painel = document.getElementById('dashDetalheDia');
+  const pct = n => info.total > 0 ? ((n / info.total) * 100).toFixed(0) : 0;
+  const [ano, mes, dia] = dataStr.split('-');
+
+  const linhas = [
+    { label: 'Confirmados', valor: info.confirmado, cor: '#2a9d8f' },
+    { label: 'Atestado', valor: info.atestado, cor: '#4b2e83' },
+    { label: 'Ficou em Indaiatuba', valor: info.ficou_indaiatuba, cor: '#1d4f9e' },
+    { label: 'Faltou', valor: info.faltou, cor: '#842029' },
+    { label: 'Outro', valor: info.outro, cor: '#41464b' },
+    { label: 'Pendente', valor: info.pendente, cor: '#856404' }
+  ].filter(l => l.valor > 0);
+
+  painel.innerHTML = `
+    <div class="dash-detalhe-card">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <strong>${dia}/${mes}/${ano} — ${TIPO_LABEL[dashTipoAtual]}</strong>
+        <span class="text-muted small">Total: ${info.total}</span>
+      </div>
+      ${linhas.map(l => `
+        <div class="dash-detalhe-linha">
+          <span class="dash-detalhe-label">${l.label}</span>
+          <div class="dash-detalhe-barra-bg">
+            <div class="dash-detalhe-barra" style="width:${pct(l.valor)}%; background:${l.cor};"></div>
+          </div>
+          <span class="dash-detalhe-valor">${l.valor} (${pct(l.valor)}%)</span>
+        </div>`).join('')}
+    </div>`;
+  painel.classList.remove('hidden');
 }
 
 // ============================================================
