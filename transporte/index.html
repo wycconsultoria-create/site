@@ -52,6 +52,9 @@
   .dash-stat-total{ color:#495057; }
   .dash-stat-confirmados{ color:#0f6b58; font-weight:600; }
   .dash-stat-apontamentos{ color:#856404; font-weight:600; }
+  .loja-chip-btn{ border-radius:20px; padding:.3rem .9rem; font-size:.8rem; border:1px solid #ced4da; background:#fff; color:#495057; cursor:pointer; transition:.15s; }
+  .loja-chip-btn:hover{ background:#f1f3f5; }
+  .loja-chip-btn.active{ background:var(--accent2); border-color:var(--accent2); color:#fff; }
 </style>
 </head>
 <body>
@@ -151,6 +154,8 @@
           </button>
         </div>
       </div>
+
+      <div id="filtroLojaContainer" class="d-flex flex-wrap gap-2 mb-3 hidden"></div>
 
       <div id="listaColaboradores" class="row g-3"></div>
       <div id="listaVazia" class="list-empty hidden">
@@ -357,6 +362,7 @@ let operacaoAtual = null;   // registro da operação aberta
 let tipoAtual = null;
 let presencasAtuais = [];   // join colaborador + presenca
 let filtroAtual = 'todos';
+let filtroLojasAtivas = new Set(); // vazio = mostra todas as lojas
 let colaboradorApontamentoAtual = null;
 
 const TIPO_LABEL = {
@@ -549,9 +555,36 @@ async function carregarPresencas(){
 
   presencasAtuais = lista.sort((a,b) => a.colaboradores.nome.localeCompare(b.colaboradores.nome, 'pt-BR'));
 
+  atualizarChipsLoja();
   renderizarLista();
   atualizarKpis();
   atualizarBotaoFinalizar();
+}
+
+// Monta os chips de loja com base em quem está na operação atual.
+// Mantém a seleção de quem já estava marcado (remove só o que não existe mais).
+function atualizarChipsLoja(){
+  const lojas = [...new Set(presencasAtuais.map(p => p.colaboradores.loja || 'Sem loja'))]
+    .sort((a,b) => a.localeCompare(b, 'pt-BR'));
+
+  filtroLojasAtivas = new Set([...filtroLojasAtivas].filter(l => lojas.includes(l)));
+
+  const container = document.getElementById('filtroLojaContainer');
+  container.classList.toggle('hidden', lojas.length <= 1);
+  container.innerHTML = lojas.map(loja => `
+    <button class="loja-chip-btn ${filtroLojasAtivas.has(loja) ? 'active' : ''}" data-loja="${escapeHtml(loja)}">
+      ${escapeHtml(loja)}
+    </button>`).join('');
+
+  container.querySelectorAll('.loja-chip-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const loja = btn.dataset.loja;
+      if (filtroLojasAtivas.has(loja)) filtroLojasAtivas.delete(loja);
+      else filtroLojasAtivas.add(loja);
+      atualizarChipsLoja();
+      renderizarLista();
+    });
+  });
 }
 
 function renderizarLista(){
@@ -561,6 +594,7 @@ function renderizarLista(){
   let lista = presencasAtuais;
   if (filtroAtual === 'pendente') lista = lista.filter(p => p.status === 'pendente');
   if (filtroAtual === 'desativado') lista = lista.filter(p => p.colaboradores.ativo === false);
+  if (filtroLojasAtivas.size > 0) lista = lista.filter(p => filtroLojasAtivas.has(p.colaboradores.loja || 'Sem loja'));
   if (busca) lista = lista.filter(p => p.colaboradores.nome.toLowerCase().includes(busca));
 
   container.innerHTML = '';
