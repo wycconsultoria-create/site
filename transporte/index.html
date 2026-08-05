@@ -57,7 +57,9 @@
   .loja-chip-btn.active{ background:var(--accent2); border-color:var(--accent2); color:#fff; }
   .dash-day-cell.dash-day-has-data{ cursor:pointer; }
   .dash-detalhe-card{ background:#fff; border:1px solid #e9ecef; border-radius:12px; padding:1rem; }
-  .dash-detalhe-linha{ display:flex; align-items:center; gap:.6rem; margin-bottom:.5rem; }
+  .dash-detalhe-linha{ display:flex; align-items:center; gap:.6rem; margin-bottom:.5rem; cursor:pointer; padding:.2rem; border-radius:8px; transition:.15s; }
+  .dash-detalhe-linha:hover{ background:#f8f9fa; }
+  .dash-detalhe-linha-ativa{ background:#eef6ff; box-shadow:0 0 0 1px #cfe3ff inset; }
   .dash-detalhe-label{ min-width:150px; font-size:.82rem; }
   .dash-detalhe-barra-bg{ flex:1; background:#eee; border-radius:20px; height:10px; overflow:hidden; }
   .dash-detalhe-barra{ height:100%; border-radius:20px; }
@@ -634,15 +636,15 @@ function renderizarLista(){
                   ${inativo ? 'title="Colaborador desativado"' : ''}>
             <i class="bi bi-check-lg"></i> Confirmar
           </button>
-          <button class="btn btn-sm btn-outline-secondary btn-apontamento"
+          <button class="btn btn-sm btn-outline-warning btn-apontamento" title="Apontamento (falta, atestado, ficou em Indaiatuba...)"
                   data-id="${p.id}" data-nome="${escapeHtml(c.nome)}">
-            <i class="bi bi-three-dots"></i>
+            <i class="bi bi-flag"></i> Apontar
           </button>
-          <button class="btn btn-sm btn-outline-secondary btn-editar-colab"
+          <button class="btn btn-sm btn-outline-primary btn-editar-colab" title="Editar cadastro (nome, equipe, loja, status)"
                   data-colid="${escapeHtml(c.id)}" data-nome="${escapeHtml(c.nome)}"
                   data-equipe="${escapeHtml(c.equipe || '')}" data-loja="${escapeHtml(c.loja || '')}"
                   data-ativo="${c.ativo !== false}">
-            <i class="bi bi-pencil"></i>
+            <i class="bi bi-person-vcard"></i> Editar
           </button>
         </div>
       </div>`;
@@ -1111,38 +1113,117 @@ function renderizarCalendario(ano, mes, porDia){
   }
 }
 
-// Mostra o detalhe do dia clicado: total, confirmados e cada motivo de
-// apontamento separado, com quantidade e % em relação ao total do dia.
-function mostrarDetalheDia(dataStr, info){
+let detalheDiaLista = [];
+let detalheDiaFiltro = null; // status selecionado na tabela, ou null = todos
+
+// Busca os nomes/setores desse dia específico e monta o painel de detalhe
+async function mostrarDetalheDia(dataStr, info){
+  const painel = document.getElementById('dashDetalheDia');
+  painel.classList.remove('hidden');
+  painel.innerHTML = `<div class="dash-detalhe-card text-center text-muted py-4">
+    <span class="spinner-border spinner-border-sm me-2"></span> Carregando...
+  </div>`;
+
+  const { data: op } = await sb.from('operacoes').select('id')
+    .eq('tipo', dashTipoAtual).eq('data', dataStr).maybeSingle();
+
+  detalheDiaLista = [];
+  if (op) {
+    const { data: pres } = await sb.from('presencas')
+      .select('status, observacao, colaboradores(nome, equipe, loja)')
+      .eq('operacao_id', op.id);
+    detalheDiaLista = (pres || []).filter(p => p.colaboradores);
+  }
+  detalheDiaFiltro = null;
+  renderizarDetalheDia(dataStr, info);
+}
+
+// Renderiza (ou re-renderiza, ao filtrar) o painel: barras clicáveis por
+// motivo + tabela com Nome / Equipe / Loja / Status / Observação.
+function renderizarDetalheDia(dataStr, info){
   const painel = document.getElementById('dashDetalheDia');
   const pct = n => info.total > 0 ? ((n / info.total) * 100).toFixed(0) : 0;
   const [ano, mes, dia] = dataStr.split('-');
 
   const linhas = [
-    { label: 'Confirmados', valor: info.confirmado, cor: '#2a9d8f' },
-    { label: 'Atestado', valor: info.atestado, cor: '#4b2e83' },
-    { label: 'Ficou em Indaiatuba', valor: info.ficou_indaiatuba, cor: '#1d4f9e' },
-    { label: 'Faltou', valor: info.faltou, cor: '#842029' },
-    { label: 'Outro', valor: info.outro, cor: '#41464b' },
-    { label: 'Pendente', valor: info.pendente, cor: '#856404' }
+    { key: 'confirmado', label: 'Confirmados', valor: info.confirmado, cor: '#2a9d8f' },
+    { key: 'atestado', label: 'Atestado', valor: info.atestado, cor: '#4b2e83' },
+    { key: 'ficou_indaiatuba', label: 'Ficou em Indaiatuba', valor: info.ficou_indaiatuba, cor: '#1d4f9e' },
+    { key: 'faltou', label: 'Faltou', valor: info.faltou, cor: '#842029' },
+    { key: 'outro', label: 'Outro', valor: info.outro, cor: '#41464b' },
+    { key: 'pendente', label: 'Pendente', valor: info.pendente, cor: '#856404' }
   ].filter(l => l.valor > 0);
+
+  const ordemStatus = { confirmado:0, atestado:1, ficou_indaiatuba:2, faltou:3, outro:4, pendente:5 };
+  const listaOrdenada = [...detalheDiaLista]
+    .filter(p => !detalheDiaFiltro || p.status === detalheDiaFiltro)
+    .sort((a,b) => {
+      const diff = (ordemStatus[a.status] ?? 9) - (ordemStatus[b.status] ?? 9);
+      return diff !== 0 ? diff : a.colaboradores.nome.localeCompare(b.colaboradores.nome, 'pt-BR');
+    });
 
   painel.innerHTML = `
     <div class="dash-detalhe-card">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <strong>${dia}/${mes}/${ano} — ${TIPO_LABEL[dashTipoAtual]}</strong>
-        <span class="text-muted small">Total: ${info.total}</span>
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted small">Total: ${info.total}</span>
+          <button class="btn btn-sm btn-outline-dark" id="dashExportarDia"><i class="bi bi-download"></i> Exportar</button>
+        </div>
       </div>
       ${linhas.map(l => `
-        <div class="dash-detalhe-linha">
+        <div class="dash-detalhe-linha ${detalheDiaFiltro === l.key ? 'dash-detalhe-linha-ativa' : ''}" data-status-filtro="${l.key}">
           <span class="dash-detalhe-label">${l.label}</span>
           <div class="dash-detalhe-barra-bg">
             <div class="dash-detalhe-barra" style="width:${pct(l.valor)}%; background:${l.cor};"></div>
           </div>
           <span class="dash-detalhe-valor">${l.valor} (${pct(l.valor)}%)</span>
         </div>`).join('')}
+      ${detalheDiaFiltro ? `<button class="btn btn-sm btn-link p-0 mb-2" id="dashLimparFiltro"><i class="bi bi-x-circle"></i> Limpar filtro</button>` : ''}
+      <div class="table-responsive mt-2" style="max-height:320px; overflow-y:auto;">
+        <table class="table table-sm align-middle mb-0">
+          <thead><tr><th>Nome</th><th>Equipe</th><th>Loja</th><th>Status</th><th>Observação</th></tr></thead>
+          <tbody>
+            ${listaOrdenada.length ? listaOrdenada.map(p => `
+              <tr>
+                <td>${escapeHtml(p.colaboradores.nome)}</td>
+                <td class="text-muted small">${escapeHtml(p.colaboradores.equipe || '-')}</td>
+                <td class="text-muted small">${escapeHtml(p.colaboradores.loja || '-')}</td>
+                <td><span class="status-badge st-${p.status}">${STATUS_LABEL[p.status]}</span></td>
+                <td class="text-muted small">${escapeHtml(p.observacao || '-')}</td>
+              </tr>`).join('') : `<tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr>`}
+          </tbody>
+        </table>
+      </div>
     </div>`;
-  painel.classList.remove('hidden');
+
+  painel.querySelectorAll('[data-status-filtro]').forEach(el => {
+    el.addEventListener('click', () => {
+      const key = el.dataset.statusFiltro;
+      detalheDiaFiltro = detalheDiaFiltro === key ? null : key;
+      renderizarDetalheDia(dataStr, info);
+    });
+  });
+
+  const btnLimpar = document.getElementById('dashLimparFiltro');
+  if (btnLimpar) btnLimpar.addEventListener('click', () => {
+    detalheDiaFiltro = null;
+    renderizarDetalheDia(dataStr, info);
+  });
+
+  document.getElementById('dashExportarDia').addEventListener('click', () => {
+    const linhasExport = listaOrdenada.map(p => ({
+      Nome: p.colaboradores.nome,
+      Equipe: p.colaboradores.equipe || '',
+      Loja: p.colaboradores.loja || '',
+      Status: STATUS_LABEL[p.status],
+      Observacao: p.observacao || ''
+    }));
+    const ws = XLSX.utils.json_to_sheet(linhasExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Detalhe');
+    XLSX.writeFile(wb, `dashboard_${TIPO_LABEL[dashTipoAtual].replace(/\s/g,'_')}_${dataStr}.xlsx`);
+  });
 }
 
 // ============================================================
