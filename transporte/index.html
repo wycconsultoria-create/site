@@ -25,7 +25,9 @@
   .card-colab:hover{ box-shadow:0 4px 16px rgba(0,0,0,.1); }
   .status-badge{ font-size:.72rem; padding:.35em .7em; border-radius:20px; font-weight:600; }
   .badge-desativado{ background:#f8d7da; color:#842029; font-size:.72rem; padding:.35em .7em; border-radius:20px; font-weight:600; }
-  .kpi-card{ border-radius:14px; border:none; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+  .kpi-card{ border-radius:14px; border:none; box-shadow:0 2px 10px rgba(0,0,0,.06); cursor:pointer; transition:.15s; }
+  .kpi-card:hover{ box-shadow:0 4px 14px rgba(0,0,0,.1); transform:translateY(-1px); }
+  .kpi-card.kpi-ativo{ box-shadow:0 0 0 2px var(--accent2) inset; }
   .kpi-num{ font-size:1.6rem; font-weight:700; }
   .login-wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--primary),#0f3460); }
   .login-card{ border-radius:18px; border:none; box-shadow:0 10px 40px rgba(0,0,0,.35); }
@@ -125,14 +127,7 @@
     <div id="operacaoArea" class="hidden">
 
       <!-- Dashboard -->
-      <div class="row g-2 mb-3" id="kpiRow">
-        <div class="col-6 col-md-2"><div class="card kpi-card p-3 text-center"><div class="kpi-num" id="kpiTotal">0</div><small class="text-muted">Total</small></div></div>
-        <div class="col-6 col-md-2"><div class="card kpi-card p-3 text-center"><div class="kpi-num text-success" id="kpiConfirmados">0</div><small class="text-muted">Confirmados</small></div></div>
-        <div class="col-6 col-md-2"><div class="card kpi-card p-3 text-center"><div class="kpi-num text-purple" id="kpiAtestados">0</div><small class="text-muted">Atestados</small></div></div>
-        <div class="col-6 col-md-2"><div class="card kpi-card p-3 text-center"><div class="kpi-num text-danger" id="kpiFaltaram">0</div><small class="text-muted">Faltaram</small></div></div>
-        <div class="col-6 col-md-2"><div class="card kpi-card p-3 text-center"><div class="kpi-num text-primary" id="kpiFicaram">0</div><small class="text-muted">Ficaram Indaiatuba</small></div></div>
-        <div class="col-6 col-md-2"><div class="card kpi-card p-3 text-center"><div class="kpi-num text-warning" id="kpiPendentes">0</div><small class="text-muted">Pendentes</small></div></div>
-      </div>
+      <div class="row g-2 mb-3" id="kpiRow"></div>
 
       <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
         <div class="d-flex gap-2 align-items-center">
@@ -632,6 +627,7 @@ document.querySelectorAll('.op-btn').forEach(btn => {
     document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     tipoAtual = btn.dataset.tipo;
+    filtroAtual = 'todos';
     document.getElementById('semOperacao').classList.add('hidden');
     document.getElementById('operacaoArea').classList.remove('hidden');
     await carregarOuCriarOperacao(tipoAtual);
@@ -806,8 +802,8 @@ function renderizarLista(){
   const busca = document.getElementById('searchBox').value.trim().toLowerCase();
 
   let lista = presencasAtuais;
-  if (filtroAtual === 'pendente') lista = lista.filter(p => p.status === 'pendente');
   if (filtroAtual === 'desativado') lista = lista.filter(p => p.colaboradores.ativo === false);
+  else if (filtroAtual !== 'todos') lista = lista.filter(p => p.status === filtroAtual);
   if (filtroLojasAtivas.size > 0) lista = lista.filter(p => filtroLojasAtivas.has(p.colaboradores.loja || 'Sem loja'));
   if (busca) lista = lista.filter(p => p.colaboradores.nome.toLowerCase().includes(busca));
 
@@ -869,12 +865,18 @@ function escapeHtml(str){
 document.getElementById('searchBox').addEventListener('input', renderizarLista);
 document.querySelectorAll('[data-filtro]').forEach(b => {
   b.addEventListener('click', () => {
-    document.querySelectorAll('[data-filtro]').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
     filtroAtual = b.dataset.filtro;
+    atualizarEstadoFiltros();
     renderizarLista();
   });
 });
+
+// Sincroniza o destaque visual dos "pills" (Todos/Pendentes/Desativados)
+// e recalcula os cartões de KPI, já que os dois controlam o mesmo filtroAtual.
+function atualizarEstadoFiltros(){
+  document.querySelectorAll('[data-filtro]').forEach(x => x.classList.toggle('active', x.dataset.filtro === filtroAtual));
+  atualizarKpis();
+}
 
 // ============================================================
 // CONFIRMAR / APONTAMENTO
@@ -1023,17 +1025,41 @@ async function resincronizarRetornoAposEdicao(colaboradorId, novaLoja){
 }
 
 // ============================================================
-// DASHBOARD / KPIs
+// DASHBOARD / KPIs (cartões clicáveis, filtram a lista abaixo)
 // ============================================================
 function atualizarKpis(){
   const total = presencasAtuais.length;
   const conta = st => presencasAtuais.filter(p => p.status === st).length;
-  document.getElementById('kpiTotal').textContent = total;
-  document.getElementById('kpiConfirmados').textContent = conta('confirmado');
-  document.getElementById('kpiAtestados').textContent = conta('atestado');
-  document.getElementById('kpiFaltaram').textContent = conta('faltou');
-  document.getElementById('kpiFicaram').textContent = conta('ficou_indaiatuba');
-  document.getElementById('kpiPendentes').textContent = conta('pendente');
+
+  // Total + Confirmados + um cartão por motivo ATIVO que tenha gente
+  // nesse status hoje (evita mostrar cartão zerado de motivo não usado
+  // nesta operação) + Pendentes por último.
+  const cartoes = [
+    { key: 'todos', label: 'Total', valor: total, cor: '#1a1a2e' },
+    { key: 'confirmado', label: 'Confirmados', valor: conta('confirmado'), cor: STATUS_FIXO.confirmado.cor },
+    ...motivosTodos
+      .filter(m => m.ativo)
+      .map(m => ({ key: m.chave, label: m.label, valor: conta(m.chave), cor: m.cor })),
+    { key: 'pendente', label: 'Pendentes', valor: conta('pendente'), cor: STATUS_FIXO.pendente.cor }
+  ];
+
+  const container = document.getElementById('kpiRow');
+  container.innerHTML = cartoes.map(c => `
+    <div class="col-6 col-md-2">
+      <div class="card kpi-card p-3 text-center ${filtroAtual === c.key ? 'kpi-ativo' : ''}" data-kpi="${escapeHtml(c.key)}">
+        <div class="kpi-num" style="color:${c.cor};">${c.valor}</div>
+        <small class="text-muted">${escapeHtml(c.label)}</small>
+      </div>
+    </div>`).join('');
+
+  container.querySelectorAll('[data-kpi]').forEach(card => {
+    card.addEventListener('click', () => {
+      filtroAtual = card.dataset.kpi;
+      document.querySelectorAll('[data-filtro]').forEach(x => x.classList.toggle('active', x.dataset.filtro === filtroAtual));
+      atualizarKpis();
+      renderizarLista();
+    });
+  });
 }
 
 function atualizarBotaoFinalizar(){
