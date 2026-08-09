@@ -773,8 +773,13 @@ async function carregarPresencas(){
 // Monta os chips de loja com base em quem está na operação atual.
 // Mantém a seleção de quem já estava marcado (remove só o que não existe mais).
 function atualizarChipsLoja(){
-  const lojas = [...new Set(presencasAtuais.map(p => p.colaboradores.loja || 'Sem loja'))]
-    .sort((a,b) => a.localeCompare(b, 'pt-BR'));
+  const contagem = {};
+  presencasAtuais.forEach(p => {
+    const loja = p.colaboradores.loja || 'Sem loja';
+    contagem[loja] = (contagem[loja] || 0) + 1;
+  });
+
+  const lojas = Object.keys(contagem).sort((a,b) => a.localeCompare(b, 'pt-BR'));
 
   filtroLojasAtivas = new Set([...filtroLojasAtivas].filter(l => lojas.includes(l)));
 
@@ -782,7 +787,7 @@ function atualizarChipsLoja(){
   container.classList.toggle('hidden', lojas.length <= 1);
   container.innerHTML = lojas.map(loja => `
     <button class="loja-chip-btn ${filtroLojasAtivas.has(loja) ? 'active' : ''}" data-loja="${escapeHtml(loja)}">
-      ${escapeHtml(loja)}
+      ${escapeHtml(loja)} (${contagem[loja]})
     </button>`).join('');
 
   container.querySelectorAll('.loja-chip-btn').forEach(btn => {
