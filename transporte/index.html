@@ -24,12 +24,7 @@
   .card-colab{ border:none; border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,.06); transition:.15s; }
   .card-colab:hover{ box-shadow:0 4px 16px rgba(0,0,0,.1); }
   .status-badge{ font-size:.72rem; padding:.35em .7em; border-radius:20px; font-weight:600; }
-  .st-pendente{ background:#fff3cd; color:#856404; }
-  .st-confirmado{ background:#d1f5ea; color:#0f6b58; }
-  .st-atestado{ background:#e2d9f3; color:#4b2e83; }
-  .st-ficou_indaiatuba{ background:#dbe9ff; color:#1d4f9e; }
-  .st-faltou{ background:#f8d7da; color:#842029; }
-  .st-outro{ background:#e2e3e5; color:#41464b; }
+  .badge-desativado{ background:#f8d7da; color:#842029; font-size:.72rem; padding:.35em .7em; border-radius:20px; font-weight:600; }
   .kpi-card{ border-radius:14px; border:none; box-shadow:0 2px 10px rgba(0,0,0,.06); }
   .kpi-num{ font-size:1.6rem; font-weight:700; }
   .login-wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--primary),#0f3460); }
@@ -100,6 +95,7 @@
     <div>
       <button class="btn btn-sm btn-outline-light me-2" id="btnImportar"><i class="bi bi-upload"></i> Importar planilha</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnDashboard"><i class="bi bi-calendar3"></i> Dashboard</button>
+      <button class="btn btn-sm btn-outline-light me-2" id="btnMotivos"><i class="bi bi-list-check"></i> Motivos</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnHistorico"><i class="bi bi-clock-history"></i> Histórico</button>
       <button class="btn btn-sm btn-outline-light" id="btnSair"><i class="bi bi-box-arrow-right"></i> Sair</button>
     </div>
@@ -232,6 +228,54 @@
   </div>
 </div>
 
+<!-- ===================== MODAL: MOTIVOS (LISTA EDITÁVEL) ===================== -->
+<div class="modal fade" id="modalMotivos" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title"><i class="bi bi-list-check me-1"></i> Motivos de apontamento</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted">
+          Edite o texto, a cor e o prazo de afastamento (em dias) de cada motivo.
+          O prazo é opcional: se preenchido, vira sugestão automática ao apontar
+          alguém com esse motivo (mas dá pra ajustar caso a caso na hora).
+        </p>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead><tr><th>Rótulo</th><th style="width:90px">Cor</th><th style="width:140px">Dias padrão</th><th style="width:90px">Ativo</th><th></th></tr></thead>
+            <tbody id="motivosBody"></tbody>
+          </table>
+        </div>
+        <hr>
+        <div class="row g-2 align-items-end">
+          <div class="col-5">
+            <label class="form-label small">Novo motivo</label>
+            <input type="text" class="form-control form-control-sm" id="novoMotivoLabel" placeholder="Ex: Savegnago">
+          </div>
+          <div class="col-3">
+            <label class="form-label small">Cor</label>
+            <input type="color" class="form-control form-control-sm form-control-color" id="novoMotivoCor" value="#0d6efd">
+          </div>
+          <div class="col-3">
+            <label class="form-label small">Dias padrão</label>
+            <input type="number" min="0" class="form-control form-control-sm" id="novoMotivoDias" placeholder="opcional">
+          </div>
+          <div class="col-1">
+            <button class="btn btn-sm btn-accent w-100" id="btnAdicionarMotivo"><i class="bi bi-plus-lg"></i></button>
+          </div>
+        </div>
+        <div id="motivosStatus" class="small mt-2"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar</button>
+        <button class="btn btn-accent btn-sm" id="btnSalvarMotivos">Salvar alterações</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== MODAL: EDITAR COLABORADOR ===================== -->
 <div class="modal fade" id="modalEditarColab" tabindex="-1">
   <div class="modal-dialog">
@@ -260,6 +304,14 @@
             <option value="true">Ativo</option>
             <option value="false">Desativado</option>
           </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small">Afastado até (opcional)</label>
+          <input type="date" class="form-control" id="editColabAfastadoAte">
+          <div class="small text-muted mt-1">
+            Enquanto essa data não passar, a pessoa não entra em novas operações.
+            Deixe em branco pra liberar imediatamente.
+          </div>
         </div>
         <div id="editColabStatus" class="small mt-2 text-muted">
           Alterar a loja pode mudar em quais operações de retorno essa pessoa aparece a partir de agora.
@@ -328,14 +380,15 @@
       </div>
       <div class="modal-body">
         <label class="form-label small">Motivo</label>
-        <select class="form-select mb-3" id="apontMotivo">
-          <option value="atestado">Atestado</option>
-          <option value="ficou_indaiatuba">Ficou em Indaiatuba</option>
-          <option value="faltou">Faltou</option>
-          <option value="outro">Outro</option>
-        </select>
+        <select class="form-select mb-3" id="apontMotivo"></select>
         <label class="form-label small">Observação (opcional)</label>
-        <textarea class="form-control" id="apontObs" rows="2" placeholder="Detalhes adicionais..."></textarea>
+        <textarea class="form-control mb-3" id="apontObs" rows="2" placeholder="Detalhes adicionais..."></textarea>
+        <label class="form-label small">Dias de afastamento (opcional)</label>
+        <input type="number" min="0" class="form-control" id="apontDias" placeholder="Ex: 5">
+        <div class="small text-muted mt-1">
+          Se preenchido, a pessoa não aparece nas operações pelos próximos X dias
+          (volta a aparecer automaticamente depois do prazo).
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
@@ -375,16 +428,33 @@ let presencasAtuais = [];   // join colaborador + presenca
 let filtroAtual = 'todos';
 let filtroLojasAtivas = new Set(); // vazio = mostra todas as lojas
 let colaboradorApontamentoAtual = null;
+let motivosTodos = [];   // todos os motivos (inclusive inativos, p/ histórico)
+let motivosMap = {};     // chave -> { chave, label, cor, dias_ausencia, ativo, ordem }
 
 const TIPO_LABEL = {
   saida_indaiatuba: 'Saída Indaiatuba',
   retorno_campinas: 'Retorno Campinas',
   retorno_santa_barbara: 'Retorno Santa Bárbara'
 };
-const STATUS_LABEL = {
-  pendente: 'Pendente', confirmado: 'Confirmado', atestado: 'Atestado',
-  ficou_indaiatuba: 'Ficou em Indaiatuba', faltou: 'Faltou', outro: 'Outro'
+
+// Cores/labels fixos dos dois status "de sistema" (não são motivos editáveis)
+const STATUS_FIXO = {
+  pendente: { label: 'Pendente', cor: '#856404' },
+  confirmado: { label: 'Confirmado', cor: '#0f6b58' }
 };
+
+function getStatusLabel(status){
+  if (STATUS_FIXO[status]) return STATUS_FIXO[status].label;
+  return motivosMap[status]?.label || status;
+}
+function getStatusColor(status){
+  if (STATUS_FIXO[status]) return STATUS_FIXO[status].cor;
+  return motivosMap[status]?.cor || '#6c757d';
+}
+function badgeStatusHtml(status){
+  const cor = getStatusColor(status);
+  return `<span class="status-badge" style="background:${cor}22;color:${cor};">${escapeHtml(getStatusLabel(status))}</span>`;
+}
 
 // Data de hoje no fuso local (evita virar o dia errado por causa do UTC)
 function dataLocalHoje(){
@@ -394,6 +464,126 @@ function dataLocalHoje(){
   const dia = String(d.getDate()).padStart(2, '0');
   return `${ano}-${mes}-${dia}`;
 }
+
+// Soma dias a uma data "YYYY-MM-DD" e devolve no mesmo formato
+function somarDias(dataStr, dias){
+  const [a,m,d] = dataStr.split('-').map(Number);
+  const dt = new Date(a, m-1, d);
+  dt.setDate(dt.getDate() + Number(dias));
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+
+// ============================================================
+// MOTIVOS (lista editável de apontamentos)
+// ============================================================
+async function carregarMotivos(){
+  const { data, error } = await sb.from('motivos').select('*').order('ordem', { ascending: true });
+  if (error) { console.error('Erro ao carregar motivos:', error.message); return; }
+  motivosTodos = data || [];
+  motivosMap = {};
+  motivosTodos.forEach(m => motivosMap[m.chave] = m);
+  popularSelectMotivo();
+}
+
+function popularSelectMotivo(){
+  const sel = document.getElementById('apontMotivo');
+  if (!sel) return;
+  const ativos = motivosTodos.filter(m => m.ativo);
+  sel.innerHTML = ativos.map(m =>
+    `<option value="${escapeHtml(m.chave)}" data-dias="${m.dias_ausencia ?? ''}">${escapeHtml(m.label)}</option>`
+  ).join('');
+  atualizarDiasSugeridos();
+}
+
+// Gera uma "chave" técnica (slug) a partir do label digitado, garantindo que não repita
+function gerarChaveMotivo(label){
+  let base = label.toLowerCase().trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'_').replace(/(^_+|_+$)/g,'');
+  if (!base) base = 'motivo';
+  let chave = base, i = 2;
+  while (motivosMap[chave]) { chave = `${base}_${i}`; i++; }
+  return chave;
+}
+
+// Módulo de gestão: abre o modal, lista todos os motivos (inclusive
+// inativos) num formulário editável.
+document.getElementById('btnMotivos').addEventListener('click', async () => {
+  document.getElementById('motivosStatus').textContent = '';
+  renderizarTabelaMotivos();
+  new bootstrap.Modal(document.getElementById('modalMotivos')).show();
+});
+
+function renderizarTabelaMotivos(){
+  const tbody = document.getElementById('motivosBody');
+  tbody.innerHTML = motivosTodos.map(m => `
+    <tr data-chave="${escapeHtml(m.chave)}">
+      <td><input type="text" class="form-control form-control-sm mot-label" value="${escapeHtml(m.label)}"></td>
+      <td><input type="color" class="form-control form-control-sm form-control-color mot-cor" value="${escapeHtml(m.cor || '#6c757d')}"></td>
+      <td><input type="number" min="0" class="form-control form-control-sm mot-dias" placeholder="sem prazo" value="${m.dias_ausencia ?? ''}"></td>
+      <td class="text-center"><input type="checkbox" class="form-check-input mot-ativo" ${m.ativo ? 'checked' : ''}></td>
+      <td class="text-muted small">${escapeHtml(m.chave)}</td>
+    </tr>`).join('');
+}
+
+document.getElementById('btnAdicionarMotivo').addEventListener('click', async () => {
+  const label = document.getElementById('novoMotivoLabel').value.trim();
+  const cor = document.getElementById('novoMotivoCor').value;
+  const diasStr = document.getElementById('novoMotivoDias').value;
+  const status = document.getElementById('motivosStatus');
+
+  if (!label) { status.textContent = 'Digite um nome pro motivo.'; status.classList.add('text-danger'); return; }
+
+  const chave = gerarChaveMotivo(label);
+  const ordem = motivosTodos.length ? Math.max(...motivosTodos.map(m => m.ordem || 0)) + 1 : 1;
+  const dias = diasStr ? Number(diasStr) : null;
+
+  const { error } = await sb.from('motivos').insert({ chave, label, cor, dias_ausencia: dias, ativo: true, ordem });
+  if (error) { status.textContent = 'Erro ao adicionar: ' + error.message; status.classList.add('text-danger'); return; }
+
+  document.getElementById('novoMotivoLabel').value = '';
+  document.getElementById('novoMotivoDias').value = '';
+  status.classList.remove('text-danger');
+  status.textContent = `Motivo "${label}" adicionado.`;
+
+  await carregarMotivos();
+  renderizarTabelaMotivos();
+});
+
+document.getElementById('btnSalvarMotivos').addEventListener('click', async () => {
+  const status = document.getElementById('motivosStatus');
+  status.textContent = 'Salvando...';
+  status.classList.remove('text-danger');
+
+  const linhas = [...document.querySelectorAll('#motivosBody tr')];
+  let erro = null;
+
+  for (const linha of linhas) {
+    const chave = linha.dataset.chave;
+    const label = linha.querySelector('.mot-label').value.trim();
+    const cor = linha.querySelector('.mot-cor').value;
+    const diasStr = linha.querySelector('.mot-dias').value;
+    const ativo = linha.querySelector('.mot-ativo').checked;
+    if (!label) continue;
+
+    const { error } = await sb.from('motivos')
+      .update({ label, cor, dias_ausencia: diasStr ? Number(diasStr) : null, ativo })
+      .eq('chave', chave);
+    if (error) erro = error;
+  }
+
+  if (erro) {
+    status.textContent = 'Erro ao salvar algumas alterações: ' + erro.message;
+    status.classList.add('text-danger');
+    return;
+  }
+
+  status.textContent = 'Alterações salvas.';
+  await carregarMotivos();
+
+  // Reflete os novos labels/cores imediatamente na tela (cards, dashboard etc.)
+  if (presencasAtuais.length) renderizarLista();
+});
 
 // ============================================================
 // LOGIN
@@ -427,6 +617,7 @@ function iniciarApp(){
       db: { schema: SUPABASE_SCHEMA }
     });
   }
+  carregarMotivos();
 }
 
 if (sessionStorage.getItem('transporte_logado') === '1') {
@@ -483,7 +674,7 @@ async function carregarOuCriarOperacao(tipo){
 // do mesmo dia (quem faltou/ficou em Indaiatuba/atestado não aparece no retorno).
 async function garantirPresencas(op){
   const { data: colaboradores, error } = await sb
-    .from('colaboradores').select('id, loja').eq('ativo', true);
+    .from('colaboradores').select('id, loja, afastado_ate').eq('ativo', true);
   if (error) { alert('Erro ao buscar colaboradores: ' + error.message); return; }
 
   const { data: jaExistentes, error: errExist } = await sb
@@ -499,6 +690,7 @@ async function garantirPresencas(op){
   const elegiveis = colaboradores.filter(c =>
     elegivelParaOperacao(c, op.tipo) &&
     !idsExistentes.has(c.id) &&
+    !estaAfastado(c, op.data) &&
     (op.tipo === 'saida_indaiatuba' || confirmadosSaida.has(c.id))
   );
   if (elegiveis.length === 0) return;
@@ -511,6 +703,12 @@ async function garantirPresencas(op){
 
   const { error: errInsert } = await sb.from('presencas').insert(linhas);
   if (errInsert) console.warn('Aviso ao gerar presenças:', errInsert.message);
+}
+
+// Verdadeiro se o colaborador ainda está dentro do prazo de afastamento
+// (atestado/apontamento com dias definidos, ou prazo manual) na data de referência.
+function estaAfastado(colaborador, dataReferencia){
+  return !!colaborador.afastado_ate && colaborador.afastado_ate >= dataReferencia;
 }
 
 // Busca quem foi CONFIRMADO na Saída Indaiatuba de uma determinada data.
@@ -548,7 +746,7 @@ function elegivelParaOperacao(colaborador, tipo){
 async function carregarPresencas(){
   const { data, error } = await sb
     .from('presencas')
-    .select('id, status, observacao, atualizado_em, colaboradores(id, nome, equipe, loja, ativo)')
+    .select('id, status, observacao, atualizado_em, colaboradores(id, nome, equipe, loja, ativo, afastado_ate)')
     .eq('operacao_id', operacaoAtual.id);
 
   if (error) { alert('Erro ao carregar lista: ' + error.message); return; }
@@ -625,8 +823,8 @@ function renderizarLista(){
             <span class="loja-chip">${escapeHtml(c.loja || '-')}</span>
           </div>
           <div class="d-flex flex-column align-items-end gap-1">
-            <span class="status-badge st-${p.status}">${STATUS_LABEL[p.status]}</span>
-            ${inativo ? '<span class="status-badge st-faltou">Desativado</span>' : ''}
+            ${badgeStatusHtml(p.status)}
+            ${inativo ? '<span class="badge-desativado">Desativado</span>' : ''}
           </div>
         </div>
         ${p.observacao ? `<div class="small text-muted mb-2"><i class="bi bi-chat-left-text me-1"></i>${escapeHtml(p.observacao)}</div>` : ''}
@@ -643,7 +841,7 @@ function renderizarLista(){
           <button class="btn btn-sm btn-outline-primary btn-editar-colab" title="Editar cadastro (nome, equipe, loja, status)"
                   data-colid="${escapeHtml(c.id)}" data-nome="${escapeHtml(c.nome)}"
                   data-equipe="${escapeHtml(c.equipe || '')}" data-loja="${escapeHtml(c.loja || '')}"
-                  data-ativo="${c.ativo !== false}">
+                  data-ativo="${c.ativo !== false}" data-afastado="${escapeHtml(c.afastado_ate || '')}">
             <i class="bi bi-person-vcard"></i> Editar
           </button>
         </div>
@@ -656,7 +854,7 @@ function renderizarLista(){
   container.querySelectorAll('.btn-apontamento').forEach(b =>
     b.addEventListener('click', () => abrirApontamento(b.dataset.id, b.dataset.nome)));
   container.querySelectorAll('.btn-editar-colab').forEach(b =>
-    b.addEventListener('click', () => abrirEditarColab(b.dataset.colid, b.dataset.nome, b.dataset.equipe, b.dataset.loja, b.dataset.ativo === 'true')));
+    b.addEventListener('click', () => abrirEditarColab(b.dataset.colid, b.dataset.nome, b.dataset.equipe, b.dataset.loja, b.dataset.ativo === 'true', b.dataset.afastado)));
 }
 
 function escapeHtml(str){
@@ -676,12 +874,22 @@ document.querySelectorAll('[data-filtro]').forEach(b => {
 // ============================================================
 // CONFIRMAR / APONTAMENTO
 // ============================================================
-async function atualizarStatus(presencaId, status, observacao = null){
+async function atualizarStatus(presencaId, status, observacao = null, afastadoAte = null){
   const { error } = await sb
     .from('presencas')
-    .update({ status, observacao, atualizado_em: new Date().toISOString() })
+    .update({ status, observacao, afastado_ate: afastadoAte, atualizado_em: new Date().toISOString() })
     .eq('id', presencaId);
   if (error) { alert('Erro ao salvar: ' + error.message); return; }
+
+  // Se foi definido um prazo de afastamento, propaga pro cadastro do colaborador
+  // (é isso que faz ele sumir das próximas operações automaticamente)
+  if (afastadoAte) {
+    const presenca = presencasAtuais.find(p => p.id === presencaId);
+    if (presenca) {
+      await sb.from('colaboradores').update({ afastado_ate: afastadoAte }).eq('id', presenca.colaboradores.id);
+    }
+  }
+
   await carregarPresencas();
 }
 
@@ -689,14 +897,31 @@ function abrirApontamento(presencaId, nome){
   colaboradorApontamentoAtual = presencaId;
   document.getElementById('apontNome').textContent = nome;
   document.getElementById('apontObs').value = '';
-  document.getElementById('apontMotivo').value = 'atestado';
+  document.getElementById('apontDias').value = '';
+  popularSelectMotivo();
   new bootstrap.Modal(document.getElementById('modalApontamento')).show();
+}
+
+document.getElementById('apontMotivo').addEventListener('change', atualizarDiasSugeridos);
+
+function atualizarDiasSugeridos(){
+  const sel = document.getElementById('apontMotivo');
+  const diasInput = document.getElementById('apontDias');
+  const opt = sel.options[sel.selectedIndex];
+  diasInput.value = opt?.dataset.dias || '';
 }
 
 document.getElementById('btnSalvarApontamento').addEventListener('click', async () => {
   const motivo = document.getElementById('apontMotivo').value;
   const obs = document.getElementById('apontObs').value.trim() || null;
-  await atualizarStatus(colaboradorApontamentoAtual, motivo, obs);
+  const diasStr = document.getElementById('apontDias').value;
+
+  let afastadoAte = null;
+  if (diasStr && Number(diasStr) > 0 && operacaoAtual) {
+    afastadoAte = somarDias(operacaoAtual.data, Number(diasStr));
+  }
+
+  await atualizarStatus(colaboradorApontamentoAtual, motivo, obs, afastadoAte);
   bootstrap.Modal.getInstance(document.getElementById('modalApontamento')).hide();
 });
 
@@ -705,12 +930,13 @@ document.getElementById('btnSalvarApontamento').addEventListener('click', async 
 // ============================================================
 let editColabLojaAnterior = '';
 
-function abrirEditarColab(colaboradorId, nome, equipe, loja, ativo){
+function abrirEditarColab(colaboradorId, nome, equipe, loja, ativo, afastadoAte){
   document.getElementById('editColabId').value = colaboradorId;
   document.getElementById('editColabNome').value = nome;
   document.getElementById('editColabEquipe').value = equipe;
   document.getElementById('editColabLoja').value = loja;
   document.getElementById('editColabAtivo').value = ativo ? 'true' : 'false';
+  document.getElementById('editColabAfastadoAte').value = afastadoAte || '';
   editColabLojaAnterior = loja;
   document.getElementById('editColabStatus').textContent =
     'Se mudar a loja, a pessoa é movida automaticamente entre as listas de retorno de hoje.';
@@ -725,12 +951,13 @@ document.getElementById('btnSalvarEditarColab').addEventListener('click', async 
   const equipe = document.getElementById('editColabEquipe').value.trim();
   const loja = document.getElementById('editColabLoja').value.trim();
   const ativo = document.getElementById('editColabAtivo').value === 'true';
+  const afastadoAte = document.getElementById('editColabAfastadoAte').value || null;
   const status = document.getElementById('editColabStatus');
 
   if (!nome) { status.textContent = 'Nome não pode ficar em branco.'; status.classList.add('text-danger'); return; }
 
   const { error } = await sb.from('colaboradores')
-    .update({ nome, equipe: equipe || null, loja: loja || null, ativo, atualizado_em: new Date().toISOString() })
+    .update({ nome, equipe: equipe || null, loja: loja || null, ativo, afastado_ate: afastadoAte, atualizado_em: new Date().toISOString() })
     .eq('id', id);
 
   if (error) {
@@ -958,7 +1185,7 @@ function montarLinhasExport(){
     Nome: p.colaboradores.nome,
     Equipe: p.colaboradores.equipe || '',
     Loja: p.colaboradores.loja || '',
-    Status: STATUS_LABEL[p.status],
+    Status: getStatusLabel(p.status),
     Observacao: p.observacao || ''
   }));
 }
@@ -1063,14 +1290,20 @@ async function buscarEstatisticasMes(ano, mes, tipo){
   const porDia = {};
   (data || []).forEach(p => {
     const dia = p.operacoes.data;
-    if (!porDia[dia]) porDia[dia] = {
-      total: 0, confirmado: 0, pendente: 0,
-      atestado: 0, ficou_indaiatuba: 0, faltou: 0, outro: 0
-    };
+    if (!porDia[dia]) porDia[dia] = { total: 0 };
     porDia[dia].total++;
     porDia[dia][p.status] = (porDia[dia][p.status] || 0) + 1;
   });
   return porDia;
+}
+
+// Soma todos os status que NÃO são "pendente" nem "confirmado"
+// (ou seja, todos os motivos de apontamento, sejam quais forem hoje)
+function contarApontamentos(info){
+  if (!info) return 0;
+  return Object.entries(info)
+    .filter(([chave]) => !['total','confirmado','pendente'].includes(chave))
+    .reduce((soma, [,valor]) => soma + valor, 0);
 }
 
 function renderizarCalendario(ano, mes, porDia){
@@ -1097,7 +1330,7 @@ function renderizarCalendario(ano, mes, porDia){
   for (let dia = 1; dia <= totalDias; dia++) {
     const dataStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
     const info = porDia[dataStr];
-    const apontamentos = info ? (info.atestado + info.ficou_indaiatuba + info.faltou + info.outro) : 0;
+    const apontamentos = contarApontamentos(info);
     const cell = document.createElement('div');
     cell.className = 'dash-day-cell' + (info ? ' dash-day-has-data' : '');
     cell.innerHTML = `
@@ -1105,7 +1338,7 @@ function renderizarCalendario(ano, mes, porDia){
       ${info ? `
         <div class="dash-day-stats">
           <span class="dash-stat-total">Total: ${info.total}</span>
-          <span class="dash-stat-confirmados">Conf: ${info.confirmado}</span>
+          <span class="dash-stat-confirmados">Conf: ${info.confirmado || 0}</span>
           <span class="dash-stat-apontamentos">Apont: ${apontamentos}</span>
         </div>` : ''}`;
     if (info) cell.addEventListener('click', () => mostrarDetalheDia(dataStr, info));
@@ -1146,19 +1379,18 @@ function renderizarDetalheDia(dataStr, info){
   const [ano, mes, dia] = dataStr.split('-');
 
   const linhas = [
-    { key: 'confirmado', label: 'Confirmados', valor: info.confirmado, cor: '#2a9d8f' },
-    { key: 'atestado', label: 'Atestado', valor: info.atestado, cor: '#4b2e83' },
-    { key: 'ficou_indaiatuba', label: 'Ficou em Indaiatuba', valor: info.ficou_indaiatuba, cor: '#1d4f9e' },
-    { key: 'faltou', label: 'Faltou', valor: info.faltou, cor: '#842029' },
-    { key: 'outro', label: 'Outro', valor: info.outro, cor: '#41464b' },
-    { key: 'pendente', label: 'Pendente', valor: info.pendente, cor: '#856404' }
+    { key: 'confirmado', label: 'Confirmados', valor: info.confirmado || 0, cor: STATUS_FIXO.confirmado.cor },
+    ...motivosTodos.map(m => ({ key: m.chave, label: m.label, valor: info[m.chave] || 0, cor: m.cor })),
+    { key: 'pendente', label: 'Pendente', valor: info.pendente || 0, cor: STATUS_FIXO.pendente.cor }
   ].filter(l => l.valor > 0);
 
-  const ordemStatus = { confirmado:0, atestado:1, ficou_indaiatuba:2, faltou:3, outro:4, pendente:5 };
+  const ordemStatus = { confirmado: 0 };
+  motivosTodos.forEach((m, i) => ordemStatus[m.chave] = i + 1);
+  ordemStatus.pendente = 999;
   const listaOrdenada = [...detalheDiaLista]
     .filter(p => !detalheDiaFiltro || p.status === detalheDiaFiltro)
     .sort((a,b) => {
-      const diff = (ordemStatus[a.status] ?? 9) - (ordemStatus[b.status] ?? 9);
+      const diff = (ordemStatus[a.status] ?? 500) - (ordemStatus[b.status] ?? 500);
       return diff !== 0 ? diff : a.colaboradores.nome.localeCompare(b.colaboradores.nome, 'pt-BR');
     });
 
@@ -1189,7 +1421,7 @@ function renderizarDetalheDia(dataStr, info){
                 <td>${escapeHtml(p.colaboradores.nome)}</td>
                 <td class="text-muted small">${escapeHtml(p.colaboradores.equipe || '-')}</td>
                 <td class="text-muted small">${escapeHtml(p.colaboradores.loja || '-')}</td>
-                <td><span class="status-badge st-${p.status}">${STATUS_LABEL[p.status]}</span></td>
+                <td>${badgeStatusHtml(p.status)}</td>
                 <td class="text-muted small">${escapeHtml(p.observacao || '-')}</td>
               </tr>`).join('') : `<tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr>`}
           </tbody>
@@ -1216,7 +1448,7 @@ function renderizarDetalheDia(dataStr, info){
       Nome: p.colaboradores.nome,
       Equipe: p.colaboradores.equipe || '',
       Loja: p.colaboradores.loja || '',
-      Status: STATUS_LABEL[p.status],
+      Status: getStatusLabel(p.status),
       Observacao: p.observacao || ''
     }));
     const ws = XLSX.utils.json_to_sheet(linhasExport);
