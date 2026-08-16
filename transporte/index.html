@@ -98,6 +98,7 @@
       <button class="btn btn-sm btn-outline-light me-2" id="btnImportar"><i class="bi bi-upload"></i> Importar planilha</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnDashboard"><i class="bi bi-calendar3"></i> Dashboard</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnMotivos"><i class="bi bi-list-check"></i> Motivos</button>
+      <button class="btn btn-sm btn-outline-light me-2" id="btnColaboradores"><i class="bi bi-people"></i> Colaboradores</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnHistorico"><i class="bi bi-clock-history"></i> Histórico</button>
       <button class="btn btn-sm btn-outline-light" id="btnSair"><i class="bi bi-box-arrow-right"></i> Sair</button>
     </div>
@@ -218,6 +219,54 @@
           Os números consideram apenas a operação de Saída Indaiatuba de cada dia
           (contagem cheia de quem estava previsto pra sair).
         </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: COLABORADORES (CADASTRO GERAL) ===================== -->
+<div class="modal fade" id="modalColaboradores" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title"><i class="bi bi-people me-1"></i> Colaboradores (cadastro geral)</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted">
+          Gerencie o cadastro completo aqui, separado das telas de Saída/Retorno.
+          Desativar alguém aqui já remove na hora de qualquer operação aberta hoje.
+        </p>
+        <input type="text" class="form-control form-control-sm mb-3" id="colabBusca" placeholder="Buscar por nome...">
+        <div class="table-responsive" style="max-height:360px; overflow-y:auto;">
+          <table class="table table-sm align-middle">
+            <thead><tr><th>Nome</th><th>Equipe</th><th>Loja</th><th>Status</th><th>Afastado até</th><th></th></tr></thead>
+            <tbody id="colaboradoresBody"></tbody>
+          </table>
+        </div>
+        <hr>
+        <div class="row g-2 align-items-end">
+          <div class="col-2">
+            <label class="form-label small">ID</label>
+            <input type="text" class="form-control form-control-sm" id="colabNovoId" readonly>
+          </div>
+          <div class="col-4">
+            <label class="form-label small">Nome *</label>
+            <input type="text" class="form-control form-control-sm" id="colabNovoNome" placeholder="Nome completo">
+          </div>
+          <div class="col-3">
+            <label class="form-label small">Equipe</label>
+            <input type="text" class="form-control form-control-sm" id="colabNovoEquipe" list="listaEquipes">
+          </div>
+          <div class="col-2">
+            <label class="form-label small">Loja</label>
+            <input type="text" class="form-control form-control-sm" id="colabNovoLoja" list="listaLojas">
+          </div>
+          <div class="col-1">
+            <button class="btn btn-sm btn-accent w-100" id="btnAdicionarColabGeral" title="Adicionar"><i class="bi bi-plus-lg"></i></button>
+          </div>
+        </div>
+        <div id="colabGeralStatus" class="small mt-2"></div>
       </div>
     </div>
   </div>
@@ -664,6 +713,89 @@ async function carregarOuCriarOperacao(tipo){
   await carregarPresencas();
 }
 
+// ============================================================
+// MÓDULO COLABORADORES (cadastro geral, separado das operações)
+// ============================================================
+let colaboradoresTodos = [];
+
+document.getElementById('btnColaboradores').addEventListener('click', async () => {
+  document.getElementById('colabGeralStatus').textContent = '';
+  document.getElementById('colabBusca').value = '';
+  await carregarColaboradoresTodos();
+  await preencherProximoIdGeral();
+  new bootstrap.Modal(document.getElementById('modalColaboradores')).show();
+});
+
+async function carregarColaboradoresTodos(){
+  const { data, error } = await sb.from('colaboradores').select('*').order('nome', { ascending: true });
+  if (error) { console.error('Erro ao carregar colaboradores:', error.message); return; }
+  colaboradoresTodos = data || [];
+  renderizarTabelaColaboradores();
+}
+
+function renderizarTabelaColaboradores(){
+  const busca = document.getElementById('colabBusca').value.trim().toLowerCase();
+  const tbody = document.getElementById('colaboradoresBody');
+  const lista = colaboradoresTodos.filter(c => !busca || c.nome.toLowerCase().includes(busca));
+
+  tbody.innerHTML = lista.map(c => `
+    <tr>
+      <td>${escapeHtml(c.nome)}</td>
+      <td class="text-muted small">${escapeHtml(c.equipe || '-')}</td>
+      <td class="text-muted small">${escapeHtml(c.loja || '-')}</td>
+      <td>${c.ativo !== false ? '<span class="status-badge" style="background:#d1f5ea;color:#0f6b58;">Ativo</span>' : '<span class="badge-desativado">Desativado</span>'}</td>
+      <td class="text-muted small">${c.afastado_ate || '-'}</td>
+      <td>
+        <button class="btn btn-sm btn-outline-primary btn-editar-colab-geral"
+          data-colid="${escapeHtml(c.id)}" data-nome="${escapeHtml(c.nome)}"
+          data-equipe="${escapeHtml(c.equipe || '')}" data-loja="${escapeHtml(c.loja || '')}"
+          data-ativo="${c.ativo !== false}" data-afastado="${escapeHtml(c.afastado_ate || '')}">
+          <i class="bi bi-pencil-square"></i>
+        </button>
+      </td>
+    </tr>`).join('') || `<tr><td colspan="6" class="text-center text-muted py-3">Nenhum colaborador encontrado</td></tr>`;
+
+  tbody.querySelectorAll('.btn-editar-colab-geral').forEach(b => {
+    b.addEventListener('click', () => abrirEditarColab(
+      b.dataset.colid, b.dataset.nome, b.dataset.equipe, b.dataset.loja,
+      b.dataset.ativo === 'true', b.dataset.afastado
+    ));
+  });
+}
+
+document.getElementById('colabBusca').addEventListener('input', renderizarTabelaColaboradores);
+
+async function preencherProximoIdGeral(){
+  const maiorId = colaboradoresTodos
+    .map(c => parseInt(c.id, 10)).filter(n => !isNaN(n))
+    .reduce((max, n) => Math.max(max, n), 0);
+  document.getElementById('colabNovoId').value = String(maiorId + 1);
+}
+
+document.getElementById('btnAdicionarColabGeral').addEventListener('click', async () => {
+  const id = document.getElementById('colabNovoId').value.trim();
+  const nome = document.getElementById('colabNovoNome').value.trim();
+  const equipe = document.getElementById('colabNovoEquipe').value.trim();
+  const loja = document.getElementById('colabNovoLoja').value.trim();
+  const status = document.getElementById('colabGeralStatus');
+
+  if (!nome) { status.textContent = 'Preencha o nome.'; status.classList.add('text-danger'); return; }
+
+  const { error } = await sb.from('colaboradores').insert({
+    id, nome, equipe: equipe || null, loja: loja || null, ativo: true
+  });
+  if (error) { status.textContent = 'Erro ao adicionar: ' + error.message; status.classList.add('text-danger'); return; }
+
+  status.classList.remove('text-danger');
+  status.textContent = `${nome} adicionado(a) ao cadastro.`;
+  document.getElementById('colabNovoNome').value = '';
+  document.getElementById('colabNovoEquipe').value = '';
+  document.getElementById('colabNovoLoja').value = '';
+
+  await carregarColaboradoresTodos();
+  await preencherProximoIdGeral();
+});
+
 // Cria uma linha de presença "pendente" para cada colaborador ativo elegível
 // que ainda não tem registro nesta operação (não duplica quem já está).
 // Nas operações de RETORNO, só entra quem foi CONFIRMADO na Saída Indaiatuba
@@ -888,13 +1020,12 @@ async function atualizarStatus(presencaId, status, observacao = null, afastadoAt
     .eq('id', presencaId);
   if (error) { alert('Erro ao salvar: ' + error.message); return; }
 
-  // Se foi definido um prazo de afastamento, propaga pro cadastro do colaborador
-  // (é isso que faz ele sumir das próximas operações automaticamente)
-  if (afastadoAte) {
-    const presenca = presencasAtuais.find(p => p.id === presencaId);
-    if (presenca) {
-      await sb.from('colaboradores').update({ afastado_ate: afastadoAte }).eq('id', presenca.colaboradores.id);
-    }
+  // Sincroniza SEMPRE o prazo de afastamento no cadastro do colaborador com o
+  // que foi definido agora (inclusive limpando, se afastadoAte vier vazio).
+  // Sem isso, um prazo antigo ficava "preso" mesmo depois de reconfirmar a pessoa.
+  const presenca = presencasAtuais.find(p => p.id === presencaId);
+  if (presenca) {
+    await sb.from('colaboradores').update({ afastado_ate: afastadoAte }).eq('id', presenca.colaboradores.id);
   }
 
   await carregarPresencas();
@@ -903,9 +1034,22 @@ async function atualizarStatus(presencaId, status, observacao = null, afastadoAt
 function abrirApontamento(presencaId, nome){
   colaboradorApontamentoAtual = presencaId;
   document.getElementById('apontNome').textContent = nome;
-  document.getElementById('apontObs').value = '';
-  document.getElementById('apontDias').value = '';
   popularSelectMotivo();
+
+  // Pré-preenche com o que já estava salvo (se essa presença já tinha um
+  // motivo/observação/prazo), pra não sobrescrever sem querer.
+  const presenca = presencasAtuais.find(p => p.id === presencaId);
+  document.getElementById('apontObs').value = presenca?.observacao || '';
+  if (presenca && motivosMap[presenca.status]) {
+    document.getElementById('apontMotivo').value = presenca.status;
+  }
+  if (presenca?.afastado_ate && operacaoAtual) {
+    const dias = Math.round((new Date(presenca.afastado_ate) - new Date(operacaoAtual.data)) / 86400000);
+    document.getElementById('apontDias').value = dias > 0 ? dias : '';
+  } else {
+    atualizarDiasSugeridos();
+  }
+
   new bootstrap.Modal(document.getElementById('modalApontamento')).show();
 }
 
@@ -978,9 +1122,30 @@ document.getElementById('btnSalvarEditarColab').addEventListener('click', async 
     await resincronizarRetornoAposEdicao(id, loja);
   }
 
+  // Se foi desativado agora, remove imediatamente das operações de HOJE que
+  // ainda estavam pendentes (sem isso, ficava contando/aparecendo mesmo
+  // desativado até a operação ser recriada do zero no dia seguinte).
+  if (!ativo) {
+    await removerPendentesHoje(id);
+  }
+
   bootstrap.Modal.getInstance(document.getElementById('modalEditarColab')).hide();
-  await carregarPresencas();
+  if (operacaoAtual) await carregarPresencas();
+  if (document.getElementById('modalColaboradores').classList.contains('show')) await carregarColaboradoresTodos();
 });
+
+// Remove os registros ainda PENDENTES de hoje (nas 3 operações) de um
+// colaborador — usado ao desativar alguém no meio do expediente.
+async function removerPendentesHoje(colaboradorId){
+  const hoje = dataLocalHoje();
+  const tipos = ['saida_indaiatuba', 'retorno_campinas', 'retorno_santa_barbara'];
+  for (const tipo of tipos) {
+    const { data: op } = await sb.from('operacoes').select('id').eq('tipo', tipo).eq('data', hoje).maybeSingle();
+    if (!op) continue;
+    await sb.from('presencas').delete()
+      .eq('operacao_id', op.id).eq('colaborador_id', colaboradorId).eq('status', 'pendente');
+  }
+}
 
 // Move o colaborador entre as operações de retorno do dia quando a loja muda.
 // Só mexe em quem já foi confirmado na Saída Indaiatuba hoje (quem não foi
