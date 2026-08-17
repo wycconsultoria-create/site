@@ -237,7 +237,7 @@
           Gerencie o cadastro completo aqui, separado das telas de Saída/Retorno.
           Desativar alguém aqui já remove na hora de qualquer operação aberta hoje.
         </p>
-        <input type="text" class="form-control form-control-sm mb-3" id="colabBusca" placeholder="Buscar por nome...">
+        <input type="text" class="form-control form-control-sm mb-3" id="colabBusca" placeholder="Buscar por nome ou loja...">
         <div class="table-responsive" style="max-height:360px; overflow-y:auto;">
           <table class="table table-sm align-middle">
             <thead><tr><th>Nome</th><th>Equipe</th><th>Loja</th><th>Status</th><th>Afastado até</th><th></th></tr></thead>
@@ -267,6 +267,27 @@
           </div>
         </div>
         <div id="colabGeralStatus" class="small mt-2"></div>
+
+        <hr>
+        <h6 class="small fw-bold"><i class="bi bi-shop me-1"></i> Renomear loja em massa</h6>
+        <p class="small text-muted mb-2">
+          Útil quando uma loja não existe mais ou mudou de nome — atualiza
+          todo mundo que estava com o nome antigo de uma vez só.
+        </p>
+        <div class="row g-2 align-items-end">
+          <div class="col-5">
+            <label class="form-label small">Loja atual</label>
+            <select class="form-select form-select-sm" id="renomeLojaAtual"></select>
+          </div>
+          <div class="col-5">
+            <label class="form-label small">Novo nome</label>
+            <input type="text" class="form-control form-control-sm" id="renomeLojaNova" placeholder="Ex: Savegnago - 063">
+          </div>
+          <div class="col-2">
+            <button class="btn btn-sm btn-outline-dark w-100" id="btnRenomearLoja">Aplicar</button>
+          </div>
+        </div>
+        <div id="renomeLojaStatus" class="small mt-2"></div>
       </div>
     </div>
   </div>
@@ -423,8 +444,9 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <label class="form-label small">Motivo</label>
-        <select class="form-select mb-3" id="apontMotivo"></select>
+        <label class="form-label small">Motivo <span class="text-danger">*</span></label>
+        <div id="apontMotivoChips" class="d-flex flex-wrap gap-2 mb-1"></div>
+        <div id="apontMotivoAviso" class="small text-danger mb-2 hidden">Escolha um motivo antes de salvar.</div>
         <label class="form-label small">Observação (opcional)</label>
         <textarea class="form-control mb-3" id="apontObs" rows="2" placeholder="Detalhes adicionais..."></textarea>
         <label class="form-label small">Dias de afastamento (opcional)</label>
@@ -526,17 +548,35 @@ async function carregarMotivos(){
   motivosTodos = data || [];
   motivosMap = {};
   motivosTodos.forEach(m => motivosMap[m.chave] = m);
-  popularSelectMotivo();
+  popularChipsMotivo();
 }
 
-function popularSelectMotivo(){
-  const sel = document.getElementById('apontMotivo');
-  if (!sel) return;
+let apontMotivoSelecionado = null;
+
+// Monta os motivos como BOTÕES clicáveis (em vez de um <select>), pra ficar
+// impossível salvar o motivo errado por engano — nada vem pré-selecionado,
+// a pessoa precisa clicar ativamente no que quer marcar.
+function popularChipsMotivo(motivoSelecionar){
+  const container = document.getElementById('apontMotivoChips');
+  if (!container) return;
   const ativos = motivosTodos.filter(m => m.ativo);
-  sel.innerHTML = ativos.map(m =>
-    `<option value="${escapeHtml(m.chave)}" data-dias="${m.dias_ausencia ?? ''}">${escapeHtml(m.label)}</option>`
-  ).join('');
-  atualizarDiasSugeridos();
+  apontMotivoSelecionado = motivoSelecionar || null;
+
+  container.innerHTML = ativos.map(m => `
+    <button type="button" class="loja-chip-btn" data-chave="${escapeHtml(m.chave)}" data-dias="${m.dias_ausencia ?? ''}"
+      style="${apontMotivoSelecionado === m.chave ? `background:${m.cor};border-color:${m.cor};color:#fff;` : `border-color:${m.cor}66;color:${m.cor};`}">
+      ${escapeHtml(m.label)}
+    </button>`).join('');
+
+  container.querySelectorAll('[data-chave]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      apontMotivoSelecionado = btn.dataset.chave;
+      document.getElementById('apontMotivoAviso').classList.add('hidden');
+      popularChipsMotivo(apontMotivoSelecionado);
+      const diasInput = document.getElementById('apontDias');
+      if (!diasInput.value) diasInput.value = btn.dataset.dias || '';
+    });
+  });
 }
 
 // Gera uma "chave" técnica (slug) a partir do label digitado, garantindo que não repita
@@ -731,12 +771,15 @@ async function carregarColaboradoresTodos(){
   if (error) { console.error('Erro ao carregar colaboradores:', error.message); return; }
   colaboradoresTodos = data || [];
   renderizarTabelaColaboradores();
+  popularSelectRenomeLoja();
 }
 
 function renderizarTabelaColaboradores(){
   const busca = document.getElementById('colabBusca').value.trim().toLowerCase();
   const tbody = document.getElementById('colaboradoresBody');
-  const lista = colaboradoresTodos.filter(c => !busca || c.nome.toLowerCase().includes(busca));
+  const lista = colaboradoresTodos.filter(c =>
+    !busca || c.nome.toLowerCase().includes(busca) || (c.loja || '').toLowerCase().includes(busca)
+  );
 
   tbody.innerHTML = lista.map(c => `
     <tr>
@@ -771,6 +814,43 @@ async function preencherProximoIdGeral(){
     .reduce((max, n) => Math.max(max, n), 0);
   document.getElementById('colabNovoId').value = String(maiorId + 1);
 }
+
+// Monta o dropdown com as lojas que existem hoje no cadastro, com a
+// quantidade de gente em cada uma, pra facilitar achar a que quer trocar.
+function popularSelectRenomeLoja(){
+  const contagem = {};
+  colaboradoresTodos.forEach(c => {
+    const loja = c.loja || 'Sem loja';
+    contagem[loja] = (contagem[loja] || 0) + 1;
+  });
+  const lojas = Object.keys(contagem).sort((a,b) => a.localeCompare(b, 'pt-BR'));
+  const sel = document.getElementById('renomeLojaAtual');
+  sel.innerHTML = lojas.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l)} (${contagem[l]})</option>`).join('');
+}
+
+document.getElementById('btnRenomearLoja').addEventListener('click', async () => {
+  const lojaAtual = document.getElementById('renomeLojaAtual').value;
+  const lojaNova = document.getElementById('renomeLojaNova').value.trim();
+  const status = document.getElementById('renomeLojaStatus');
+
+  if (!lojaAtual) { status.textContent = 'Escolha a loja que quer trocar.'; status.classList.add('text-danger'); return; }
+  if (!lojaNova) { status.textContent = 'Digite o novo nome.'; status.classList.add('text-danger'); return; }
+
+  const filtroIgual = lojaAtual === 'Sem loja'
+    ? sb.from('colaboradores').update({ loja: lojaNova }).is('loja', null)
+    : sb.from('colaboradores').update({ loja: lojaNova }).eq('loja', lojaAtual);
+
+  const { error, count } = await filtroIgual.select('id', { count: 'exact' });
+
+  if (error) { status.textContent = 'Erro ao renomear: ' + error.message; status.classList.add('text-danger'); return; }
+
+  status.classList.remove('text-danger');
+  status.textContent = `Pronto! ${count ?? ''} colaborador(es) atualizado(s) de "${lojaAtual}" para "${lojaNova}".`;
+  document.getElementById('renomeLojaNova').value = '';
+
+  await carregarColaboradoresTodos();
+  if (operacaoAtual) await carregarPresencas();
+});
 
 document.getElementById('btnAdicionarColabGeral').addEventListener('click', async () => {
   const id = document.getElementById('colabNovoId').value.trim();
@@ -1034,36 +1114,31 @@ async function atualizarStatus(presencaId, status, observacao = null, afastadoAt
 function abrirApontamento(presencaId, nome){
   colaboradorApontamentoAtual = presencaId;
   document.getElementById('apontNome').textContent = nome;
-  popularSelectMotivo();
+  document.getElementById('apontMotivoAviso').classList.add('hidden');
+  document.getElementById('apontDias').value = '';
 
   // Pré-preenche com o que já estava salvo (se essa presença já tinha um
-  // motivo/observação/prazo), pra não sobrescrever sem querer.
+  // motivo/observação/prazo), pra não sobrescrever sem querer. Se for uma
+  // marcação nova, começa SEM nada selecionado (evita salvar motivo errado).
   const presenca = presencasAtuais.find(p => p.id === presencaId);
   document.getElementById('apontObs').value = presenca?.observacao || '';
-  if (presenca && motivosMap[presenca.status]) {
-    document.getElementById('apontMotivo').value = presenca.status;
-  }
+  const motivoJaMarcado = (presenca && motivosMap[presenca.status]) ? presenca.status : null;
+  popularChipsMotivo(motivoJaMarcado);
+
   if (presenca?.afastado_ate && operacaoAtual) {
     const dias = Math.round((new Date(presenca.afastado_ate) - new Date(operacaoAtual.data)) / 86400000);
     document.getElementById('apontDias').value = dias > 0 ? dias : '';
-  } else {
-    atualizarDiasSugeridos();
   }
 
   new bootstrap.Modal(document.getElementById('modalApontamento')).show();
 }
 
-document.getElementById('apontMotivo').addEventListener('change', atualizarDiasSugeridos);
-
-function atualizarDiasSugeridos(){
-  const sel = document.getElementById('apontMotivo');
-  const diasInput = document.getElementById('apontDias');
-  const opt = sel.options[sel.selectedIndex];
-  diasInput.value = opt?.dataset.dias || '';
-}
-
 document.getElementById('btnSalvarApontamento').addEventListener('click', async () => {
-  const motivo = document.getElementById('apontMotivo').value;
+  if (!apontMotivoSelecionado) {
+    document.getElementById('apontMotivoAviso').classList.remove('hidden');
+    return;
+  }
+  const motivo = apontMotivoSelecionado;
   const obs = document.getElementById('apontObs').value.trim() || null;
   const diasStr = document.getElementById('apontDias').value;
 
