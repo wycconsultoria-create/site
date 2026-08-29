@@ -449,11 +449,11 @@
         <div id="apontMotivoAviso" class="small text-danger mb-2 hidden">Escolha um motivo antes de salvar.</div>
         <label class="form-label small">Observação (opcional)</label>
         <textarea class="form-control mb-3" id="apontObs" rows="2" placeholder="Detalhes adicionais..."></textarea>
-        <label class="form-label small">Dias de afastamento (opcional)</label>
-        <input type="number" min="0" class="form-control" id="apontDias" placeholder="Ex: 5">
+        <label class="form-label small">Dias de afastamento</label>
+        <input type="number" min="1" class="form-control" id="apontDias" placeholder="Deixe em branco = 1 dia (só hoje)">
         <div class="small text-muted mt-1">
-          Se preenchido, a pessoa não aparece nas operações pelos próximos X dias
-          (volta a aparecer automaticamente depois do prazo).
+          Some da lista de todas as operações (saída e retorno) enquanto durar o prazo,
+          e volta a aparecer sozinha depois. Em branco = fica afastada só hoje.
         </div>
       </div>
       <div class="modal-footer">
@@ -537,6 +537,20 @@ function somarDias(dataStr, dias){
   const dt = new Date(a, m-1, d);
   dt.setDate(dt.getDate() + Number(dias));
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+
+// Formata "YYYY-MM-DD" para "DD/MM/AAAA"
+function formatarDataBR(dataStr){
+  const [a,m,d] = dataStr.split('-');
+  return `${d}/${m}/${a}`;
+}
+
+// Diferença em dias (inteiros) entre duas datas "YYYY-MM-DD"
+function diferencaDias(dataFim, dataInicio){
+  const [a1,m1,d1] = dataInicio.split('-').map(Number);
+  const [a2,m2,d2] = dataFim.split('-').map(Number);
+  const ms = new Date(a2,m2-1,d2) - new Date(a1,m1-1,d1);
+  return Math.round(ms / 86400000);
 }
 
 // ============================================================
@@ -954,7 +968,7 @@ function elegivelParaOperacao(colaborador, tipo){
 async function carregarPresencas(){
   const { data, error } = await sb
     .from('presencas')
-    .select('id, status, observacao, atualizado_em, colaboradores(id, nome, equipe, loja, ativo, afastado_ate)')
+    .select('id, status, observacao, atualizado_em, afastado_ate, colaboradores(id, nome, equipe, loja, ativo, afastado_ate)')
     .eq('operacao_id', operacaoAtual.id);
 
   if (error) { alert('Erro ao carregar lista: ' + error.message); return; }
@@ -1015,6 +1029,7 @@ function renderizarLista(){
 
   let lista = presencasAtuais;
   if (filtroAtual === 'desativado') lista = lista.filter(p => p.colaboradores.ativo === false);
+  else if (filtroAtual === 'apontamentos') lista = lista.filter(p => p.status !== 'pendente' && p.status !== 'confirmado');
   else if (filtroAtual !== 'todos') lista = lista.filter(p => p.status === filtroAtual);
   if (filtroLojasAtivas.size > 0) lista = lista.filter(p => filtroLojasAtivas.has(p.colaboradores.loja || 'Sem loja'));
   if (busca) lista = lista.filter(p => p.colaboradores.nome.toLowerCase().includes(busca));
@@ -1025,6 +1040,12 @@ function renderizarLista(){
   lista.forEach(p => {
     const c = p.colaboradores;
     const inativo = c.ativo === false;
+    const hoje = dataLocalHoje();
+    const afastadoAte = p.afastado_ate || c.afastado_ate;
+    const mostraAusencia = afastadoAte && afastadoAte >= hoje;
+    const diasRestantes = mostraAusencia ? diferencaDias(afastadoAte, hoje) + 1 : 0;
+    const corMotivo = getStatusColor(p.status);
+
     const col = document.createElement('div');
     col.className = 'col-12 col-md-6 col-lg-4';
     col.innerHTML = `
@@ -1040,6 +1061,11 @@ function renderizarLista(){
             ${inativo ? '<span class="badge-desativado">Desativado</span>' : ''}
           </div>
         </div>
+        ${mostraAusencia ? `
+          <div class="small mb-2" style="color:${corMotivo};">
+            <i class="bi bi-clock-history me-1"></i>
+            Ausente até ${formatarDataBR(afastadoAte)} (${diasRestantes} dia${diasRestantes === 1 ? '' : 's'}) — ${escapeHtml(getStatusLabel(p.status))}
+          </div>` : ''}
         ${p.observacao ? `<div class="small text-muted mb-2"><i class="bi bi-chat-left-text me-1"></i>${escapeHtml(p.observacao)}</div>` : ''}
         <div class="d-flex gap-2 mt-auto">
           <button class="btn btn-sm btn-success flex-grow-1 btn-confirmar" data-id="${p.id}"
@@ -1094,6 +1120,8 @@ function atualizarEstadoFiltros(){
 // CONFIRMAR / APONTAMENTO
 // ============================================================
 async function atualizarStatus(presencaId, status, observacao = null, afastadoAte = null){
+  const presencaAntes = presencasAtuais.find(p => p.id === presencaId);
+
   const { error } = await sb
     .from('presencas')
     .update({ status, observacao, afastado_ate: afastadoAte, atualizado_em: new Date().toISOString() })
@@ -1103,9 +1131,17 @@ async function atualizarStatus(presencaId, status, observacao = null, afastadoAt
   // Sincroniza SEMPRE o prazo de afastamento no cadastro do colaborador com o
   // que foi definido agora (inclusive limpando, se afastadoAte vier vazio).
   // Sem isso, um prazo antigo ficava "preso" mesmo depois de reconfirmar a pessoa.
-  const presenca = presencasAtuais.find(p => p.id === presencaId);
-  if (presenca) {
-    await sb.from('colaboradores').update({ afastado_ate: afastadoAte }).eq('id', presenca.colaboradores.id);
+  if (presencaAntes) {
+    await sb.from('colaboradores').update({ afastado_ate: afastadoAte }).eq('id', presencaAntes.colaboradores.id);
+  }
+
+  // Se a pessoa foi apontada (qualquer motivo, não "confirmado") NA SAÍDA,
+  // ela deixou de estar confirmada pra viagem — remove na hora qualquer
+  // pendência que já existisse pra ela nos retornos de hoje. Sem isso, ela
+  // ficava "esquecida" lá, contando e aparecendo sem nenhuma informação
+  // do apontamento que acabou de ser feito.
+  if (presencaAntes && operacaoAtual?.tipo === 'saida_indaiatuba' && status !== 'confirmado') {
+    await removerPendentesHoje(presencaAntes.colaboradores.id, ['retorno_campinas', 'retorno_santa_barbara']);
   }
 
   await carregarPresencas();
@@ -1142,10 +1178,12 @@ document.getElementById('btnSalvarApontamento').addEventListener('click', async 
   const obs = document.getElementById('apontObs').value.trim() || null;
   const diasStr = document.getElementById('apontDias').value;
 
-  let afastadoAte = null;
-  if (diasStr && Number(diasStr) > 0 && operacaoAtual) {
-    afastadoAte = somarDias(operacaoAtual.data, Number(diasStr));
-  }
+  // Se não informar quantos dias, considera 1 dia (só hoje) — evita
+  // apontamento "sem prazo" que nunca some da lista sozinho.
+  const dias = diasStr && Number(diasStr) > 0 ? Number(diasStr) : 1;
+  // "X dias" conta a partir de hoje incluindo hoje: 1 dia = só hoje,
+  // volta amanhã. 3 dias = hoje + mais 2, volta no 4º dia.
+  const afastadoAte = operacaoAtual ? somarDias(operacaoAtual.data, dias - 1) : null;
 
   await atualizarStatus(colaboradorApontamentoAtual, motivo, obs, afastadoAte);
   bootstrap.Modal.getInstance(document.getElementById('modalApontamento')).hide();
@@ -1209,11 +1247,12 @@ document.getElementById('btnSalvarEditarColab').addEventListener('click', async 
   if (document.getElementById('modalColaboradores').classList.contains('show')) await carregarColaboradoresTodos();
 });
 
-// Remove os registros ainda PENDENTES de hoje (nas 3 operações) de um
-// colaborador — usado ao desativar alguém no meio do expediente.
-async function removerPendentesHoje(colaboradorId){
+// Remove os registros ainda PENDENTES de hoje de um colaborador, nos tipos
+// de operação informados. Usado tanto ao desativar alguém (limpa das 3)
+// quanto ao apontar alguém na Saída (limpa só dos retornos, já que ela
+// deixou de estar "confirmada na saída" e não deveria mais aparecer lá).
+async function removerPendentesHoje(colaboradorId, tipos = ['saida_indaiatuba', 'retorno_campinas', 'retorno_santa_barbara']){
   const hoje = dataLocalHoje();
-  const tipos = ['saida_indaiatuba', 'retorno_campinas', 'retorno_santa_barbara'];
   for (const tipo of tipos) {
     const { data: op } = await sb.from('operacoes').select('id').eq('tipo', tipo).eq('data', hoje).maybeSingle();
     if (!op) continue;
@@ -1271,21 +1310,22 @@ function atualizarKpis(){
   const total = presencasAtuais.length;
   const conta = st => presencasAtuais.filter(p => p.status === st).length;
 
-  // Total + Confirmados + um cartão por motivo ATIVO que tenha gente
-  // nesse status hoje (evita mostrar cartão zerado de motivo não usado
-  // nesta operação) + Pendentes por último.
+  // Todos os motivos (Atestado, Faltou, Outro, Folga, Savegnago, o que for)
+  // somados numa ÚNICA caixa "Apontamentos" — evita ter uma caixinha por
+  // motivo, o que fica insustentável de acompanhar com várias lojas/motivos.
+  // O motivo específico de cada um continua visível no badge do card.
+  const apontamentos = presencasAtuais.filter(p => p.status !== 'pendente' && p.status !== 'confirmado').length;
+
   const cartoes = [
     { key: 'todos', label: 'Total', valor: total, cor: '#1a1a2e' },
     { key: 'confirmado', label: 'Confirmados', valor: conta('confirmado'), cor: STATUS_FIXO.confirmado.cor },
-    ...motivosTodos
-      .filter(m => m.ativo)
-      .map(m => ({ key: m.chave, label: m.label, valor: conta(m.chave), cor: m.cor })),
+    { key: 'apontamentos', label: 'Apontamentos', valor: apontamentos, cor: '#b45309' },
     { key: 'pendente', label: 'Pendentes', valor: conta('pendente'), cor: STATUS_FIXO.pendente.cor }
   ];
 
   const container = document.getElementById('kpiRow');
   container.innerHTML = cartoes.map(c => `
-    <div class="col-6 col-md-2">
+    <div class="col-6 col-md-3">
       <div class="card kpi-card p-3 text-center ${filtroAtual === c.key ? 'kpi-ativo' : ''}" data-kpi="${escapeHtml(c.key)}">
         <div class="kpi-num" style="color:${c.cor};">${c.valor}</div>
         <small class="text-muted">${escapeHtml(c.label)}</small>
