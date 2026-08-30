@@ -99,6 +99,7 @@
       <button class="btn btn-sm btn-outline-light me-2" id="btnDashboard"><i class="bi bi-calendar3"></i> Dashboard</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnMotivos"><i class="bi bi-list-check"></i> Motivos</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnColaboradores"><i class="bi bi-people"></i> Colaboradores</button>
+      <button class="btn btn-sm btn-outline-light me-2" id="btnAreas"><i class="bi bi-diagram-3"></i> Áreas</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnHistorico"><i class="bi bi-clock-history"></i> Histórico</button>
       <button class="btn btn-sm btn-outline-light" id="btnSair"><i class="bi bi-box-arrow-right"></i> Sair</button>
     </div>
@@ -156,7 +157,8 @@
         </div>
       </div>
 
-      <div id="filtroLojaContainer" class="d-flex flex-wrap gap-2 mb-3 hidden"></div>
+      <div id="filtroLojaContainer" class="d-flex flex-wrap gap-2 mb-2 hidden"></div>
+      <div id="filtroAreaContainer" class="d-flex flex-wrap gap-2 mb-3 hidden"></div>
 
       <div id="listaColaboradores" class="row g-3"></div>
       <div id="listaVazia" class="list-empty hidden">
@@ -237,10 +239,10 @@
           Gerencie o cadastro completo aqui, separado das telas de Saída/Retorno.
           Desativar alguém aqui já remove na hora de qualquer operação aberta hoje.
         </p>
-        <input type="text" class="form-control form-control-sm mb-3" id="colabBusca" placeholder="Buscar por nome ou loja...">
+        <input type="text" class="form-control form-control-sm mb-3" id="colabBusca" placeholder="Buscar por nome, loja ou área...">
         <div class="table-responsive" style="max-height:360px; overflow-y:auto;">
           <table class="table table-sm align-middle">
-            <thead><tr><th>Nome</th><th>Equipe</th><th>Loja</th><th>Status</th><th>Afastado até</th><th></th></tr></thead>
+            <thead><tr><th>Nome</th><th>Equipe</th><th>Loja</th><th>Área</th><th>Líder</th><th>Status</th><th>Afastado até</th><th></th></tr></thead>
             <tbody id="colaboradoresBody"></tbody>
           </table>
         </div>
@@ -250,17 +252,21 @@
             <label class="form-label small">ID</label>
             <input type="text" class="form-control form-control-sm" id="colabNovoId" readonly>
           </div>
-          <div class="col-4">
+          <div class="col-3">
             <label class="form-label small">Nome *</label>
             <input type="text" class="form-control form-control-sm" id="colabNovoNome" placeholder="Nome completo">
           </div>
-          <div class="col-3">
+          <div class="col-2">
             <label class="form-label small">Equipe</label>
             <input type="text" class="form-control form-control-sm" id="colabNovoEquipe" list="listaEquipes">
           </div>
           <div class="col-2">
             <label class="form-label small">Loja</label>
             <input type="text" class="form-control form-control-sm" id="colabNovoLoja" list="listaLojas">
+          </div>
+          <div class="col-2">
+            <label class="form-label small">Área</label>
+            <input type="text" class="form-control form-control-sm" id="colabNovoArea" list="listaAreas">
           </div>
           <div class="col-1">
             <button class="btn btn-sm btn-accent w-100" id="btnAdicionarColabGeral" title="Adicionar"><i class="bi bi-plus-lg"></i></button>
@@ -288,6 +294,50 @@
           </div>
         </div>
         <div id="renomeLojaStatus" class="small mt-2"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: ÁREAS & LÍDERES ===================== -->
+<div class="modal fade" id="modalAreas" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title"><i class="bi bi-diagram-3 me-1"></i> Áreas &amp; Líderes</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted">
+          Defina o líder responsável por cada área (ex: Padaria, Frente de Caixa).
+          Todo colaborador marcado com essa área já mostra o líder automaticamente,
+          sem precisar editar pessoa por pessoa.
+        </p>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead><tr><th>Área</th><th>Líder</th><th style="width:70px">Qtd.</th><th style="width:70px">Ativa</th></tr></thead>
+            <tbody id="areasBody"></tbody>
+          </table>
+        </div>
+        <hr>
+        <div class="row g-2 align-items-end">
+          <div class="col-5">
+            <label class="form-label small">Nova área</label>
+            <input type="text" class="form-control form-control-sm" id="novaAreaNome" placeholder="Ex: Padaria">
+          </div>
+          <div class="col-5">
+            <label class="form-label small">Líder responsável</label>
+            <input type="text" class="form-control form-control-sm" id="novaAreaLider" placeholder="Nome do líder">
+          </div>
+          <div class="col-2">
+            <button class="btn btn-sm btn-accent w-100" id="btnAdicionarArea"><i class="bi bi-plus-lg"></i></button>
+          </div>
+        </div>
+        <div id="areasStatus" class="small mt-2"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar</button>
+        <button class="btn btn-accent btn-sm" id="btnSalvarAreas">Salvar alterações</button>
       </div>
     </div>
   </div>
@@ -364,6 +414,11 @@
           <input type="text" class="form-control" id="editColabLoja" list="listaLojas">
         </div>
         <div class="mb-2">
+          <label class="form-label small">Área / Setor</label>
+          <input type="text" class="form-control" id="editColabArea" list="listaAreas" placeholder="Ex: Padaria, Frente de Caixa">
+          <div id="editColabLiderInfo" class="small text-muted mt-1"></div>
+        </div>
+        <div class="mb-2">
           <label class="form-label small">Status</label>
           <select class="form-select" id="editColabAtivo">
             <option value="true">Ativo</option>
@@ -422,6 +477,11 @@
           <label class="form-label small">Loja</label>
           <input type="text" class="form-control" id="novoColabLoja" list="listaLojas" placeholder="Ex: Santa Barbara">
           <datalist id="listaLojas"></datalist>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small">Área</label>
+          <input type="text" class="form-control" id="novoColabArea" list="listaAreas" placeholder="Ex: Padaria">
+          <datalist id="listaAreas"></datalist>
         </div>
         <div id="novoColabStatus" class="small mt-2"></div>
       </div>
@@ -493,6 +553,7 @@ let tipoAtual = null;
 let presencasAtuais = [];   // join colaborador + presenca
 let filtroAtual = 'todos';
 let filtroLojasAtivas = new Set(); // vazio = mostra todas as lojas
+let filtroAreasAtivas = new Set(); // vazio = mostra todas as áreas
 let colaboradorApontamentoAtual = null;
 let motivosTodos = [];   // todos os motivos (inclusive inativos, p/ histórico)
 let motivosMap = {};     // chave -> { chave, label, cor, dias_ausencia, ativo, ordem }
@@ -603,6 +664,89 @@ function gerarChaveMotivo(label){
   while (motivosMap[chave]) { chave = `${base}_${i}`; i++; }
   return chave;
 }
+
+// ============================================================
+// ÁREAS & LÍDERES (associa um líder responsável a cada área/setor)
+// ============================================================
+let areasTodos = [];
+let areasMap = {};
+
+async function carregarAreas(){
+  const { data, error } = await sb.from('areas').select('*').order('area', { ascending: true });
+  if (error) { console.error('Erro ao carregar áreas:', error.message); return; }
+  areasTodos = data || [];
+  areasMap = {};
+  areasTodos.forEach(a => areasMap[a.area] = a);
+  const datalist = document.getElementById('listaAreas');
+  if (datalist) datalist.innerHTML = areasTodos.map(a => `<option value="${escapeHtml(a.area)}">`).join('');
+}
+
+document.getElementById('btnAreas').addEventListener('click', async () => {
+  document.getElementById('areasStatus').textContent = '';
+  if (!colaboradoresTodos.length) await carregarColaboradoresTodos();
+  renderizarTabelaAreas();
+  new bootstrap.Modal(document.getElementById('modalAreas')).show();
+});
+
+function renderizarTabelaAreas(){
+  const tbody = document.getElementById('areasBody');
+  tbody.innerHTML = areasTodos.map(a => {
+    const qtd = colaboradoresTodos.filter(c => c.area === a.area && c.ativo !== false).length;
+    return `
+    <tr data-area="${escapeHtml(a.area)}">
+      <td>${escapeHtml(a.area)}</td>
+      <td><input type="text" class="form-control form-control-sm area-lider" value="${escapeHtml(a.lider || '')}" placeholder="Nome do líder"></td>
+      <td class="text-center text-muted small">${qtd}</td>
+      <td class="text-center"><input type="checkbox" class="form-check-input area-ativa" ${a.ativo ? 'checked' : ''}></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="4" class="text-center text-muted py-3">Nenhuma área cadastrada ainda</td></tr>`;
+}
+
+document.getElementById('btnAdicionarArea').addEventListener('click', async () => {
+  const area = document.getElementById('novaAreaNome').value.trim();
+  const lider = document.getElementById('novaAreaLider').value.trim();
+  const status = document.getElementById('areasStatus');
+
+  if (!area) { status.textContent = 'Digite o nome da área.'; status.classList.add('text-danger'); return; }
+
+  const { error } = await sb.from('areas').insert({ area, lider: lider || null, ativo: true });
+  if (error) { status.textContent = 'Erro ao adicionar: ' + error.message; status.classList.add('text-danger'); return; }
+
+  document.getElementById('novaAreaNome').value = '';
+  document.getElementById('novaAreaLider').value = '';
+  status.classList.remove('text-danger');
+  status.textContent = `Área "${area}" adicionada.`;
+
+  await carregarAreas();
+  renderizarTabelaAreas();
+});
+
+document.getElementById('btnSalvarAreas').addEventListener('click', async () => {
+  const status = document.getElementById('areasStatus');
+  status.textContent = 'Salvando...';
+  status.classList.remove('text-danger');
+
+  const linhas = [...document.querySelectorAll('#areasBody tr[data-area]')];
+  let erro = null;
+
+  for (const linha of linhas) {
+    const area = linha.dataset.area;
+    const lider = linha.querySelector('.area-lider').value.trim();
+    const ativo = linha.querySelector('.area-ativa').checked;
+    const { error } = await sb.from('areas').update({ lider: lider || null, ativo }).eq('area', area);
+    if (error) erro = error;
+  }
+
+  if (erro) {
+    status.textContent = 'Erro ao salvar algumas alterações: ' + erro.message;
+    status.classList.add('text-danger');
+    return;
+  }
+
+  status.textContent = 'Alterações salvas.';
+  await carregarAreas();
+  if (presencasAtuais.length) renderizarLista();
+});
 
 // Módulo de gestão: abre o modal, lista todos os motivos (inclusive
 // inativos) num formulário editável.
@@ -716,6 +860,7 @@ function iniciarApp(){
     });
   }
   carregarMotivos();
+  carregarAreas();
 }
 
 if (sessionStorage.getItem('transporte_logado') === '1') {
@@ -792,7 +937,7 @@ function renderizarTabelaColaboradores(){
   const busca = document.getElementById('colabBusca').value.trim().toLowerCase();
   const tbody = document.getElementById('colaboradoresBody');
   const lista = colaboradoresTodos.filter(c =>
-    !busca || c.nome.toLowerCase().includes(busca) || (c.loja || '').toLowerCase().includes(busca)
+    !busca || c.nome.toLowerCase().includes(busca) || (c.loja || '').toLowerCase().includes(busca) || (c.area || '').toLowerCase().includes(busca)
   );
 
   tbody.innerHTML = lista.map(c => `
@@ -800,22 +945,25 @@ function renderizarTabelaColaboradores(){
       <td>${escapeHtml(c.nome)}</td>
       <td class="text-muted small">${escapeHtml(c.equipe || '-')}</td>
       <td class="text-muted small">${escapeHtml(c.loja || '-')}</td>
+      <td class="text-muted small">${escapeHtml(c.area || '-')}</td>
+      <td class="text-muted small">${escapeHtml((c.area && areasMap[c.area]?.lider) || '-')}</td>
       <td>${c.ativo !== false ? '<span class="status-badge" style="background:#d1f5ea;color:#0f6b58;">Ativo</span>' : '<span class="badge-desativado">Desativado</span>'}</td>
       <td class="text-muted small">${c.afastado_ate || '-'}</td>
       <td>
         <button class="btn btn-sm btn-outline-primary btn-editar-colab-geral"
           data-colid="${escapeHtml(c.id)}" data-nome="${escapeHtml(c.nome)}"
           data-equipe="${escapeHtml(c.equipe || '')}" data-loja="${escapeHtml(c.loja || '')}"
+          data-area="${escapeHtml(c.area || '')}"
           data-ativo="${c.ativo !== false}" data-afastado="${escapeHtml(c.afastado_ate || '')}">
           <i class="bi bi-pencil-square"></i>
         </button>
       </td>
-    </tr>`).join('') || `<tr><td colspan="6" class="text-center text-muted py-3">Nenhum colaborador encontrado</td></tr>`;
+    </tr>`).join('') || `<tr><td colspan="8" class="text-center text-muted py-3">Nenhum colaborador encontrado</td></tr>`;
 
   tbody.querySelectorAll('.btn-editar-colab-geral').forEach(b => {
     b.addEventListener('click', () => abrirEditarColab(
       b.dataset.colid, b.dataset.nome, b.dataset.equipe, b.dataset.loja,
-      b.dataset.ativo === 'true', b.dataset.afastado
+      b.dataset.ativo === 'true', b.dataset.afastado, b.dataset.area
     ));
   });
 }
@@ -871,12 +1019,13 @@ document.getElementById('btnAdicionarColabGeral').addEventListener('click', asyn
   const nome = document.getElementById('colabNovoNome').value.trim();
   const equipe = document.getElementById('colabNovoEquipe').value.trim();
   const loja = document.getElementById('colabNovoLoja').value.trim();
+  const area = document.getElementById('colabNovoArea').value.trim();
   const status = document.getElementById('colabGeralStatus');
 
   if (!nome) { status.textContent = 'Preencha o nome.'; status.classList.add('text-danger'); return; }
 
   const { error } = await sb.from('colaboradores').insert({
-    id, nome, equipe: equipe || null, loja: loja || null, ativo: true
+    id, nome, equipe: equipe || null, loja: loja || null, area: area || null, ativo: true
   });
   if (error) { status.textContent = 'Erro ao adicionar: ' + error.message; status.classList.add('text-danger'); return; }
 
@@ -885,6 +1034,7 @@ document.getElementById('btnAdicionarColabGeral').addEventListener('click', asyn
   document.getElementById('colabNovoNome').value = '';
   document.getElementById('colabNovoEquipe').value = '';
   document.getElementById('colabNovoLoja').value = '';
+  document.getElementById('colabNovoArea').value = '';
 
   await carregarColaboradoresTodos();
   await preencherProximoIdGeral();
@@ -968,7 +1118,7 @@ function elegivelParaOperacao(colaborador, tipo){
 async function carregarPresencas(){
   const { data, error } = await sb
     .from('presencas')
-    .select('id, status, observacao, atualizado_em, afastado_ate, colaboradores(id, nome, equipe, loja, ativo, afastado_ate)')
+    .select('id, status, observacao, atualizado_em, afastado_ate, colaboradores(id, nome, equipe, loja, area, ativo, afastado_ate)')
     .eq('operacao_id', operacaoAtual.id);
 
   if (error) { alert('Erro ao carregar lista: ' + error.message); return; }
@@ -987,6 +1137,7 @@ async function carregarPresencas(){
   presencasAtuais = lista.sort((a,b) => a.colaboradores.nome.localeCompare(b.colaboradores.nome, 'pt-BR'));
 
   atualizarChipsLoja();
+  atualizarChipsArea();
   renderizarLista();
   atualizarKpis();
   atualizarBotaoFinalizar();
@@ -1023,6 +1174,36 @@ function atualizarChipsLoja(){
   });
 }
 
+// Mesma lógica dos chips de loja, mas pra área/setor (Padaria, Frente de Caixa...)
+function atualizarChipsArea(){
+  const contagem = {};
+  presencasAtuais.forEach(p => {
+    const area = p.colaboradores.area || 'Sem área';
+    contagem[area] = (contagem[area] || 0) + 1;
+  });
+
+  const areas = Object.keys(contagem).sort((a,b) => a.localeCompare(b, 'pt-BR'));
+
+  filtroAreasAtivas = new Set([...filtroAreasAtivas].filter(a => areas.includes(a)));
+
+  const container = document.getElementById('filtroAreaContainer');
+  container.classList.toggle('hidden', areas.length <= 1);
+  container.innerHTML = areas.map(area => `
+    <button class="loja-chip-btn ${filtroAreasAtivas.has(area) ? 'active' : ''}" data-area="${escapeHtml(area)}" style="border-style:dashed;">
+      ${escapeHtml(area)} (${contagem[area]})
+    </button>`).join('');
+
+  container.querySelectorAll('[data-area]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const area = btn.dataset.area;
+      if (filtroAreasAtivas.has(area)) filtroAreasAtivas.delete(area);
+      else filtroAreasAtivas.add(area);
+      atualizarChipsArea();
+      renderizarLista();
+    });
+  });
+}
+
 function renderizarLista(){
   const container = document.getElementById('listaColaboradores');
   const busca = document.getElementById('searchBox').value.trim().toLowerCase();
@@ -1032,6 +1213,7 @@ function renderizarLista(){
   else if (filtroAtual === 'apontamentos') lista = lista.filter(p => p.status !== 'pendente' && p.status !== 'confirmado');
   else if (filtroAtual !== 'todos') lista = lista.filter(p => p.status === filtroAtual);
   if (filtroLojasAtivas.size > 0) lista = lista.filter(p => filtroLojasAtivas.has(p.colaboradores.loja || 'Sem loja'));
+  if (filtroAreasAtivas.size > 0) lista = lista.filter(p => filtroAreasAtivas.has(p.colaboradores.area || 'Sem área'));
   if (busca) lista = lista.filter(p => p.colaboradores.nome.toLowerCase().includes(busca));
 
   container.innerHTML = '';
@@ -1055,6 +1237,7 @@ function renderizarLista(){
             <div class="fw-semibold">${escapeHtml(c.nome)}</div>
             <div class="small text-muted">${escapeHtml(c.equipe || '-')}</div>
             <span class="loja-chip">${escapeHtml(c.loja || '-')}</span>
+            ${c.area ? `<span class="loja-chip" style="border-style:dashed;">${escapeHtml(c.area)}${areasMap[c.area]?.lider ? ' • Líder: ' + escapeHtml(areasMap[c.area].lider) : ''}</span>` : ''}
           </div>
           <div class="d-flex flex-column align-items-end gap-1">
             ${badgeStatusHtml(p.status)}
@@ -1077,9 +1260,10 @@ function renderizarLista(){
                   data-id="${p.id}" data-nome="${escapeHtml(c.nome)}">
             <i class="bi bi-flag"></i> Apontar
           </button>
-          <button class="btn btn-sm btn-outline-primary btn-editar-colab" title="Editar cadastro (nome, equipe, loja, status)"
+          <button class="btn btn-sm btn-outline-primary btn-editar-colab" title="Editar cadastro (nome, equipe, loja, área, status)"
                   data-colid="${escapeHtml(c.id)}" data-nome="${escapeHtml(c.nome)}"
                   data-equipe="${escapeHtml(c.equipe || '')}" data-loja="${escapeHtml(c.loja || '')}"
+                  data-area="${escapeHtml(c.area || '')}"
                   data-ativo="${c.ativo !== false}" data-afastado="${escapeHtml(c.afastado_ate || '')}">
             <i class="bi bi-person-vcard"></i> Editar
           </button>
@@ -1093,7 +1277,7 @@ function renderizarLista(){
   container.querySelectorAll('.btn-apontamento').forEach(b =>
     b.addEventListener('click', () => abrirApontamento(b.dataset.id, b.dataset.nome)));
   container.querySelectorAll('.btn-editar-colab').forEach(b =>
-    b.addEventListener('click', () => abrirEditarColab(b.dataset.colid, b.dataset.nome, b.dataset.equipe, b.dataset.loja, b.dataset.ativo === 'true', b.dataset.afastado)));
+    b.addEventListener('click', () => abrirEditarColab(b.dataset.colid, b.dataset.nome, b.dataset.equipe, b.dataset.loja, b.dataset.ativo === 'true', b.dataset.afastado, b.dataset.area)));
 }
 
 function escapeHtml(str){
@@ -1194,14 +1378,16 @@ document.getElementById('btnSalvarApontamento').addEventListener('click', async 
 // ============================================================
 let editColabLojaAnterior = '';
 
-function abrirEditarColab(colaboradorId, nome, equipe, loja, ativo, afastadoAte){
+function abrirEditarColab(colaboradorId, nome, equipe, loja, ativo, afastadoAte, area){
   document.getElementById('editColabId').value = colaboradorId;
   document.getElementById('editColabNome').value = nome;
   document.getElementById('editColabEquipe').value = equipe;
   document.getElementById('editColabLoja').value = loja;
+  document.getElementById('editColabArea').value = area || '';
   document.getElementById('editColabAtivo').value = ativo ? 'true' : 'false';
   document.getElementById('editColabAfastadoAte').value = afastadoAte || '';
   editColabLojaAnterior = loja;
+  atualizarLiderInfoEdit();
   document.getElementById('editColabStatus').textContent =
     'Se mudar a loja, a pessoa é movida automaticamente entre as listas de retorno de hoje.';
   document.getElementById('editColabStatus').classList.remove('text-danger');
@@ -1209,11 +1395,19 @@ function abrirEditarColab(colaboradorId, nome, equipe, loja, ativo, afastadoAte)
   new bootstrap.Modal(document.getElementById('modalEditarColab')).show();
 }
 
+function atualizarLiderInfoEdit(){
+  const area = document.getElementById('editColabArea').value.trim();
+  const lider = areasMap[area]?.lider;
+  document.getElementById('editColabLiderInfo').textContent = lider ? `Líder responsável: ${lider}` : '';
+}
+document.getElementById('editColabArea').addEventListener('input', atualizarLiderInfoEdit);
+
 document.getElementById('btnSalvarEditarColab').addEventListener('click', async () => {
   const id = document.getElementById('editColabId').value;
   const nome = document.getElementById('editColabNome').value.trim();
   const equipe = document.getElementById('editColabEquipe').value.trim();
   const loja = document.getElementById('editColabLoja').value.trim();
+  const area = document.getElementById('editColabArea').value.trim();
   const ativo = document.getElementById('editColabAtivo').value === 'true';
   const afastadoAte = document.getElementById('editColabAfastadoAte').value || null;
   const status = document.getElementById('editColabStatus');
@@ -1221,7 +1415,7 @@ document.getElementById('btnSalvarEditarColab').addEventListener('click', async 
   if (!nome) { status.textContent = 'Nome não pode ficar em branco.'; status.classList.add('text-danger'); return; }
 
   const { error } = await sb.from('colaboradores')
-    .update({ nome, equipe: equipe || null, loja: loja || null, ativo, afastado_ate: afastadoAte, atualizado_em: new Date().toISOString() })
+    .update({ nome, equipe: equipe || null, loja: loja || null, area: area || null, ativo, afastado_ate: afastadoAte, atualizado_em: new Date().toISOString() })
     .eq('id', id);
 
   if (error) {
@@ -1370,6 +1564,7 @@ document.getElementById('btnAdicionarColab').addEventListener('click', async () 
   document.getElementById('novoColabNome').value = '';
   document.getElementById('novoColabEquipe').value = '';
   document.getElementById('novoColabLoja').value = '';
+  document.getElementById('novoColabArea').value = '';
   document.getElementById('novoColabStatus').textContent = '';
   document.getElementById('novoColabId').value = 'calculando...';
 
@@ -1386,11 +1581,13 @@ document.getElementById('btnAdicionarColab').addEventListener('click', async () 
     document.getElementById('novoColabId').value = String(maiorId + 1);
   }
 
-  // Sugestões de equipe e loja com base em quem já está na operação atual
+  // Sugestões de equipe, loja e área com base em quem já está na operação atual
   const equipes = [...new Set(presencasAtuais.map(p => p.colaboradores.equipe).filter(Boolean))];
   const lojas = [...new Set(presencasAtuais.map(p => p.colaboradores.loja).filter(Boolean))];
+  const areas = [...new Set(presencasAtuais.map(p => p.colaboradores.area).filter(Boolean))];
   document.getElementById('listaEquipes').innerHTML = equipes.map(e => `<option value="${escapeHtml(e)}">`).join('');
   document.getElementById('listaLojas').innerHTML = lojas.map(l => `<option value="${escapeHtml(l)}">`).join('');
+  document.getElementById('listaAreas').innerHTML = areas.map(a => `<option value="${escapeHtml(a)}">`).join('');
 
   new bootstrap.Modal(document.getElementById('modalAdicionarColab')).show();
 });
@@ -1400,6 +1597,7 @@ document.getElementById('btnSalvarNovoColab').addEventListener('click', async ()
   const nome = document.getElementById('novoColabNome').value.trim();
   const equipe = document.getElementById('novoColabEquipe').value.trim();
   const loja = document.getElementById('novoColabLoja').value.trim();
+  const area = document.getElementById('novoColabArea').value.trim();
   const status = document.getElementById('novoColabStatus');
 
   if (!id || !nome) { status.textContent = 'Preencha ao menos o nome.'; return; }
@@ -1408,7 +1606,7 @@ document.getElementById('btnSalvarNovoColab').addEventListener('click', async ()
   status.textContent = 'Salvando...';
 
   const { error: errColab } = await sb.from('colaboradores').insert({
-    id, nome, equipe: equipe || null, loja: loja || null, ativo: true
+    id, nome, equipe: equipe || null, loja: loja || null, area: area || null, ativo: true
   });
   if (errColab) { status.textContent = 'Erro ao salvar colaborador: ' + errColab.message; return; }
 
