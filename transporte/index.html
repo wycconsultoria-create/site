@@ -97,6 +97,7 @@
     <div>
       <button class="btn btn-sm btn-outline-light me-2" id="btnImportar"><i class="bi bi-upload"></i> Importar planilha</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnDashboard"><i class="bi bi-calendar3"></i> Dashboard</button>
+      <button class="btn btn-sm btn-outline-light me-2" id="btnResumoAreas"><i class="bi bi-bar-chart-steps"></i> Resumo</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnMotivos"><i class="bi bi-list-check"></i> Motivos</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnColaboradores"><i class="bi bi-people"></i> Colaboradores</button>
       <button class="btn btn-sm btn-outline-light me-2" id="btnAreas"><i class="bi bi-diagram-3"></i> Áreas</button>
@@ -226,6 +227,30 @@
   </div>
 </div>
 
+<!-- ===================== MODAL: RESUMO POR ÁREA ===================== -->
+<div class="modal fade" id="modalResumoAreas" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title"><i class="bi bi-bar-chart-steps me-1"></i> Resumo por área</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted">
+          Cadastro geral (todo mundo ativo/desativado), sem depender de nenhuma operação aberta.
+        </p>
+        <div class="d-flex flex-wrap gap-2 mb-3" id="resumoAreaChips"></div>
+        <div class="table-responsive" style="max-height:420px; overflow-y:auto;">
+          <table class="table table-sm align-middle">
+            <thead><tr><th>Nome</th><th>Loja</th><th>Status</th><th>Ausência</th></tr></thead>
+            <tbody id="resumoAreaBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== MODAL: COLABORADORES (CADASTRO GERAL) ===================== -->
 <div class="modal fade" id="modalColaboradores" tabindex="-1">
   <div class="modal-dialog modal-lg">
@@ -242,7 +267,7 @@
         <input type="text" class="form-control form-control-sm mb-3" id="colabBusca" placeholder="Buscar por nome, loja ou área...">
         <div class="table-responsive" style="max-height:360px; overflow-y:auto;">
           <table class="table table-sm align-middle">
-            <thead><tr><th>Nome</th><th>Equipe</th><th>Loja</th><th>Área</th><th>Líder</th><th>Status</th><th>Afastado até</th><th></th></tr></thead>
+            <thead><tr><th>Nome</th><th>Equipe</th><th>Loja</th><th>Área</th><th>Líder</th><th>Status</th><th>Ausência</th><th></th></tr></thead>
             <tbody id="colaboradoresBody"></tbody>
           </table>
         </div>
@@ -426,12 +451,27 @@
           </select>
         </div>
         <div class="mb-2">
-          <label class="form-label small">Afastado até (opcional)</label>
-          <input type="date" class="form-control" id="editColabAfastadoAte">
-          <div class="small text-muted mt-1">
-            Enquanto essa data não passar, a pessoa não entra em novas operações.
-            Deixe em branco pra liberar imediatamente.
+          <label class="form-label small">Motivo da ausência (opcional)</label>
+          <select class="form-select" id="editColabAfastadoMotivo">
+            <option value="">Nenhum</option>
+          </select>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label small">Afastado a partir de</label>
+            <input type="date" class="form-control" id="editColabAfastadoDesde">
           </div>
+          <div class="col-6">
+            <label class="form-label small">Afastado até</label>
+            <input type="date" class="form-control" id="editColabAfastadoAte">
+          </div>
+        </div>
+        <div class="small text-muted mt-1 mb-2">
+          Deixe "a partir de" em branco pra afastar a pessoa imediatamente (some das
+          operações agora). Preencha uma data futura pra AGENDAR um aviso que só
+          começa depois — ex: alguém avisa hoje que só vai faltar dia 03/09; a pessoa
+          continua aparecendo normalmente até lá e some sozinha só a partir dessa data.
+          Deixe as duas datas em branco pra liberar/cancelar qualquer ausência.
         </div>
         <div id="editColabStatus" class="small mt-2 text-muted">
           Alterar a loja pode mudar em quais operações de retorno essa pessoa aparece a partir de agora.
@@ -933,6 +973,76 @@ async function carregarColaboradoresTodos(){
   popularSelectRenomeLoja();
 }
 
+// Resume a ausência de um colaborador pra tabela geral: distingue uma
+// ausência já em andamento de uma AGENDADA pra começar só no futuro.
+function formatarAusenciaResumo(c){
+  if (!c.afastado_ate) return '-';
+  const hoje = dataLocalHoje();
+  const motivoLabel = c.afastado_motivo ? getStatusLabel(c.afastado_motivo) : null;
+  const futura = c.afastado_desde && c.afastado_desde > hoje;
+  if (futura) {
+    return `<span class="text-primary">Agendada: ${formatarDataBR(c.afastado_desde)} a ${formatarDataBR(c.afastado_ate)}</span>` +
+      (motivoLabel ? ` <span class="loja-chip">${escapeHtml(motivoLabel)}</span>` : '');
+  }
+  return `Até ${formatarDataBR(c.afastado_ate)}` + (motivoLabel ? ` <span class="loja-chip">${escapeHtml(motivoLabel)}</span>` : '');
+}
+
+// ============================================================
+// RESUMO POR ÁREA (modal separado, cadastro geral, independente
+// de qualquer operação aberta hoje)
+// ============================================================
+let resumoAreaSelecionada = null;
+
+document.getElementById('btnResumoAreas').addEventListener('click', async () => {
+  await carregarColaboradoresTodos();
+  resumoAreaSelecionada = null;
+  renderizarChipsResumoArea();
+  renderizarTabelaResumoArea();
+  new bootstrap.Modal(document.getElementById('modalResumoAreas')).show();
+});
+
+function renderizarChipsResumoArea(){
+  const contagem = {};
+  colaboradoresTodos.forEach(c => {
+    const area = c.area || 'Sem área';
+    contagem[area] = (contagem[area] || 0) + 1;
+  });
+  const areas = Object.keys(contagem).sort((a,b) => a.localeCompare(b, 'pt-BR'));
+
+  const container = document.getElementById('resumoAreaChips');
+  container.innerHTML = `
+    <button class="loja-chip-btn ${!resumoAreaSelecionada ? 'active' : ''}" data-area="">
+      Todas (${colaboradoresTodos.length})
+    </button>` +
+    areas.map(area => `
+      <button class="loja-chip-btn ${resumoAreaSelecionada === area ? 'active' : ''}" data-area="${escapeHtml(area)}">
+        ${escapeHtml(area)} (${contagem[area]})
+      </button>`).join('');
+
+  container.querySelectorAll('[data-area]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      resumoAreaSelecionada = btn.dataset.area || null;
+      renderizarChipsResumoArea();
+      renderizarTabelaResumoArea();
+    });
+  });
+}
+
+function renderizarTabelaResumoArea(){
+  const tbody = document.getElementById('resumoAreaBody');
+  const lista = colaboradoresTodos
+    .filter(c => !resumoAreaSelecionada || (c.area || 'Sem área') === resumoAreaSelecionada)
+    .sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+  tbody.innerHTML = lista.map(c => `
+    <tr>
+      <td>${escapeHtml(c.nome)}</td>
+      <td class="text-muted small">${escapeHtml(c.loja || '-')}</td>
+      <td>${c.ativo !== false ? '<span class="status-badge" style="background:#d1f5ea;color:#0f6b58;">Ativo</span>' : '<span class="badge-desativado">Desativado</span>'}</td>
+      <td class="text-muted small">${formatarAusenciaResumo(c)}</td>
+    </tr>`).join('') || `<tr><td colspan="4" class="text-center text-muted py-3">Nenhum colaborador nessa área</td></tr>`;
+}
+
 function renderizarTabelaColaboradores(){
   const busca = document.getElementById('colabBusca').value.trim().toLowerCase();
   const tbody = document.getElementById('colaboradoresBody');
@@ -948,13 +1058,14 @@ function renderizarTabelaColaboradores(){
       <td class="text-muted small">${escapeHtml(c.area || '-')}</td>
       <td class="text-muted small">${escapeHtml((c.area && areasMap[c.area]?.lider) || '-')}</td>
       <td>${c.ativo !== false ? '<span class="status-badge" style="background:#d1f5ea;color:#0f6b58;">Ativo</span>' : '<span class="badge-desativado">Desativado</span>'}</td>
-      <td class="text-muted small">${c.afastado_ate || '-'}</td>
+      <td class="text-muted small">${formatarAusenciaResumo(c)}</td>
       <td>
         <button class="btn btn-sm btn-outline-primary btn-editar-colab-geral"
           data-colid="${escapeHtml(c.id)}" data-nome="${escapeHtml(c.nome)}"
           data-equipe="${escapeHtml(c.equipe || '')}" data-loja="${escapeHtml(c.loja || '')}"
           data-area="${escapeHtml(c.area || '')}"
-          data-ativo="${c.ativo !== false}" data-afastado="${escapeHtml(c.afastado_ate || '')}">
+          data-ativo="${c.ativo !== false}" data-afastado="${escapeHtml(c.afastado_ate || '')}"
+          data-afastado-desde="${escapeHtml(c.afastado_desde || '')}" data-afastado-motivo="${escapeHtml(c.afastado_motivo || '')}">
           <i class="bi bi-pencil-square"></i>
         </button>
       </td>
@@ -963,7 +1074,8 @@ function renderizarTabelaColaboradores(){
   tbody.querySelectorAll('.btn-editar-colab-geral').forEach(b => {
     b.addEventListener('click', () => abrirEditarColab(
       b.dataset.colid, b.dataset.nome, b.dataset.equipe, b.dataset.loja,
-      b.dataset.ativo === 'true', b.dataset.afastado, b.dataset.area
+      b.dataset.ativo === 'true', b.dataset.afastado, b.dataset.area,
+      b.dataset.afastadoDesde, b.dataset.afastadoMotivo
     ));
   });
 }
@@ -1046,7 +1158,7 @@ document.getElementById('btnAdicionarColabGeral').addEventListener('click', asyn
 // do mesmo dia (quem faltou/ficou em Indaiatuba/atestado não aparece no retorno).
 async function garantirPresencas(op){
   const { data: colaboradores, error } = await sb
-    .from('colaboradores').select('id, loja, afastado_ate').eq('ativo', true);
+    .from('colaboradores').select('id, loja, afastado_ate, afastado_desde').eq('ativo', true);
   if (error) { alert('Erro ao buscar colaboradores: ' + error.message); return; }
 
   const { data: jaExistentes, error: errExist } = await sb
@@ -1079,8 +1191,13 @@ async function garantirPresencas(op){
 
 // Verdadeiro se o colaborador ainda está dentro do prazo de afastamento
 // (atestado/apontamento com dias definidos, ou prazo manual) na data de referência.
+// Considera também "afastado_desde": uma ausência AGENDADA pra começar só no
+// futuro (ex: avisaram hoje que a pessoa vai faltar dia 03/09) não pode
+// tirar a pessoa das operações de HOJE nem dos dias antes do início.
 function estaAfastado(colaborador, dataReferencia){
-  return !!colaborador.afastado_ate && colaborador.afastado_ate >= dataReferencia;
+  if (!colaborador.afastado_ate || colaborador.afastado_ate < dataReferencia) return false;
+  if (colaborador.afastado_desde && colaborador.afastado_desde > dataReferencia) return false;
+  return true;
 }
 
 // Busca quem foi CONFIRMADO na Saída Indaiatuba de uma determinada data.
@@ -1118,7 +1235,7 @@ function elegivelParaOperacao(colaborador, tipo){
 async function carregarPresencas(){
   const { data, error } = await sb
     .from('presencas')
-    .select('id, status, observacao, atualizado_em, afastado_ate, colaboradores(id, nome, equipe, loja, area, ativo, afastado_ate)')
+    .select('id, status, observacao, atualizado_em, afastado_ate, colaboradores(id, nome, equipe, loja, area, ativo, afastado_ate, afastado_desde, afastado_motivo)')
     .eq('operacao_id', operacaoAtual.id);
 
   if (error) { alert('Erro ao carregar lista: ' + error.message); return; }
@@ -1224,9 +1341,12 @@ function renderizarLista(){
     const inativo = c.ativo === false;
     const hoje = dataLocalHoje();
     const afastadoAte = p.afastado_ate || c.afastado_ate;
-    const mostraAusencia = afastadoAte && afastadoAte >= hoje;
+    const mostraAusencia = afastadoAte && afastadoAte >= hoje && !(c.afastado_desde && c.afastado_desde > hoje);
     const diasRestantes = mostraAusencia ? diferencaDias(afastadoAte, hoje) + 1 : 0;
     const corMotivo = getStatusColor(p.status);
+    // Ausência AGENDADA pra começar depois de hoje (ex: avisaram hoje que só
+    // vai faltar dia 03/09) — a pessoa aparece normal na lista, só com um aviso.
+    const ausenciaAgendada = c.afastado_ate && c.afastado_desde && c.afastado_desde > hoje;
 
     const col = document.createElement('div');
     col.className = 'col-12 col-md-6 col-lg-4';
@@ -1237,7 +1357,7 @@ function renderizarLista(){
             <div class="fw-semibold">${escapeHtml(c.nome)}</div>
             <div class="small text-muted">${escapeHtml(c.equipe || '-')}</div>
             <span class="loja-chip">${escapeHtml(c.loja || '-')}</span>
-            ${c.area ? `<span class="loja-chip" style="border-style:dashed;">${escapeHtml(c.area)}${areasMap[c.area]?.lider ? ' • Líder: ' + escapeHtml(areasMap[c.area].lider) : ''}</span>` : ''}
+            ${c.area ? `<span class="text-muted small">${escapeHtml(c.area)}${areasMap[c.area]?.lider ? ' • Líder: ' + escapeHtml(areasMap[c.area].lider) : ''}</span>` : ''}
           </div>
           <div class="d-flex flex-column align-items-end gap-1">
             ${badgeStatusHtml(p.status)}
@@ -1248,6 +1368,11 @@ function renderizarLista(){
           <div class="small mb-2" style="color:${corMotivo};">
             <i class="bi bi-clock-history me-1"></i>
             Ausente até ${formatarDataBR(afastadoAte)} (${diasRestantes} dia${diasRestantes === 1 ? '' : 's'}) — ${escapeHtml(getStatusLabel(p.status))}
+          </div>` : ''}
+        ${ausenciaAgendada ? `
+          <div class="small mb-2 text-primary">
+            <i class="bi bi-calendar-event me-1"></i>
+            Ausência agendada: ${formatarDataBR(c.afastado_desde)} a ${formatarDataBR(c.afastado_ate)}${c.afastado_motivo ? ' — ' + escapeHtml(getStatusLabel(c.afastado_motivo)) : ''}
           </div>` : ''}
         ${p.observacao ? `<div class="small text-muted mb-2"><i class="bi bi-chat-left-text me-1"></i>${escapeHtml(p.observacao)}</div>` : ''}
         <div class="d-flex gap-2 mt-auto">
@@ -1264,7 +1389,8 @@ function renderizarLista(){
                   data-colid="${escapeHtml(c.id)}" data-nome="${escapeHtml(c.nome)}"
                   data-equipe="${escapeHtml(c.equipe || '')}" data-loja="${escapeHtml(c.loja || '')}"
                   data-area="${escapeHtml(c.area || '')}"
-                  data-ativo="${c.ativo !== false}" data-afastado="${escapeHtml(c.afastado_ate || '')}">
+                  data-ativo="${c.ativo !== false}" data-afastado="${escapeHtml(c.afastado_ate || '')}"
+                  data-afastado-desde="${escapeHtml(c.afastado_desde || '')}" data-afastado-motivo="${escapeHtml(c.afastado_motivo || '')}">
             <i class="bi bi-person-vcard"></i> Editar
           </button>
         </div>
@@ -1277,7 +1403,7 @@ function renderizarLista(){
   container.querySelectorAll('.btn-apontamento').forEach(b =>
     b.addEventListener('click', () => abrirApontamento(b.dataset.id, b.dataset.nome)));
   container.querySelectorAll('.btn-editar-colab').forEach(b =>
-    b.addEventListener('click', () => abrirEditarColab(b.dataset.colid, b.dataset.nome, b.dataset.equipe, b.dataset.loja, b.dataset.ativo === 'true', b.dataset.afastado, b.dataset.area)));
+    b.addEventListener('click', () => abrirEditarColab(b.dataset.colid, b.dataset.nome, b.dataset.equipe, b.dataset.loja, b.dataset.ativo === 'true', b.dataset.afastado, b.dataset.area, b.dataset.afastadoDesde, b.dataset.afastadoMotivo)));
 }
 
 function escapeHtml(str){
@@ -1315,8 +1441,14 @@ async function atualizarStatus(presencaId, status, observacao = null, afastadoAt
   // Sincroniza SEMPRE o prazo de afastamento no cadastro do colaborador com o
   // que foi definido agora (inclusive limpando, se afastadoAte vier vazio).
   // Sem isso, um prazo antigo ficava "preso" mesmo depois de reconfirmar a pessoa.
+  // Um apontamento feito HOJE (nesta tela) sempre vale a partir de hoje —
+  // "afastado_desde" agendado só se cria pela tela de Editar cadastro.
   if (presencaAntes) {
-    await sb.from('colaboradores').update({ afastado_ate: afastadoAte }).eq('id', presencaAntes.colaboradores.id);
+    await sb.from('colaboradores').update({
+      afastado_ate: afastadoAte,
+      afastado_desde: afastadoAte ? (operacaoAtual?.data || dataLocalHoje()) : null,
+      afastado_motivo: afastadoAte ? status : null
+    }).eq('id', presencaAntes.colaboradores.id);
   }
 
   // Se a pessoa foi apontada (qualquer motivo, não "confirmado") NA SAÍDA,
@@ -1378,14 +1510,27 @@ document.getElementById('btnSalvarApontamento').addEventListener('click', async 
 // ============================================================
 let editColabLojaAnterior = '';
 
-function abrirEditarColab(colaboradorId, nome, equipe, loja, ativo, afastadoAte, area){
+// Monta o <select> de motivos do modal de editar cadastro (reaproveita a
+// mesma lista de motivos usada no apontamento do dia).
+function popularSelectAfastadoMotivo(selecionado){
+  const sel = document.getElementById('editColabAfastadoMotivo');
+  if (!sel) return;
+  const ativos = motivosTodos.filter(m => m.ativo);
+  sel.innerHTML = '<option value="">Nenhum</option>' +
+    ativos.map(m => `<option value="${escapeHtml(m.chave)}">${escapeHtml(m.label)}</option>`).join('');
+  sel.value = selecionado || '';
+}
+
+function abrirEditarColab(colaboradorId, nome, equipe, loja, ativo, afastadoAte, area, afastadoDesde, afastadoMotivo){
   document.getElementById('editColabId').value = colaboradorId;
   document.getElementById('editColabNome').value = nome;
   document.getElementById('editColabEquipe').value = equipe;
   document.getElementById('editColabLoja').value = loja;
   document.getElementById('editColabArea').value = area || '';
   document.getElementById('editColabAtivo').value = ativo ? 'true' : 'false';
+  document.getElementById('editColabAfastadoDesde').value = afastadoDesde || '';
   document.getElementById('editColabAfastadoAte').value = afastadoAte || '';
+  popularSelectAfastadoMotivo(afastadoMotivo);
   editColabLojaAnterior = loja;
   atualizarLiderInfoEdit();
   document.getElementById('editColabStatus').textContent =
@@ -1409,13 +1554,23 @@ document.getElementById('btnSalvarEditarColab').addEventListener('click', async 
   const loja = document.getElementById('editColabLoja').value.trim();
   const area = document.getElementById('editColabArea').value.trim();
   const ativo = document.getElementById('editColabAtivo').value === 'true';
+  const afastadoDesde = document.getElementById('editColabAfastadoDesde').value || null;
   const afastadoAte = document.getElementById('editColabAfastadoAte').value || null;
+  const afastadoMotivo = document.getElementById('editColabAfastadoMotivo').value || null;
   const status = document.getElementById('editColabStatus');
 
   if (!nome) { status.textContent = 'Nome não pode ficar em branco.'; status.classList.add('text-danger'); return; }
+  if (afastadoDesde && !afastadoAte) { status.textContent = 'Preencha também a data "Afastado até".'; status.classList.add('text-danger'); return; }
+  if (afastadoDesde && afastadoAte && afastadoDesde > afastadoAte) { status.textContent = 'A data "a partir de" não pode ser depois da data "até".'; status.classList.add('text-danger'); return; }
 
   const { error } = await sb.from('colaboradores')
-    .update({ nome, equipe: equipe || null, loja: loja || null, area: area || null, ativo, afastado_ate: afastadoAte, atualizado_em: new Date().toISOString() })
+    .update({
+      nome, equipe: equipe || null, loja: loja || null, area: area || null, ativo,
+      afastado_desde: afastadoAte ? afastadoDesde : null,
+      afastado_ate: afastadoAte,
+      afastado_motivo: afastadoAte ? afastadoMotivo : null,
+      atualizado_em: new Date().toISOString()
+    })
     .eq('id', id);
 
   if (error) {
