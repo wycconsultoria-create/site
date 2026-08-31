@@ -159,7 +159,10 @@
       </div>
 
       <div id="filtroLojaContainer" class="d-flex flex-wrap gap-2 mb-2 hidden"></div>
-      <div id="filtroAreaContainer" class="d-flex flex-wrap gap-2 mb-3 hidden"></div>
+      <div class="mb-3 hidden" id="filtroAreaWrap" style="max-width:280px;">
+        <label class="form-label small text-muted mb-1">Filtrar por área</label>
+        <select class="form-select form-select-sm" id="filtroAreaSelect"></select>
+      </div>
 
       <div id="listaColaboradores" class="row g-3"></div>
       <div id="listaVazia" class="list-empty hidden">
@@ -593,7 +596,7 @@ let tipoAtual = null;
 let presencasAtuais = [];   // join colaborador + presenca
 let filtroAtual = 'todos';
 let filtroLojasAtivas = new Set(); // vazio = mostra todas as lojas
-let filtroAreasAtivas = new Set(); // vazio = mostra todas as áreas
+let filtroAreaSelecionada = null; // null = mostra todas as áreas
 let colaboradorApontamentoAtual = null;
 let motivosTodos = [];   // todos os motivos (inclusive inativos, p/ histórico)
 let motivosMap = {};     // chave -> { chave, label, cor, dias_ausencia, ativo, ordem }
@@ -1291,7 +1294,9 @@ function atualizarChipsLoja(){
   });
 }
 
-// Mesma lógica dos chips de loja, mas pra área/setor (Padaria, Frente de Caixa...)
+// Área/setor (Padaria, Frente de Caixa...) filtrada por um <select> dropdown,
+// de propósito diferente dos chips de loja: pra não confundir visualmente
+// com as quantidades de loja logo acima.
 function atualizarChipsArea(){
   const contagem = {};
   presencasAtuais.forEach(p => {
@@ -1301,24 +1306,20 @@ function atualizarChipsArea(){
 
   const areas = Object.keys(contagem).sort((a,b) => a.localeCompare(b, 'pt-BR'));
 
-  filtroAreasAtivas = new Set([...filtroAreasAtivas].filter(a => areas.includes(a)));
+  if (filtroAreaSelecionada && !areas.includes(filtroAreaSelecionada)) filtroAreaSelecionada = null;
 
-  const container = document.getElementById('filtroAreaContainer');
-  container.classList.toggle('hidden', areas.length <= 1);
-  container.innerHTML = areas.map(area => `
-    <button class="loja-chip-btn ${filtroAreasAtivas.has(area) ? 'active' : ''}" data-area="${escapeHtml(area)}" style="border-style:dashed;">
-      ${escapeHtml(area)} (${contagem[area]})
-    </button>`).join('');
+  const wrap = document.getElementById('filtroAreaWrap');
+  const select = document.getElementById('filtroAreaSelect');
+  wrap.classList.toggle('hidden', areas.length <= 1);
 
-  container.querySelectorAll('[data-area]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const area = btn.dataset.area;
-      if (filtroAreasAtivas.has(area)) filtroAreasAtivas.delete(area);
-      else filtroAreasAtivas.add(area);
-      atualizarChipsArea();
-      renderizarLista();
-    });
-  });
+  select.innerHTML = `<option value="">Todas as áreas (${presencasAtuais.length})</option>` +
+    areas.map(area => `<option value="${escapeHtml(area)}">${escapeHtml(area)} (${contagem[area]})</option>`).join('');
+  select.value = filtroAreaSelecionada || '';
+
+  select.onchange = () => {
+    filtroAreaSelecionada = select.value || null;
+    renderizarLista();
+  };
 }
 
 function renderizarLista(){
@@ -1330,7 +1331,7 @@ function renderizarLista(){
   else if (filtroAtual === 'apontamentos') lista = lista.filter(p => p.status !== 'pendente' && p.status !== 'confirmado');
   else if (filtroAtual !== 'todos') lista = lista.filter(p => p.status === filtroAtual);
   if (filtroLojasAtivas.size > 0) lista = lista.filter(p => filtroLojasAtivas.has(p.colaboradores.loja || 'Sem loja'));
-  if (filtroAreasAtivas.size > 0) lista = lista.filter(p => filtroAreasAtivas.has(p.colaboradores.area || 'Sem área'));
+  if (filtroAreaSelecionada) lista = lista.filter(p => (p.colaboradores.area || 'Sem área') === filtroAreaSelecionada);
   if (busca) lista = lista.filter(p => p.colaboradores.nome.toLowerCase().includes(busca));
 
   container.innerHTML = '';
