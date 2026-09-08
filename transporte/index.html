@@ -795,6 +795,7 @@ document.getElementById('btnSalvarAreas').addEventListener('click', async () => 
 // inativos) num formulário editável.
 document.getElementById('btnMotivos').addEventListener('click', async () => {
   document.getElementById('motivosStatus').textContent = '';
+  await carregarMotivos();
   renderizarTabelaMotivos();
   new bootstrap.Modal(document.getElementById('modalMotivos')).show();
 });
@@ -1464,11 +1465,16 @@ async function atualizarStatus(presencaId, status, observacao = null, afastadoAt
   await carregarPresencas();
 }
 
-function abrirApontamento(presencaId, nome){
+async function abrirApontamento(presencaId, nome){
   colaboradorApontamentoAtual = presencaId;
   document.getElementById('apontNome').textContent = nome;
   document.getElementById('apontMotivoAviso').classList.add('hidden');
   document.getElementById('apontDias').value = '';
+
+  // Busca a lista de motivos atualizada do banco toda vez que o modal abre —
+  // sem isso, um motivo criado em outra aba/sessão só apareceria aqui depois
+  // de recarregar a página inteira.
+  await carregarMotivos();
 
   // Pré-preenche com o que já estava salvo (se essa presença já tinha um
   // motivo/observação/prazo), pra não sobrescrever sem querer. Se for uma
@@ -1850,6 +1856,7 @@ function montarLinhasExport(){
     Nome: p.colaboradores.nome,
     Equipe: p.colaboradores.equipe || '',
     Loja: p.colaboradores.loja || '',
+    'Área/Setor': p.colaboradores.area || '',
     Status: getStatusLabel(p.status),
     Observacao: p.observacao || ''
   }));
@@ -2028,7 +2035,7 @@ async function mostrarDetalheDia(dataStr, info){
   detalheDiaLista = [];
   if (op) {
     const { data: pres } = await sb.from('presencas')
-      .select('status, observacao, colaboradores(nome, equipe, loja)')
+      .select('status, observacao, colaboradores(nome, equipe, loja, area)')
       .eq('operacao_id', op.id);
     detalheDiaLista = (pres || []).filter(p => p.colaboradores);
   }
@@ -2079,16 +2086,17 @@ function renderizarDetalheDia(dataStr, info){
       ${detalheDiaFiltro ? `<button class="btn btn-sm btn-link p-0 mb-2" id="dashLimparFiltro"><i class="bi bi-x-circle"></i> Limpar filtro</button>` : ''}
       <div class="table-responsive mt-2" style="max-height:320px; overflow-y:auto;">
         <table class="table table-sm align-middle mb-0">
-          <thead><tr><th>Nome</th><th>Equipe</th><th>Loja</th><th>Status</th><th>Observação</th></tr></thead>
+          <thead><tr><th>Nome</th><th>Equipe</th><th>Loja</th><th>Área</th><th>Status</th><th>Observação</th></tr></thead>
           <tbody>
             ${listaOrdenada.length ? listaOrdenada.map(p => `
               <tr>
                 <td>${escapeHtml(p.colaboradores.nome)}</td>
                 <td class="text-muted small">${escapeHtml(p.colaboradores.equipe || '-')}</td>
                 <td class="text-muted small">${escapeHtml(p.colaboradores.loja || '-')}</td>
+                <td class="text-muted small">${escapeHtml(p.colaboradores.area || '-')}</td>
                 <td>${badgeStatusHtml(p.status)}</td>
                 <td class="text-muted small">${escapeHtml(p.observacao || '-')}</td>
-              </tr>`).join('') : `<tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr>`}
+              </tr>`).join('') : `<tr><td colspan="6" class="text-center text-muted py-3">Nenhum registro</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -2113,6 +2121,7 @@ function renderizarDetalheDia(dataStr, info){
       Nome: p.colaboradores.nome,
       Equipe: p.colaboradores.equipe || '',
       Loja: p.colaboradores.loja || '',
+      'Área/Setor': p.colaboradores.area || '',
       Status: getStatusLabel(p.status),
       Observacao: p.observacao || ''
     }));
