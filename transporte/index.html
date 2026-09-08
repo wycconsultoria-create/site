@@ -1246,13 +1246,22 @@ async function carregarPresencas(){
 
   let lista = (data || []).filter(p => p.colaboradores);
 
-  // Nas operações de retorno, esconde quem ainda está "pendente" mas não foi
-  // confirmado na saída (ex: status mudou pra "faltou" depois da lista criada).
-  // Registros que já têm um status definido no retorno (confirmado, atestado etc.)
-  // continuam aparecendo normalmente.
+  // Nas operações de retorno, quem ficou "pendente" ali mas NÃO está mais
+  // confirmado na Saída de hoje (ex: foi reapontada depois com um motivo tipo
+  // "Nossa Loja"/"Ficou em Indaiatuba" — ou seja, na prática não saiu) não
+  // deveria nem existir como pendência de retorno: ela nunca viajou, então
+  // "aguardando retorno" é um falso positivo. Isso já era escondido na TELA,
+  // mas o registro fantasma continuava no banco e vazava pra exportação e
+  // pro dashboard mensal. Agora ele é apagado de verdade, e como isso roda
+  // toda vez que a lista carrega, também corrige sozinho casos antigos.
   if (operacaoAtual.tipo !== 'saida_indaiatuba') {
     const confirmadosSaida = await buscarConfirmadosSaida(operacaoAtual.data);
-    lista = lista.filter(p => p.status !== 'pendente' || confirmadosSaida.has(p.colaboradores.id));
+    const orfaos = lista.filter(p => p.status === 'pendente' && !confirmadosSaida.has(p.colaboradores.id));
+    if (orfaos.length > 0) {
+      await sb.from('presencas').delete().in('id', orfaos.map(p => p.id));
+      const idsOrfaos = new Set(orfaos.map(p => p.id));
+      lista = lista.filter(p => !idsOrfaos.has(p.id));
+    }
   }
 
   presencasAtuais = lista.sort((a,b) => a.colaboradores.nome.localeCompare(b.colaboradores.nome, 'pt-BR'));
