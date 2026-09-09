@@ -438,8 +438,16 @@
   const ACCESS_PASSWORD = "Preto01@"; // mesma senha do restante do sistema de transporte
   const SESSION_KEY = "cadastro_operadoras_auth";
 
-  const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-  const TABLE = () => sb.schema("transporte").from("operadoras");
+  let sb = null;
+  function getSupabase(){
+    if (sb) return sb;
+    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+      throw new Error("Configuração do Supabase não encontrada. Confira se o arquivo supabase-config.js está na mesma pasta que esta página.");
+    }
+    sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    return sb;
+  }
+  const TABLE = () => getSupabase().schema("transporte").from("operadoras");
 
   // ============================================================
   // Estado
@@ -520,7 +528,13 @@
   // Carregar / renderizar
   // ============================================================
   async function loadRegistros(){
-    const { data, error } = await TABLE().select("*").order("nome", { ascending: true });
+    let data, error;
+    try {
+      ({ data, error } = await TABLE().select("*").order("nome", { ascending: true }));
+    } catch (err) {
+      showConfigError(err.message);
+      return;
+    }
     if (error) {
       showToast("Erro ao carregar dados: " + error.message);
       console.error(error);
@@ -528,6 +542,18 @@
     }
     registros = data || [];
     renderTable();
+  }
+
+  function showConfigError(message){
+    const tbody = document.getElementById("table-body");
+    const emptyState = document.getElementById("empty-state");
+    tbody.innerHTML = "";
+    document.getElementById("count-line").textContent = "";
+    emptyState.style.display = "block";
+    emptyState.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p style="color:var(--danger);font-weight:600;">Não foi possível conectar ao banco de dados.</p>
+      <p>${escapeHtml(message)}</p>`;
   }
 
   function renderTable(){
@@ -632,7 +658,10 @@
     const record = registros.find(r => r.id === id);
     if (!record) return;
     if (!confirm(`Excluir "${record.nome}" do cadastro?`)) return;
-    const { error } = await TABLE().delete().eq("id", id);
+    let error;
+    try {
+      ({ error } = await TABLE().delete().eq("id", id));
+    } catch (err) { showToast(err.message); return; }
     if (error) { showToast("Erro ao excluir: " + error.message); return; }
     showToast("Colaboradora excluída.");
     loadRegistros();
@@ -658,11 +687,13 @@
     };
 
     let error;
-    if (editingId) {
-      ({ error } = await TABLE().update(payload).eq("id", editingId));
-    } else {
-      ({ error } = await TABLE().insert(payload));
-    }
+    try {
+      if (editingId) {
+        ({ error } = await TABLE().update(payload).eq("id", editingId));
+      } else {
+        ({ error } = await TABLE().insert(payload));
+      }
+    } catch (err) { showToast(err.message); return; }
 
     if (error) { showToast("Erro ao salvar: " + error.message); console.error(error); return; }
     showToast(editingId ? "Alterações salvas." : "Colaboradora adicionada.");
