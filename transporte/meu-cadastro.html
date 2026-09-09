@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Cadastro · Transporte Paulistão</title>
+<style>
+  :root{
+    --bg:#F3F5F8;
+    --surface:#FFFFFF;
+    --ink:#1B2333;
+    --muted:#6B7484;
+    --primary:#24447A;
+    --primary-dark:#182F57;
+    --border:#DCE1E8;
+    --border-soft:#EAEDF2;
+    --danger:#C1443B;
+    --danger-bg:#FBEAE8;
+    --success:#2F8F5B;
+    --success-bg:#E9F5EE;
+    --radius:12px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font);
+    background:var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+
+  .page{
+    max-width:480px;margin:0 auto;padding:28px 18px 60px;
+    min-height:100vh;
+  }
+
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+  .brand-mark{
+    width:48px;height:48px;border-radius:50%;background:var(--primary);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    overflow:hidden;box-shadow:0 0 0 1px var(--border);
+  }
+  .brand-mark img{width:100%;height:100%;object-fit:cover;}
+  .brand-text h1{font-size:15.5px;margin:0;line-height:1.3;}
+  .brand-text span{display:block;font-size:12.5px;color:var(--muted);}
+
+  .card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:24px 20px;
+  }
+
+  .who{
+    display:flex;align-items:center;gap:12px;margin-bottom:22px;
+    padding-bottom:18px;border-bottom:1px solid var(--border-soft);
+  }
+  .who-avatar{
+    width:44px;height:44px;border-radius:50%;background:#EAF0F9;color:var(--primary);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;
+    flex-shrink:0;
+  }
+  .who-name{font-size:16px;font-weight:700;}
+  .who-cargo{font-size:13px;color:var(--muted);margin-top:2px;}
+
+  h2.form-title{font-size:14px;margin:0 0 4px;}
+  p.form-sub{color:var(--muted);font-size:13px;margin:0 0 20px;}
+
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:5px;}
+  .field input, .field textarea{
+    width:100%;padding:11px 12px;border:1px solid var(--border);
+    border-radius:8px;font-size:15px;color:var(--ink);background:var(--surface);
+  }
+  .field input:focus, .field textarea:focus{outline:2px solid var(--primary);outline-offset:1px;}
+  .field textarea{resize:vertical;min-height:64px;}
+  .field-row{display:flex;gap:10px;}
+  .field-row .field{flex:1;}
+  .cep-field{position:relative;}
+  .cep-status{font-size:11.5px;margin-top:4px;color:var(--muted);}
+  .cep-status.ok{color:var(--success);}
+  .cep-status.err{color:var(--danger);}
+
+  .section-label{
+    font-size:12px;font-weight:700;color:var(--primary);
+    margin:20px 0 12px;padding-top:16px;border-top:1px solid var(--border-soft);
+  }
+
+  .save-btn{
+    width:100%;padding:13px;border:none;border-radius:8px;
+    background:var(--primary);color:#fff;font-size:14.5px;font-weight:700;
+    margin-top:8px;
+  }
+  .save-btn:hover{background:var(--primary-dark);}
+  .save-btn:disabled{opacity:0.6;cursor:default;}
+
+  .banner{
+    padding:12px 14px;border-radius:8px;font-size:13.5px;margin-bottom:18px;display:none;
+  }
+  .banner.ok{background:var(--success-bg);color:var(--success);display:block;}
+  .banner.err{background:var(--danger-bg);color:var(--danger);display:block;}
+
+  .state-box{text-align:center;padding:50px 20px;color:var(--muted);}
+  .state-box svg{width:32px;height:32px;margin-bottom:12px;opacity:0.6;}
+  .state-box p{margin:4px 0;font-size:14px;}
+
+  #app{display:none;}
+</style>
+</head>
+<body>
+
+  <div class="page">
+    <div class="brand">
+      <div class="brand-mark">
+        <img src="logo-frente-caixa.jpeg" alt="Paulistão Atacadista - Equipe de Frente de Caixa">
+      </div>
+      <div class="brand-text">
+        <h1>Meu cadastro</h1>
+        <span>Transporte · Paulistão Atacadista</span>
+      </div>
+    </div>
+
+    <div class="card">
+
+      <!-- Estado: carregando -->
+      <div class="state-box" id="loading-state">
+        <p>Carregando seus dados...</p>
+      </div>
+
+      <!-- Estado: link inválido / não encontrado -->
+      <div class="state-box" id="error-state" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p style="color:var(--danger);font-weight:600;">Link inválido ou expirado.</p>
+        <p>Peça um novo link ao seu supervisor para preencher seu cadastro.</p>
+      </div>
+
+      <!-- App -->
+      <div id="app">
+        <div class="who">
+          <div class="who-avatar" id="who-initial">?</div>
+          <div>
+            <div class="who-name" id="who-name">—</div>
+            <div class="who-cargo" id="who-cargo"></div>
+          </div>
+        </div>
+
+        <h2 class="form-title">Endereço e linhas de ônibus</h2>
+        <p class="form-sub">Preencha com calma. Você pode voltar e editar quando quiser, usando este mesmo link.</p>
+
+        <div class="banner" id="save-banner"></div>
+
+        <div class="field-row">
+          <div class="field cep-field" style="max-width:140px;">
+            <label for="f-cep">CEP</label>
+            <input type="text" id="f-cep" placeholder="00000-000" maxlength="9" inputmode="numeric">
+            <div class="cep-status" id="cep-status"></div>
+          </div>
+          <div class="field">
+            <label for="f-numero">Número</label>
+            <input type="text" id="f-numero" placeholder="Nº">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="f-endereco">Endereço (rua/avenida)</label>
+          <input type="text" id="f-endereco" placeholder="Preenche sozinho com o CEP">
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="f-bairro">Bairro</label>
+            <input type="text" id="f-bairro" placeholder="Bairro">
+          </div>
+          <div class="field">
+            <label for="f-cidade">Cidade</label>
+            <input type="text" id="f-cidade" placeholder="Cidade">
+          </div>
+        </div>
+
+        <div class="section-label">Linhas de ônibus</div>
+
+        <div class="field">
+          <label for="f-ida">Linha para ir ao trabalho</label>
+          <input type="text" id="f-ida" placeholder="Ex: 218 - Jardim Morada">
+        </div>
+        <div class="field">
+          <label for="f-volta">Linha para voltar pra casa</label>
+          <input type="text" id="f-volta" placeholder="Ex: 219 - Centro">
+        </div>
+
+        <div class="field">
+          <label for="f-obs">Observação (opcional)</label>
+          <textarea id="f-obs" placeholder="Algo importante que devemos saber?"></textarea>
+        </div>
+
+        <button class="save-btn" id="save-btn">Salvar meus dados</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+  let sb = null;
+  function getSupabase(){
+    if (sb) return sb;
+    const url = (typeof SUPABASE_URL !== "undefined") ? SUPABASE_URL : window.SUPABASE_URL;
+    const key = (typeof SUPABASE_ANON_KEY !== "undefined") ? SUPABASE_ANON_KEY : window.SUPABASE_ANON_KEY;
+    if (!url || !key) throw new Error("Configuração do Supabase não encontrada.");
+    sb = window.supabase.createClient(url, key);
+    return sb;
+  }
+  function getSchema(){
+    return (typeof SUPABASE_SCHEMA !== "undefined") ? SUPABASE_SCHEMA : "transporte";
+  }
+  const TABLE = () => getSupabase().schema(getSchema()).from("operadoras");
+
+  const params = new URLSearchParams(location.search);
+  const recordId = params.get("id");
+
+  let currentRecord = null;
+
+  function showState(state){
+    document.getElementById("loading-state").style.display = state === "loading" ? "block" : "none";
+    document.getElementById("error-state").style.display = state === "error" ? "block" : "none";
+    document.getElementById("app").style.display = state === "app" ? "block" : "none";
+  }
+
+  async function init(){
+    if (!recordId) { showState("error"); return; }
+
+    let data, error;
+    try {
+      ({ data, error } = await TABLE().select("*").eq("id", recordId).maybeSingle());
+    } catch (err) {
+      document.getElementById("error-state").querySelector("p:last-child").textContent = err.message;
+      showState("error");
+      return;
+    }
+
+    if (error || !data) { showState("error"); return; }
+
+    currentRecord = data;
+    fillForm(data);
+    showState("app");
+
+    document.getElementById("save-btn").addEventListener("click", saveData);
+    document.getElementById("f-cep").addEventListener("blur", lookupCep);
+    document.getElementById("f-cep").addEventListener("input", maskCep);
+  }
+
+  function fillForm(r){
+    document.getElementById("who-name").textContent = r.nome || "—";
+    document.getElementById("who-cargo").textContent = r.cargo || "";
+    document.getElementById("who-initial").textContent = (r.nome || "?").trim().charAt(0).toUpperCase();
+
+    document.getElementById("f-cep").value = r.cep || "";
+    document.getElementById("f-numero").value = r.numero || "";
+    document.getElementById("f-endereco").value = r.endereco || "";
+    document.getElementById("f-bairro").value = r.bairro || "";
+    document.getElementById("f-cidade").value = r.cidade || "";
+    document.getElementById("f-ida").value = r.linha_ida || "";
+    document.getElementById("f-volta").value = r.linha_volta || "";
+    document.getElementById("f-obs").value = r.observacao || "";
+  }
+
+  function maskCep(e){
+    let v = e.target.value.replace(/\D/g, "").slice(0, 8);
+    if (v.length > 5) v = v.slice(0,5) + "-" + v.slice(5);
+    e.target.value = v;
+  }
+
+  async function lookupCep(){
+    const cepInput = document.getElementById("f-cep");
+    const status = document.getElementById("cep-status");
+    const cep = cepInput.value.replace(/\D/g, "");
+    if (cep.length !== 8) { status.textContent = ""; status.className = "cep-status"; return; }
+
+    status.textContent = "Buscando endereço...";
+    status.className = "cep-status";
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+      if (data.erro) {
+        status.textContent = "CEP não encontrado";
+        status.className = "cep-status err";
+        return;
+      }
+      document.getElementById("f-endereco").value = data.logradouro || document.getElementById("f-endereco").value;
+      document.getElementById("f-bairro").value = data.bairro || "";
+      document.getElementById("f-cidade").value = data.localidade || "";
+      status.textContent = "Endereço encontrado ✓";
+      status.className = "cep-status ok";
+      if (!document.getElementById("f-numero").value) document.getElementById("f-numero").focus();
+    } catch (err) {
+      status.textContent = "Não foi possível buscar o CEP agora";
+      status.className = "cep-status err";
+    }
+  }
+
+  async function saveData(){
+    const btn = document.getElementById("save-btn");
+    const banner = document.getElementById("save-banner");
+    banner.style.display = "none";
+
+    const payload = {
+      cep: document.getElementById("f-cep").value.trim() || null,
+      numero: document.getElementById("f-numero").value.trim() || null,
+      endereco: document.getElementById("f-endereco").value.trim() || null,
+      bairro: document.getElementById("f-bairro").value.trim() || null,
+      cidade: document.getElementById("f-cidade").value.trim() || null,
+      linha_ida: document.getElementById("f-ida").value.trim() || null,
+      linha_volta: document.getElementById("f-volta").value.trim() || null,
+      observacao: document.getElementById("f-obs").value.trim() || null,
+    };
+
+    btn.disabled = true;
+    btn.textContent = "Salvando...";
+
+    let error;
+    try {
+      ({ error } = await TABLE().update(payload).eq("id", recordId));
+    } catch (err) {
+      error = err;
+    }
+
+    btn.disabled = false;
+    btn.textContent = "Salvar meus dados";
+
+    if (error) {
+      banner.textContent = "Não foi possível salvar. Tente novamente em instantes.";
+      banner.className = "banner err";
+    } else {
+      banner.textContent = "Dados salvos com sucesso!";
+      banner.className = "banner ok";
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  init();
+  </script>
+</body>
+</html>
