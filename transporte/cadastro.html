@@ -443,13 +443,18 @@
   let sb = null;
   function getSupabase(){
     if (sb) return sb;
-    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+    const url = (typeof SUPABASE_URL !== "undefined") ? SUPABASE_URL : window.SUPABASE_URL;
+    const key = (typeof SUPABASE_ANON_KEY !== "undefined") ? SUPABASE_ANON_KEY : window.SUPABASE_ANON_KEY;
+    if (!url || !key) {
       throw new Error("Configuração do Supabase não encontrada. Confira se o arquivo supabase-config.js está na mesma pasta que esta página.");
     }
-    sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    sb = window.supabase.createClient(url, key);
     return sb;
   }
-  const TABLE = () => getSupabase().schema("transporte").from("operadoras");
+  function getSchema(){
+    return (typeof SUPABASE_SCHEMA !== "undefined") ? SUPABASE_SCHEMA : "transporte";
+  }
+  const TABLE = () => getSupabase().schema(getSchema()).from("operadoras");
 
   // ============================================================
   // Estado
