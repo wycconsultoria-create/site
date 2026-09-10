@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastro de Operadoras · Transporte Paulistão</title>
+<style>
+  :root{
+    --bg:#F3F5F8;
+    --surface:#FFFFFF;
+    --ink:#1B2333;
+    --muted:#6B7484;
+    --primary:#24447A;
+    --primary-dark:#182F57;
+    --accent:#E2A33B;
+    --border:#DCE1E8;
+    --border-soft:#EAEDF2;
+    --danger:#C1443B;
+    --danger-bg:#FBEAE8;
+    --success:#2F8F5B;
+    --success-bg:#E9F5EE;
+    --radius:10px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font);
+    background:var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+
+  /* ---------- Login ---------- */
+  #login-screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .login-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:36px 32px;
+    width:100%;
+    max-width:360px;
+    text-align:left;
+  }
+  .login-mark{
+    width:60px;height:60px;border-radius:50%;
+    background:var(--primary);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:18px;overflow:hidden;
+    box-shadow:0 0 0 1px var(--border);
+  }
+  .login-mark img{width:100%;height:100%;object-fit:cover;}
+  .login-card h1{font-size:18px;margin:0 0 4px;}
+  .login-card p{color:var(--muted);font-size:14px;margin:0 0 20px;}
+  .login-card input{
+    width:100%;padding:11px 12px;border:1px solid var(--border);
+    border-radius:8px;font-size:14px;margin-bottom:12px;
+  }
+  .login-card input:focus{outline:2px solid var(--primary);outline-offset:1px;}
+  .login-card button{
+    width:100%;padding:11px;border:none;border-radius:8px;
+    background:var(--primary);color:#fff;font-size:14px;font-weight:600;
+  }
+  .login-card button:hover{background:var(--primary-dark);}
+  .login-error{color:var(--danger);font-size:13px;margin:-6px 0 12px;display:none;}
+
+  /* ---------- App shell ---------- */
+  #app{display:none;min-height:100vh;}
+  header.top{
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    padding:18px 24px;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:16px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{
+    width:42px;height:42px;border-radius:50%;background:var(--primary);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    overflow:hidden;box-shadow:0 0 0 1px var(--border);
+  }
+  .brand-mark img{width:100%;height:100%;object-fit:cover;}
+  .brand h1{font-size:16px;margin:0;line-height:1.3;}
+  .brand span{display:block;font-size:12.5px;color:var(--muted);font-weight:400;}
+
+  .toolbar{
+    padding:16px 24px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+  }
+  .search-box{
+    flex:1;min-width:220px;position:relative;
+  }
+  .search-box input{
+    width:100%;padding:9px 12px 9px 34px;border:1px solid var(--border);
+    border-radius:8px;font-size:14px;background:var(--surface);
+  }
+  .search-box svg{
+    position:absolute;left:11px;top:50%;transform:translateY(-50%);
+    width:15px;height:15px;color:var(--muted);
+  }
+  .chip-toggle{
+    display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--muted);
+    border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--surface);
+    user-select:none;
+  }
+  .chip-toggle input{cursor:pointer;}
+
+  .btn{
+    padding:9px 16px;border-radius:8px;border:1px solid var(--border);
+    font-size:13.5px;font-weight:600;background:var(--surface);color:var(--ink);
+    display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--primary);}
+  .btn svg{width:15px;height:15px;}
+  .btn-primary{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);border-color:var(--primary-dark);}
+
+  main{padding:0 24px 40px;max-width:1180px;margin:0 auto;}
+
+  .count-line{color:var(--muted);font-size:13px;margin:2px 0 14px;}
+
+  /* ---------- Table ---------- */
+  .table-wrap{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);overflow:hidden;
+  }
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  thead th{
+    text-align:left;padding:11px 14px;background:#F7F8FA;
+    border-bottom:1px solid var(--border);color:var(--muted);
+    font-weight:600;font-size:12.5px;
+  }
+  tbody td{padding:12px 14px;border-bottom:1px solid var(--border-soft);vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#FAFBFD;}
+  .nome-cell{font-weight:600;}
+  .cargo-tag{
+    display:inline-block;font-size:12px;color:var(--primary);
+    background:#EAF0F9;padding:2px 8px;border-radius:6px;margin-top:3px;
+  }
+  .linha-badges{display:flex;flex-direction:column;gap:3px;}
+  .linha-badges span{font-size:12.5px;}
+  .linha-badges b{color:var(--muted);font-weight:600;font-size:11.5px;}
+  .muted-cell{color:var(--muted);}
+  .status-dot{
+    display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;
+  }
+  .status-dot::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--success);}
+  .status-dot.inativo{color:var(--muted);}
+  .status-dot.inativo::before{background:#C6CBD3;}
+
+  .farol{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;white-space:nowrap;}
+  .farol::before{content:"";width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .farol.cinza{color:var(--muted);}
+  .farol.cinza::before{background:#C6CBD3;}
+  .farol.amarelo{color:#9A6B12;}
+  .farol.amarelo::before{background:var(--accent);}
+  .farol.verde{color:var(--success);}
+  .farol.verde::before{background:var(--success);}
+  .row-actions{display:flex;gap:6px;}
+  .icon-btn{
+    border:1px solid var(--border);background:var(--surface);border-radius:7px;
+    padding:6px;display:inline-flex;
+  }
+  .icon-btn svg{width:14px;height:14px;}
+  .icon-btn:hover{border-color:var(--primary);}
+  .icon-btn.danger:hover{border-color:var(--danger);}
+  .icon-btn.danger:hover svg{color:var(--danger);}
+
+  .empty-state{
+    padding:56px 24px;text-align:center;color:var(--muted);
+  }
+  .empty-state svg{width:34px;height:34px;margin-bottom:10px;opacity:0.5;}
+  .empty-state p{margin:4px 0;font-size:14px;}
+
+  /* ---------- Mobile cards ---------- */
+  @media (max-width: 760px){
+    thead{display:none;}
+    table, tbody, tr, td{display:block;width:100%;}
+    tbody tr{padding:14px;border-bottom:1px solid var(--border);}
+    tbody td{padding:3px 0;border:none;}
+    td[data-label]::before{
+      content:attr(data-label);
+      display:block;font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;
+    }
+    td[data-label="Colaboradora"]::before{display:none;margin-top:0;}
+    .row-actions{margin-top:10px;}
+  }
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    display:none;position:fixed;inset:0;background:rgba(15,20,32,0.45);
+    align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto;z-index:50;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--surface);border-radius:var(--radius);
+    width:100%;max-width:560px;padding:26px;margin-top:20px;
+  }
+  .modal h2{font-size:17px;margin:0 0 2px;}
+  .modal .modal-sub{color:var(--muted);font-size:13px;margin:0 0 20px;}
+  .field-row{display:flex;gap:12px;margin-bottom:14px;}
+  .field-row .field{flex:1;min-width:0;}
+  .field label{
+    display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:5px;
+  }
+  .field input, .field select, .field textarea{
+    width:100%;padding:9px 11px;border:1px solid var(--border);
+    border-radius:8px;font-size:14px;color:var(--ink);background:var(--surface);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    outline:2px solid var(--primary);outline-offset:1px;
+  }
+  .field textarea{resize:vertical;min-height:60px;}
+  .cep-field{position:relative;}
+  .cep-status{position:absolute;right:10px;top:33px;font-size:11px;color:var(--muted);}
+  .cep-status.ok{color:var(--success);}
+  .cep-status.err{color:var(--danger);}
+  .section-label{
+    font-size:12px;font-weight:700;color:var(--primary);text-transform:none;
+    margin:22px 0 10px;padding-top:14px;border-top:1px solid var(--border-soft);
+  }
+  .modal-actions{
+    display:flex;justify-content:space-between;align-items:center;margin-top:22px;gap:10px;
+  }
+  .switch-row{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);}
+  .modal-buttons{display:flex;gap:8px;}
+  .btn-ghost{background:transparent;border:1px solid var(--border);}
+  .btn-ghost:hover{background:#F5F6F8;}
+
+  /* ---------- Import modal ---------- */
+  .import-drop{
+    border:1.5px dashed var(--border);border-radius:10px;padding:28px 16px;
+    text-align:center;color:var(--muted);font-size:13.5px;margin-bottom:14px;
+  }
+  .import-drop svg{width:26px;height:26px;margin-bottom:8px;opacity:0.6;}
+  .import-hint{font-size:12.5px;color:var(--muted);line-height:1.6;background:#F7F8FA;padding:10px 12px;border-radius:8px;}
+  .import-summary{font-size:13.5px;margin-top:12px;padding:10px 12px;border-radius:8px;display:none;}
+  .import-summary.ok{background:var(--success-bg);color:var(--success);display:block;}
+  .import-summary.err{background:var(--danger-bg);color:var(--danger);display:block;}
+
+  .toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:11px 18px;border-radius:8px;
+    font-size:13.5px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:100;
+  }
+  .toast.show{opacity:1;}
+
+  #file-input{display:none;}
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 640px){
+    header.top{padding:14px 16px;gap:10px;}
+    .brand{gap:10px;}
+    .brand h1{font-size:14.5px;}
+    .brand h1 span{font-size:11.5px;}
+    #logout-btn{padding:8px 12px;font-size:13px;}
+
+    .toolbar{padding:12px 16px;gap:8px;}
+    .search-box{flex:1 1 100%;min-width:0;}
+    .chip-toggle{flex:1 1 auto;justify-content:center;}
+    #filter-farol{flex:1 1 100%;}
+    #import-btn, #export-btn, #add-btn{flex:1 1 auto;justify-content:center;}
+    #add-btn{order:-1;flex:1 1 100%;}
+
+    main{padding:0 16px 32px;}
+
+    .modal{
+      padding:20px 16px;margin-top:0;border-radius:0;
+      min-height:100vh;width:100%;max-width:100%;
+    }
+    .overlay{padding:0;}
+    .field-row{flex-direction:column;gap:14px;margin-bottom:0;}
+    .field-row .field{width:100% !important;max-width:none !important;flex:none;}
+    .field{margin-bottom:14px;}
+    .section-label{margin:18px 0 10px;}
+    .modal-actions{flex-direction:column;align-items:stretch;gap:14px;}
+    .modal-buttons{width:100%;}
+    .modal-buttons .btn{flex:1;justify-content:center;}
+    .switch-row{justify-content:center;}
+
+    .cep-status{position:static;display:block;margin-top:4px;}
+  }
+</style>
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-mark">
+        <img src="logo-frente-caixa.jpeg" alt="Paulistão Atacadista - Equipe de Frente de Caixa">
+      </div>
+      <h1>Cadastro de operadoras</h1>
+      <p>Transporte · Paulistão Atacadista</p>
+      <input type="password" id="pwd-input" placeholder="Senha de acesso" autofocus>
+      <p class="login-error" id="login-error">Senha incorreta.</p>
+      <button id="login-btn">Entrar</button>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app">
+    <header class="top">
+      <div class="brand">
+        <div class="brand-mark">
+          <img src="logo-frente-caixa.jpeg" alt="Paulistão Atacadista - Equipe de Frente de Caixa">
+        </div>
+        <h1>Cadastro de operadoras<span>Endereço, CEP e linhas de ônibus · Paulistão</span></h1>
+      </div>
+      <button class="btn" id="logout-btn">Sair</button>
+    </header>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="search-input" placeholder="Buscar por nome ou cargo...">
+      </div>
+      <label class="chip-toggle">
+        <input type="checkbox" id="filter-ativas" checked>
+        Somente ativas
+      </label>
+      <select id="filter-farol" class="btn" style="font-weight:500;">
+        <option value="todos">Todos os status</option>
+        <option value="nao_enviado">Link não enviado</option>
+        <option value="aguardando">Aguardando resposta</option>
+        <option value="respondeu">Já respondeu</option>
+      </select>
+      <button class="btn" id="import-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Importar Excel
+      </button>
+      <button class="btn" id="export-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Exportar Excel
+      </button>
+      <button class="btn btn-primary" id="add-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Adicionar colaboradora
+      </button>
+    </div>
+
+    <main>
+      <p class="count-line" id="count-line"></p>
+      <div class="table-wrap">
+        <table id="data-table">
+          <thead>
+            <tr>
+              <th>Colaboradora</th>
+              <th>Endereço</th>
+              <th>Linhas de ônibus</th>
+              <th>Status do link</th>
+              <th>Cadastro</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+        <div class="empty-state" id="empty-state" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 11h18"/></svg>
+          <p>Nenhuma colaboradora cadastrada ainda.</p>
+          <p>Use "Importar Excel" para subir os nomes ou adicione uma de cada vez.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL: adicionar/editar -->
+  <div class="overlay" id="form-overlay">
+    <div class="modal">
+      <h2 id="form-title">Adicionar colaboradora</h2>
+      <p class="modal-sub">Preencha os dados abaixo. Só o nome é obrigatório.</p>
+
+      <div class="field-row">
+        <div class="field" style="flex:2;">
+          <label for="f-nome">Nome completo</label>
+          <input type="text" id="f-nome" placeholder="Nome completo">
+        </div>
+        <div class="field">
+          <label for="f-cargo">Cargo</label>
+          <input type="text" id="f-cargo" placeholder="Ex: Operadora de caixa">
+        </div>
+      </div>
+
+      <div class="section-label">Endereço</div>
+      <div class="field-row">
+        <div class="field cep-field" style="max-width:160px;">
+          <label for="f-cep">CEP</label>
+          <input type="text" id="f-cep" placeholder="00000-000" maxlength="9">
+          <span class="cep-status" id="cep-status"></span>
+        </div>
+        <div class="field" style="flex:2;">
+          <label for="f-endereco">Endereço</label>
+          <input type="text" id="f-endereco" placeholder="Rua, avenida...">
+        </div>
+        <div class="field" style="max-width:110px;">
+          <label for="f-numero">Número</label>
+          <input type="text" id="f-numero" placeholder="Nº">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="f-bairro">Bairro</label>
+          <input type="text" id="f-bairro" placeholder="Bairro">
+        </div>
+        <div class="field">
+          <label for="f-cidade">Cidade</label>
+          <input type="text" id="f-cidade" placeholder="Cidade">
+        </div>
+        <div class="field" style="max-width:80px;">
+          <label for="f-uf">UF</label>
+          <input type="text" id="f-uf" placeholder="UF" maxlength="2">
+        </div>
+      </div>
+
+      <div class="section-label">Linhas de ônibus</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="f-ida">Linha para ir</label>
+          <input type="text" id="f-ida" placeholder="Ex: 218 - Jd. Morada">
+        </div>
+        <div class="field">
+          <label for="f-volta">Linha para voltar</label>
+          <input type="text" id="f-volta" placeholder="Ex: 219 - Centro">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="f-obs">Observação</label>
+          <textarea id="f-obs" placeholder="Qualquer observação relevante..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <label class="switch-row">
+          <input type="checkbox" id="f-ativo" checked>
+          Colaboradora ativa
+        </label>
+        <div class="modal-buttons">
+          <button class="btn btn-ghost" id="cancel-btn">Cancelar</button>
+          <button class="btn btn-primary" id="save-btn">Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: importar excel -->
+  <div class="overlay" id="import-overlay">
+    <div class="modal" style="max-width:440px;">
+      <h2>Importar planilha</h2>
+      <p class="modal-sub">Sobe uma lista de nomes e cargos de uma vez.</p>
+
+      <div class="import-drop" id="drop-zone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <div>Clique para escolher o arquivo (.xlsx ou .csv)</div>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx,.xls,.csv">
+
+      <div class="import-hint">
+        A planilha precisa ter uma coluna <b>Nome</b> e, se quiser, uma coluna <b>Cargo</b>.
+        Colaboradoras que já existirem na lista (mesmo nome) não serão duplicadas — o cargo delas
+        será atualizado. Endereço e linhas de ônibus você completa depois, direto na lista.
+      </div>
+
+      <div class="import-summary" id="import-summary"></div>
+
+      <div class="modal-actions" style="justify-content:flex-end;">
+        <div class="modal-buttons">
+          <button class="btn btn-ghost" id="import-cancel-btn">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Config do Supabase: mesmo arquivo usado no restante do sistema de transporte -->
+  <script src="supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <script>
+  // ============================================================
+  // Configuração
+  // ============================================================
+  const ACCESS_PASSWORD = "Preto01@"; // mesma senha do restante do sistema de transporte
+  const SESSION_KEY = "cadastro_operadoras_auth";
+
+  let sb = null;
+  function getSupabase(){
+    if (sb) return sb;
+    const url = (typeof SUPABASE_URL !== "undefined") ? SUPABASE_URL : window.SUPABASE_URL;
+    const key = (typeof SUPABASE_ANON_KEY !== "undefined") ? SUPABASE_ANON_KEY : window.SUPABASE_ANON_KEY;
+    if (!url || !key) {
+      throw new Error("Configuração do Supabase não encontrada. Confira se o arquivo supabase-config.js está na mesma pasta que esta página.");
+    }
+    sb = window.supabase.createClient(url, key);
+    return sb;
+  }
+  function getSchema(){
+    return (typeof SUPABASE_SCHEMA !== "undefined") ? SUPABASE_SCHEMA : "transporte";
+  }
+  const TABLE = () => getSupabase().schema(getSchema()).from("operadoras");
+
+  // ============================================================
+  // Estado
+  // ============================================================
+  let registros = [];
+  let editingId = null;
+
+  // ============================================================
+  // Login
+  // ============================================================
+  const loginScreen = document.getElementById("login-screen");
+  const appEl = document.getElementById("app");
+  const pwdInput = document.getElementById("pwd-input");
+  const loginError = document.getElementById("login-error");
+
+  function checkSession(){
+    if (sessionStorage.getItem(SESSION_KEY) === "1") {
+      loginScreen.style.display = "none";
+      appEl.style.display = "block";
+      init();
+    }
+  }
+
+  document.getElementById("login-btn").addEventListener("click", tryLogin);
+  pwdInput.addEventListener("keydown", e => { if (e.key === "Enter") tryLogin(); });
+
+  function tryLogin(){
+    if (pwdInput.value === ACCESS_PASSWORD) {
+      sessionStorage.setItem(SESSION_KEY, "1");
+      loginScreen.style.display = "none";
+      appEl.style.display = "block";
+      init();
+    } else {
+      loginError.style.display = "block";
+    }
+  }
+
+  document.getElementById("logout-btn").addEventListener("click", () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    location.reload();
+  });
+
+  checkSession();
+
+  // ============================================================
+  // Inicialização
+  // ============================================================
+  function init(){
+    loadRegistros();
+    document.getElementById("search-input").addEventListener("input", renderTable);
+    document.getElementById("filter-ativas").addEventListener("change", renderTable);
+    document.getElementById("filter-farol").addEventListener("change", renderTable);
+    document.getElementById("add-btn").addEventListener("click", () => openForm(null));
+    document.getElementById("cancel-btn").addEventListener("click", closeForm);
+    document.getElementById("save-btn").addEventListener("click", saveRegistro);
+    document.getElementById("f-cep").addEventListener("blur", lookupCep);
+    document.getElementById("f-cep").addEventListener("input", maskCep);
+
+    document.getElementById("export-btn").addEventListener("click", exportExcel);
+    document.getElementById("import-btn").addEventListener("click", () => {
+      document.getElementById("import-summary").style.display = "none";
+      document.getElementById("import-summary").className = "import-summary";
+      document.getElementById("import-overlay").classList.add("open");
+    });
+    document.getElementById("import-cancel-btn").addEventListener("click", () => {
+      document.getElementById("import-overlay").classList.remove("open");
+      loadRegistros();
+    });
+    document.getElementById("drop-zone").addEventListener("click", () => {
+      document.getElementById("file-input").click();
+    });
+    document.getElementById("file-input").addEventListener("change", handleFile);
+
+    [document.getElementById("form-overlay"), document.getElementById("import-overlay")].forEach(ov => {
+      ov.addEventListener("click", e => { if (e.target === ov) ov.classList.remove("open"); });
+    });
+  }
+
+  // ============================================================
+  // Carregar / renderizar
+  // ============================================================
+  async function loadRegistros(){
+    let data, error;
+    try {
+      ({ data, error } = await TABLE().select("*").order("nome", { ascending: true }));
+    } catch (err) {
+      showConfigError(err.message);
+      return;
+    }
+    if (error) {
+      showToast("Erro ao carregar dados: " + error.message);
+      console.error(error);
+      return;
+    }
+    registros = data || [];
+    renderTable();
+  }
+
+  function showConfigError(message){
+    const tbody = document.getElementById("table-body");
+    const emptyState = document.getElementById("empty-state");
+    tbody.innerHTML = "";
+    document.getElementById("count-line").textContent = "";
+    emptyState.style.display = "block";
+    emptyState.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p style="color:var(--danger);font-weight:600;">Não foi possível conectar ao banco de dados.</p>
+      <p>${escapeHtml(message)}</p>`;
+  }
+
+  function getFarolStatus(r){
+    const respondeu = !!(r.endereco || r.cep || r.linha_ida || r.linha_volta);
+    if (respondeu) return { key: "respondeu", label: "Respondeu", className: "verde" };
+    if (r.link_enviado_em) return { key: "aguardando", label: "Aguardando resposta", className: "amarelo" };
+    return { key: "nao_enviado", label: "Link não enviado", className: "cinza" };
+  }
+
+  function getFilteredList(){
+    const term = document.getElementById("search-input").value.trim().toLowerCase();
+    const somenteAtivas = document.getElementById("filter-ativas").checked;
+    const farolFiltro = document.getElementById("filter-farol").value;
+
+    return registros.filter(r => {
+      if (somenteAtivas && r.ativo === false) return false;
+      if (farolFiltro !== "todos" && getFarolStatus(r).key !== farolFiltro) return false;
+      if (!term) return true;
+      return (r.nome || "").toLowerCase().includes(term) || (r.cargo || "").toLowerCase().includes(term);
+    });
+  }
+
+  function renderTable(){
+    let lista = getFilteredList();
+
+    const tbody = document.getElementById("table-body");
+    const emptyState = document.getElementById("empty-state");
+    document.getElementById("count-line").textContent =
+      lista.length === 0 ? "" : `${lista.length} colaboradora${lista.length > 1 ? "s" : ""}`;
+
+    if (lista.length === 0) {
+      tbody.innerHTML = "";
+      emptyState.style.display = "block";
+      return;
+    }
+    emptyState.style.display = "none";
+
+    tbody.innerHTML = lista.map(r => {
+      const endereco = [r.endereco, r.numero].filter(Boolean).join(", ");
+      const cidadeUf = [r.cidade, r.uf].filter(Boolean).join(" / ");
+      const enderecoHtml = endereco || cidadeUf
+        ? `${endereco || '<span class="muted-cell">Endereço não informado</span>'}${r.cep ? '<br><span class="muted-cell">CEP ' + r.cep + '</span>' : ''}${cidadeUf ? '<br><span class="muted-cell">' + cidadeUf + '</span>' : ''}`
+        : '<span class="muted-cell">Não informado</span>';
+
+      const linhas = (r.linha_ida || r.linha_volta)
+        ? `<div class="linha-badges">${r.linha_ida ? '<span><b>Ida </b>' + escapeHtml(r.linha_ida) + '</span>' : ''}${r.linha_volta ? '<span><b>Volta </b>' + escapeHtml(r.linha_volta) + '</span>' : ''}</div>`
+        : '<span class="muted-cell">Não informado</span>';
+
+      const farol = getFarolStatus(r);
+
+      return `
+        <tr>
+          <td data-label="Colaboradora">
+            <div class="nome-cell">${escapeHtml(r.nome || "")}</div>
+            ${r.cargo ? `<span class="cargo-tag">${escapeHtml(r.cargo)}</span>` : ''}
+          </td>
+          <td data-label="Endereço">${enderecoHtml}</td>
+          <td data-label="Linhas de ônibus">${linhas}</td>
+          <td data-label="Status do link"><span class="farol ${farol.className}">${farol.label}</span></td>
+          <td data-label="Cadastro">
+            <span class="status-dot ${r.ativo === false ? 'inativo' : ''}">${r.ativo === false ? 'Inativa' : 'Ativa'}</span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn" onclick="sendWhatsApp('${r.id}')" title="Enviar link pelo WhatsApp">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.01c5.46 0 9.9-4.45 9.9-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm5.8 14.14c-.24.68-1.4 1.3-1.93 1.38-.5.08-1.12.11-1.8-.11a16.5 16.5 0 0 1-1.65-.61c-2.92-1.26-4.82-4.2-4.97-4.4-.15-.2-1.19-1.58-1.19-3.02 0-1.43.75-2.14 1.02-2.43.27-.29.58-.36.78-.36.2 0 .39 0 .56.01.18.01.42-.07.65.5.24.58.82 2 .89 2.15.07.15.12.32.02.52-.1.2-.15.32-.3.5-.15.17-.31.39-.44.52-.15.15-.3.31-.13.6.17.3.76 1.25 1.63 2.02 1.12 1 2.06 1.31 2.36 1.46.3.15.48.13.65-.08.18-.2.75-.87.95-1.17.2-.3.4-.25.66-.15.27.1 1.72.81 2.02.96.3.15.5.22.57.35.08.13.08.75-.16 1.43z"/></svg>
+              </button>
+              <button class="icon-btn" onclick="copyLink('${r.id}')" title="Copiar link individual">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+              <button class="icon-btn" onclick="editRegistro('${r.id}')" title="Editar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="icon-btn danger" onclick="deleteRegistro('${r.id}')" title="Excluir">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+    }).join("");
+  }
+
+  // ============================================================
+  // Exportar Excel
+  // ============================================================
+  function exportExcel(){
+    const lista = getFilteredList();
+    if (!lista.length) {
+      showToast("Não há colaboradoras para exportar com esse filtro.");
+      return;
+    }
+
+    const linhas = lista.map(r => ({
+      "Nome": r.nome || "",
+      "Cargo": r.cargo || "",
+      "Endereço": r.endereco || "",
+      "Número": r.numero || "",
+      "CEP": r.cep || "",
+      "Bairro": r.bairro || "",
+      "Cidade": r.cidade || "",
+      "UF": r.uf || "",
+      "Linha Ida": r.linha_ida || "",
+      "Linha Volta": r.linha_volta || "",
+      "Observação": r.observacao || "",
+      "Status do Link": getFarolStatus(r).label,
+      "Cadastro": r.ativo === false ? "Inativa" : "Ativa",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(linhas);
+    ws["!cols"] = [
+      { wch: 28 }, { wch: 20 }, { wch: 28 }, { wch: 8 }, { wch: 11 },
+      { wch: 18 }, { wch: 18 }, { wch: 5 }, { wch: 20 }, { wch: 20 },
+      { wch: 30 }, { wch: 18 }, { wch: 9 },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Operadoras");
+
+    const hoje = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `operadoras_transporte_${hoje}.xlsx`);
+    showToast(`Planilha exportada com ${lista.length} colaboradora${lista.length > 1 ? "s" : ""}.`);
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+
+  // ============================================================
+  // Formulário (adicionar / editar)
+  // ============================================================
+  function openForm(record){
+    editingId = record ? record.id : null;
+    document.getElementById("form-title").textContent = record ? "Editar colaboradora" : "Adicionar colaboradora";
+
+    document.getElementById("f-nome").value = record?.nome || "";
+    document.getElementById("f-cargo").value = record?.cargo || "";
+    document.getElementById("f-cep").value = record?.cep || "";
+    document.getElementById("f-endereco").value = record?.endereco || "";
+    document.getElementById("f-numero").value = record?.numero || "";
+    document.getElementById("f-bairro").value = record?.bairro || "";
+    document.getElementById("f-cidade").value = record?.cidade || "";
+    document.getElementById("f-uf").value = record?.uf || "";
+    document.getElementById("f-ida").value = record?.linha_ida || "";
+    document.getElementById("f-volta").value = record?.linha_volta || "";
+    document.getElementById("f-obs").value = record?.observacao || "";
+    document.getElementById("f-ativo").checked = record ? record.ativo !== false : true;
+    document.getElementById("cep-status").textContent = "";
+    document.getElementById("cep-status").className = "cep-status";
+
+    document.getElementById("form-overlay").classList.add("open");
+    document.getElementById("f-nome").focus();
+  }
+
+  function closeForm(){
+    document.getElementById("form-overlay").classList.remove("open");
+    editingId = null;
+  }
+
+  window.editRegistro = function(id){
+    const record = registros.find(r => r.id === id);
+    if (record) openForm(record);
+  };
+
+  window.copyLink = function(id){
+    const link = new URL("meu-cadastro.html", location.href);
+    link.searchParams.set("id", id);
+    const url = link.toString();
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url)
+        .then(() => showToast("Link copiado! Envie por WhatsApp para a colaboradora."))
+        .catch(() => fallbackCopy(url));
+    } else {
+      fallbackCopy(url);
+    }
+    markLinkSent(id);
+  };
+
+  window.sendWhatsApp = function(id){
+    const record = registros.find(r => r.id === id);
+    const link = new URL("meu-cadastro.html", location.href);
+    link.searchParams.set("id", id);
+    const url = link.toString();
+
+    const primeiroNome = (record?.nome || "").trim().split(" ")[0] || "";
+    const saudacao = primeiroNome ? `Oi, ${primeiroNome}! ` : "Oi! ";
+    const texto = `${saudacao}Segue o link pra você preencher seu endereço e as linhas de ônibus do transporte: ${url}`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
+    markLinkSent(id);
+  };
+
+  async function markLinkSent(id){
+    const agora = new Date().toISOString();
+    try {
+      const { error } = await TABLE().update({ link_enviado_em: agora }).eq("id", id);
+      if (!error) {
+        const rec = registros.find(r => r.id === id);
+        if (rec) rec.link_enviado_em = agora;
+        renderTable();
+      }
+    } catch (err) {
+      // silencioso — não atrapalha o fluxo de envio se isso falhar
+    }
+  }
+
+  function fallbackCopy(text){
+    const temp = document.createElement("textarea");
+    temp.value = text;
+    temp.style.position = "fixed";
+    temp.style.opacity = "0";
+    document.body.appendChild(temp);
+    temp.select();
+    try {
+      document.execCommand("copy");
+      showToast("Link copiado! Envie por WhatsApp para a colaboradora.");
+    } catch {
+      prompt("Copie o link abaixo:", text);
+    }
+    document.body.removeChild(temp);
+  }
+
+  window.deleteRegistro = async function(id){
+    const record = registros.find(r => r.id === id);
+    if (!record) return;
+    if (!confirm(`Excluir "${record.nome}" do cadastro?`)) return;
+    let error;
+    try {
+      ({ error } = await TABLE().delete().eq("id", id));
+    } catch (err) { showToast(err.message); return; }
+    if (error) { showToast("Erro ao excluir: " + error.message); return; }
+    showToast("Colaboradora excluída.");
+    loadRegistros();
+  };
+
+  async function saveRegistro(){
+    const nome = document.getElementById("f-nome").value.trim();
+    if (!nome) { showToast("Informe o nome."); document.getElementById("f-nome").focus(); return; }
+
+    const payload = {
+      nome,
+      cargo: document.getElementById("f-cargo").value.trim() || null,
+      cep: document.getElementById("f-cep").value.trim() || null,
+      endereco: document.getElementById("f-endereco").value.trim() || null,
+      numero: document.getElementById("f-numero").value.trim() || null,
+      bairro: document.getElementById("f-bairro").value.trim() || null,
+      cidade: document.getElementById("f-cidade").value.trim() || null,
+      uf: document.getElementById("f-uf").value.trim().toUpperCase() || null,
+      linha_ida: document.getElementById("f-ida").value.trim() || null,
+      linha_volta: document.getElementById("f-volta").value.trim() || null,
+      observacao: document.getElementById("f-obs").value.trim() || null,
+      ativo: document.getElementById("f-ativo").checked,
+    };
+
+    let error;
+    try {
+      if (editingId) {
+        ({ error } = await TABLE().update(payload).eq("id", editingId));
+      } else {
+        ({ error } = await TABLE().insert(payload));
+      }
+    } catch (err) { showToast(err.message); return; }
+
+    if (error) { showToast("Erro ao salvar: " + error.message); console.error(error); return; }
+    showToast(editingId ? "Alterações salvas." : "Colaboradora adicionada.");
+    closeForm();
+    loadRegistros();
+  }
+
+  // ============================================================
+  // CEP (ViaCEP)
+  // ============================================================
+  function maskCep(e){
+    let v = e.target.value.replace(/\D/g, "").slice(0, 8);
+    if (v.length > 5) v = v.slice(0,5) + "-" + v.slice(5);
+    e.target.value = v;
+  }
+
+  async function lookupCep(){
+    const cepInput = document.getElementById("f-cep");
+    const status = document.getElementById("cep-status");
+    const cep = cepInput.value.replace(/\D/g, "");
+    if (cep.length !== 8) { status.textContent = ""; status.className = "cep-status"; return; }
+
+    status.textContent = "Buscando...";
+    status.className = "cep-status";
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+      if (data.erro) {
+        status.textContent = "CEP não encontrado";
+        status.className = "cep-status err";
+        return;
+      }
+      document.getElementById("f-endereco").value = data.logradouro || document.getElementById("f-endereco").value;
+      document.getElementById("f-bairro").value = data.bairro || "";
+      document.getElementById("f-cidade").value = data.localidade || "";
+      document.getElementById("f-uf").value = data.uf || "";
+      status.textContent = "Endereço encontrado";
+      status.className = "cep-status ok";
+      if (!document.getElementById("f-numero").value) document.getElementById("f-numero").focus();
+    } catch (err) {
+      status.textContent = "Não foi possível buscar";
+      status.className = "cep-status err";
+    }
+  }
+
+  // ============================================================
+  // Importar Excel
+  // ============================================================
+  function handleFile(e){
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const wb = XLSX.read(evt.target.result, { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        await importRows(rows);
+      } catch (err) {
+        console.error(err);
+        const summary = document.getElementById("import-summary");
+        summary.textContent = "Não foi possível ler o arquivo. Confira o formato e tente novamente.";
+        summary.className = "import-summary err";
+      }
+      e.target.value = "";
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function findCol(row, options){
+    const keys = Object.keys(row);
+    for (const opt of options) {
+      const found = keys.find(k => k.trim().toLowerCase() === opt);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  async function importRows(rows){
+    if (!rows.length) {
+      const summary = document.getElementById("import-summary");
+      summary.textContent = "A planilha está vazia.";
+      summary.className = "import-summary err";
+      return;
+    }
+
+    const nomeKey = findCol(rows[0], ["nome", "nome completo", "colaboradora"]);
+    if (!nomeKey) {
+      const summary = document.getElementById("import-summary");
+      summary.textContent = 'Não encontrei uma coluna "Nome" na planilha.';
+      summary.className = "import-summary err";
+      return;
+    }
+    const cargoKey = findCol(rows[0], ["cargo", "função", "funcao"]);
+
+    const existentes = new Map(registros.map(r => [normalizeName(r.nome), r]));
+
+    let novos = 0, atualizados = 0, ignorados = 0;
+
+    for (const row of rows) {
+      const nome = String(row[nomeKey] || "").trim();
+      if (!nome) { ignorados++; continue; }
+      const cargo = cargoKey ? String(row[cargoKey] || "").trim() : "";
+      const key = normalizeName(nome);
+
+      if (existentes.has(key)) {
+        const existente = existentes.get(key);
+        if (cargo && cargo !== existente.cargo) {
+          await TABLE().update({ cargo }).eq("id", existente.id);
+        }
+        atualizados++;
+      } else {
+        const { error } = await TABLE().insert({ nome, cargo: cargo || null, ativo: true });
+        if (!error) novos++;
+      }
+    }
+
+    const summary = document.getElementById("import-summary");
+    summary.textContent = `Importação concluída: ${novos} adicionada(s), ${atualizados} já existiam (cargo atualizado quando informado)${ignorados ? `, ${ignorados} linha(s) sem nome ignorada(s)` : ""}.`;
+    summary.className = "import-summary ok";
+
+    await loadRegistros();
+  }
+
+  function normalizeName(str){
+    return String(str || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+
+  // ============================================================
+  // Toast
+  // ============================================================
+  function showToast(msg){
+    const toast = document.getElementById("toast");
+    toast.textContent = msg;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2600);
+  }
+  </script>
+</body>
+</html>
