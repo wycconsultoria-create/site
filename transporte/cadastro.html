@@ -155,6 +155,15 @@
   .status-dot::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--success);}
   .status-dot.inativo{color:var(--muted);}
   .status-dot.inativo::before{background:#C6CBD3;}
+
+  .farol{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;white-space:nowrap;}
+  .farol::before{content:"";width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .farol.cinza{color:var(--muted);}
+  .farol.cinza::before{background:#C6CBD3;}
+  .farol.amarelo{color:#9A6B12;}
+  .farol.amarelo::before{background:var(--accent);}
+  .farol.verde{color:var(--success);}
+  .farol.verde::before{background:var(--success);}
   .row-actions{display:flex;gap:6px;}
   .icon-btn{
     border:1px solid var(--border);background:var(--surface);border-radius:7px;
@@ -257,6 +266,7 @@
     .toolbar{padding:12px 16px;gap:8px;}
     .search-box{flex:1 1 100%;min-width:0;}
     .chip-toggle{flex:1 1 auto;justify-content:center;}
+    #filter-farol{flex:1 1 100%;}
     #import-btn, #export-btn, #add-btn{flex:1 1 auto;justify-content:center;}
     #add-btn{order:-1;flex:1 1 100%;}
 
@@ -317,6 +327,12 @@
         <input type="checkbox" id="filter-ativas" checked>
         Somente ativas
       </label>
+      <select id="filter-farol" class="btn" style="font-weight:500;">
+        <option value="todos">Todos os status</option>
+        <option value="nao_enviado">Link não enviado</option>
+        <option value="aguardando">Aguardando resposta</option>
+        <option value="respondeu">Já respondeu</option>
+      </select>
       <button class="btn" id="import-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Importar Excel
@@ -340,7 +356,8 @@
               <th>Colaboradora</th>
               <th>Endereço</th>
               <th>Linhas de ônibus</th>
-              <th>Status</th>
+              <th>Status do link</th>
+              <th>Cadastro</th>
               <th></th>
             </tr>
           </thead>
@@ -543,6 +560,7 @@
     loadRegistros();
     document.getElementById("search-input").addEventListener("input", renderTable);
     document.getElementById("filter-ativas").addEventListener("change", renderTable);
+    document.getElementById("filter-farol").addEventListener("change", renderTable);
     document.getElementById("add-btn").addEventListener("click", () => openForm(null));
     document.getElementById("cancel-btn").addEventListener("click", closeForm);
     document.getElementById("save-btn").addEventListener("click", saveRegistro);
@@ -601,12 +619,21 @@
       <p>${escapeHtml(message)}</p>`;
   }
 
+  function getFarolStatus(r){
+    const respondeu = !!(r.endereco || r.cep || r.linha_ida || r.linha_volta);
+    if (respondeu) return { key: "respondeu", label: "Respondeu", className: "verde" };
+    if (r.link_enviado_em) return { key: "aguardando", label: "Aguardando resposta", className: "amarelo" };
+    return { key: "nao_enviado", label: "Link não enviado", className: "cinza" };
+  }
+
   function getFilteredList(){
     const term = document.getElementById("search-input").value.trim().toLowerCase();
     const somenteAtivas = document.getElementById("filter-ativas").checked;
+    const farolFiltro = document.getElementById("filter-farol").value;
 
     return registros.filter(r => {
       if (somenteAtivas && r.ativo === false) return false;
+      if (farolFiltro !== "todos" && getFarolStatus(r).key !== farolFiltro) return false;
       if (!term) return true;
       return (r.nome || "").toLowerCase().includes(term) || (r.cargo || "").toLowerCase().includes(term);
     });
@@ -638,6 +665,8 @@
         ? `<div class="linha-badges">${r.linha_ida ? '<span><b>Ida </b>' + escapeHtml(r.linha_ida) + '</span>' : ''}${r.linha_volta ? '<span><b>Volta </b>' + escapeHtml(r.linha_volta) + '</span>' : ''}</div>`
         : '<span class="muted-cell">Não informado</span>';
 
+      const farol = getFarolStatus(r);
+
       return `
         <tr>
           <td data-label="Colaboradora">
@@ -646,7 +675,8 @@
           </td>
           <td data-label="Endereço">${enderecoHtml}</td>
           <td data-label="Linhas de ônibus">${linhas}</td>
-          <td data-label="Status">
+          <td data-label="Status do link"><span class="farol ${farol.className}">${farol.label}</span></td>
+          <td data-label="Cadastro">
             <span class="status-dot ${r.ativo === false ? 'inativo' : ''}">${r.ativo === false ? 'Inativa' : 'Ativa'}</span>
           </td>
           <td>
@@ -691,14 +721,15 @@
       "Linha Ida": r.linha_ida || "",
       "Linha Volta": r.linha_volta || "",
       "Observação": r.observacao || "",
-      "Status": r.ativo === false ? "Inativa" : "Ativa",
+      "Status do Link": getFarolStatus(r).label,
+      "Cadastro": r.ativo === false ? "Inativa" : "Ativa",
     }));
 
     const ws = XLSX.utils.json_to_sheet(linhas);
     ws["!cols"] = [
       { wch: 28 }, { wch: 20 }, { wch: 28 }, { wch: 8 }, { wch: 11 },
       { wch: 18 }, { wch: 18 }, { wch: 5 }, { wch: 20 }, { wch: 20 },
-      { wch: 30 }, { wch: 9 },
+      { wch: 30 }, { wch: 18 }, { wch: 9 },
     ];
 
     const wb = XLSX.utils.book_new();
@@ -761,6 +792,7 @@
     } else {
       fallbackCopy(url);
     }
+    markLinkSent(id);
   };
 
   window.sendWhatsApp = function(id){
@@ -774,7 +806,22 @@
     const texto = `${saudacao}Segue o link pra você preencher seu endereço e as linhas de ônibus do transporte: ${url}`;
 
     window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
+    markLinkSent(id);
   };
+
+  async function markLinkSent(id){
+    const agora = new Date().toISOString();
+    try {
+      const { error } = await TABLE().update({ link_enviado_em: agora }).eq("id", id);
+      if (!error) {
+        const rec = registros.find(r => r.id === id);
+        if (rec) rec.link_enviado_em = agora;
+        renderTable();
+      }
+    } catch (err) {
+      // silencioso — não atrapalha o fluxo de envio se isso falhar
+    }
+  }
 
   function fallbackCopy(text){
     const temp = document.createElement("textarea");
