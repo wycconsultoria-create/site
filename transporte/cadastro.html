@@ -255,6 +255,39 @@
 
   #file-input{display:none;}
 
+  /* ---------- Popup de processamento / confirmação ---------- */
+  .popup-overlay{
+    display:none;position:fixed;inset:0;background:rgba(15,20,32,0.5);
+    align-items:center;justify-content:center;padding:20px;z-index:80;
+  }
+  .popup-overlay.open{display:flex;}
+  .popup-card{
+    background:var(--surface);border-radius:16px;padding:32px 28px;
+    text-align:center;max-width:280px;width:100%;
+  }
+  .popup-spinner{
+    width:40px;height:40px;border-radius:50%;margin:0 auto 16px;
+    border:3px solid var(--border);border-top-color:var(--primary);
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .popup-icon{
+    width:52px;height:52px;border-radius:50%;margin:0 auto 16px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .popup-icon.success{background:var(--success-bg);}
+  .popup-icon.success svg{width:26px;height:26px;color:var(--success);}
+  .popup-icon.error{background:var(--danger-bg);}
+  .popup-icon.error svg{width:26px;height:26px;color:var(--danger);}
+  .popup-title{font-size:15.5px;font-weight:700;margin:0 0 4px;}
+  .popup-sub{font-size:13px;color:var(--muted);margin:0;}
+  .popup-btn{
+    margin-top:18px;padding:9px 20px;border:none;border-radius:8px;
+    background:var(--primary);color:#fff;font-size:13.5px;font-weight:600;
+    display:none;
+  }
+  .popup-btn:hover{background:var(--primary-dark);}
+
   /* ---------- Mobile ---------- */
   @media (max-width: 640px){
     header.top{padding:14px 16px;gap:10px;}
@@ -481,6 +514,18 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <div class="popup-overlay" id="popup-overlay">
+    <div class="popup-card">
+      <div id="popup-spinner-wrap">
+        <div class="popup-spinner"></div>
+      </div>
+      <div id="popup-icon-wrap"></div>
+      <p class="popup-title" id="popup-title">Processando...</p>
+      <p class="popup-sub" id="popup-sub">Só um instante.</p>
+      <button class="popup-btn" id="popup-btn">Fechar</button>
+    </div>
+  </div>
 
   <!-- Config do Supabase: mesmo arquivo usado no restante do sistema de transporte -->
   <script src="supabase-config.js"></script>
@@ -852,6 +897,42 @@
     loadRegistros();
   };
 
+  function showPopupProcessing(text){
+    document.getElementById("popup-spinner-wrap").style.display = "block";
+    document.getElementById("popup-icon-wrap").innerHTML = "";
+    document.getElementById("popup-title").textContent = text || "Processando...";
+    document.getElementById("popup-sub").textContent = "Só um instante.";
+    document.getElementById("popup-btn").style.display = "none";
+    document.getElementById("popup-overlay").classList.add("open");
+  }
+
+  function showPopupSuccess(text){
+    document.getElementById("popup-spinner-wrap").style.display = "none";
+    document.getElementById("popup-icon-wrap").innerHTML =
+      '<div class="popup-icon success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>';
+    document.getElementById("popup-title").textContent = text || "Dados salvos!";
+    document.getElementById("popup-sub").textContent = "";
+    document.getElementById("popup-btn").style.display = "none";
+    document.getElementById("popup-overlay").classList.add("open");
+    setTimeout(closePopup, 1200);
+  }
+
+  function showPopupError(message){
+    document.getElementById("popup-spinner-wrap").style.display = "none";
+    document.getElementById("popup-icon-wrap").innerHTML =
+      '<div class="popup-icon error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>';
+    document.getElementById("popup-title").textContent = "Não foi possível salvar";
+    document.getElementById("popup-sub").textContent = message || "Tente novamente em instantes.";
+    document.getElementById("popup-btn").style.display = "inline-block";
+    document.getElementById("popup-overlay").classList.add("open");
+  }
+
+  function closePopup(){
+    document.getElementById("popup-overlay").classList.remove("open");
+  }
+
+  document.getElementById("popup-btn").addEventListener("click", closePopup);
+
   async function saveRegistro(){
     const nome = document.getElementById("f-nome").value.trim();
     if (!nome) { showToast("Informe o nome."); document.getElementById("f-nome").focus(); return; }
@@ -871,6 +952,8 @@
       ativo: document.getElementById("f-ativo").checked,
     };
 
+    showPopupProcessing("Salvando...");
+
     let error;
     try {
       if (editingId) {
@@ -878,10 +961,14 @@
       } else {
         ({ error } = await TABLE().insert(payload));
       }
-    } catch (err) { showToast(err.message); return; }
+    } catch (err) { error = err; }
 
-    if (error) { showToast("Erro ao salvar: " + error.message); console.error(error); return; }
-    showToast(editingId ? "Alterações salvas." : "Colaboradora adicionada.");
+    if (error) {
+      showPopupError(error.message);
+      console.error(error);
+      return;
+    }
+    showPopupSuccess(editingId ? "Alterações salvas!" : "Colaboradora adicionada!");
     closeForm();
     loadRegistros();
   }
