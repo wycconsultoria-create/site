@@ -54,6 +54,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .hide{display:none!important}
 .demo{background:var(--vm);color:#fff;text-align:center;font-size:13px;padding:6px}
 #toast{position:fixed;left:16px;right:16px;bottom:calc(90px + env(safe-area-inset-bottom,0px));max-width:488px;margin:0 auto;background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:10px;font-size:14px}
+.logo{width:220px;height:auto;max-width:80%;display:block;margin:0 auto 18px;}
 </style>
 </head>
 <body>
@@ -62,10 +63,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
 <main id="login">
   <h1>Registro de POS</h1>
-  <p>Entre para registrar as fotos das maquininhas.</p>
+  <p>Informe seu nome para iniciar os registros.</p>
   <div class="card" style="margin-top:18px">
-    <label for="email" id="lblE">E-mail</label><input type="email" id="email" autocomplete="username">
-    <div id="boxS"><label for="senha">Senha</label><input type="password" id="senha" autocomplete="current-password"></div>
+    <label for="email" id="lblE">Nome do fiscal</label><input type="text" id="email" autocomplete="name" placeholder="Digite seu nome">
     <div style="height:14px"></div><button class="pri" id="entrar">Entrar</button>
   </div>
 </main>
@@ -116,9 +116,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <script>
 /* CONFIGURAÇÃO: cole aqui os dados do Supabase (veja o guia). Vazio = modo demonstração. */
 var CFG={URL:"",KEY:"",LOJAS:["313 - Indaiatuba","120 - Campinas","087 - Valinhos"]};
+// MODO TEMPORÁRIO SEM LOGIN: os registros ficam salvos neste navegador.
+var MODO_SEM_LOGIN=true;
+var STORAGE_KEY="paulistao_pos_registros_v1";
+var FISCAL_KEY="paulistao_pos_fiscal_v1";
 
 var $=function(i){return document.getElementById(i)};
-var sb=(CFG.URL&&window.supabase)?supabase.createClient(CFG.URL,CFG.KEY):null;
+var sb=(!MODO_SEM_LOGIN&&CFG.URL&&window.supabase)?supabase.createClient(CFG.URL,CFG.KEY):null;
 var me=null,demo=[],foto=null,hojeL=[],resL=[];
 function toast(t){var e=$("toast");e.textContent=t;e.classList.remove("hide");setTimeout(function(){e.classList.add("hide")},2800)}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
@@ -128,6 +132,13 @@ function dia(n){var d=new Date();d.setHours(0,0,0,0);return new Date(d.getTime()
 
 /* ---------- dados ---------- */
 async function buscar(de,ate,comFoto){
+  if(MODO_SEM_LOGIN){
+    var arr=[];
+    try{arr=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]")}catch(e){arr=[]}
+    return arr.map(function(r){return{id:r.id,uid:r.uid,loja:r.loja,pdv:r.pdv,t:new Date(r.t),fiscal:r.fiscal,path:r.path||"",url:r.url}})
+      .filter(function(r){return r.t>=de&&r.t<=ate})
+      .sort(function(a,b){return b.t-a.t});
+  }
   if(!sb)return demo.filter(function(r){return r.t>=de&&r.t<=ate}).sort(function(a,b){return b.t-a.t});
   var q=await sb.from("registros").select("id,user_id,loja,pdv,criado_em,foto_path,profiles(nome)").gte("criado_em",de.toISOString()).lte("criado_em",ate.toISOString()).order("criado_em",{ascending:false}).limit(1000);
   if(q.error){toast(q.error.message);return[]}
@@ -136,6 +147,12 @@ async function buscar(de,ate,comFoto){
   return q.data.map(function(r,i){return{id:r.id,uid:r.user_id,loja:r.loja,pdv:r.pdv,t:new Date(r.criado_em),fiscal:r.profiles?r.profiles.nome:"-",path:r.foto_path,url:s.data[i]?s.data[i].signedUrl:""}});
 }
 async function gravar(loja,pdv,f){
+  if(MODO_SEM_LOGIN){
+    var arr=[];try{arr=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]")}catch(e){arr=[]}
+    arr.push({id:Date.now(),uid:me.id,loja:loja,pdv:pdv,t:new Date().toISOString(),fiscal:me.nome,url:f.url});
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(arr))}catch(e){throw new Error("O armazenamento deste navegador está cheio. Exclua alguns registros e tente novamente.")}
+    return;
+  }
   if(!sb){demo.push({id:Date.now(),uid:me.id,loja:loja,pdv:pdv,t:new Date(),fiscal:me.nome,url:f.url});return}
   var p=me.id+"/"+Date.now()+".jpg",u=await sb.storage.from("pos-fotos").upload(p,f.blob,{contentType:"image/jpeg"});
   if(u.error)throw u.error;
@@ -143,6 +160,10 @@ async function gravar(loja,pdv,f){
   if(i.error)throw i.error;
 }
 async function apagar(r){
+  if(MODO_SEM_LOGIN){
+    var arr=[];try{arr=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]")}catch(e){arr=[]}
+    arr=arr.filter(function(x){return x.id!==r.id});localStorage.setItem(STORAGE_KEY,JSON.stringify(arr));return;
+  }
   if(!sb){demo=demo.filter(function(x){return x.id!==r.id});return}
   await sb.storage.from("pos-fotos").remove([r.path]);await sb.from("registros").delete().eq("id",r.id);
 }
@@ -211,12 +232,12 @@ async function entrarCom(u,email){
 document.querySelectorAll(".tabs button").forEach(function(b){b.onclick=function(){aba(b.getAttribute("data-t"))}});
 $("entrar").onclick=async function(){
   var e=$("email").value.trim();
-  if(!sb){if(!e){toast("Digite seu nome.");return}me={id:"d",nome:e,role:"admin"};iniciar();return}
-  var r=await sb.auth.signInWithPassword({email:e,password:$("senha").value});
-  if(r.error){toast("E-mail ou senha incorretos.");return}
-  entrarCom(r.data.user,e);
+  if(!e){toast("Digite o nome do fiscal.");return}
+  me={id:"fiscal-"+e.toLowerCase().replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"")||"fiscal",nome:e,role:"fiscal"};
+  localStorage.setItem(FISCAL_KEY,e);
+  iniciar();
 };
-$("sair").onclick=function(){if(sb)sb.auth.signOut();location.reload()};
+$("sair").onclick=function(){localStorage.removeItem(FISCAL_KEY);location.reload()};
 function lerFoto(e){var f=e.target.files[0];if(!f)return;comprimir(f).then(function(c){foto=c;$("shotTxt").innerHTML='<img src="'+c.url+'" alt="Pré-visualização">'})}
 $("foto").onchange=lerFoto;$("foto2").onchange=lerFoto;
 $("salvar").onclick=async function(){
@@ -234,11 +255,16 @@ $("per").onchange=painel;$("busca").onclick=pesquisar;
 $("pdfres").onclick=function(){pdf(resL,"Resultado da pesquisa",$("pdfres"))};
 
 /* ---------- início ---------- */
-if(!sb){
-  $("demo").classList.remove("hide");$("lblE").textContent="Seu nome";$("email").type="text";$("boxS").classList.add("hide");
-  var c=document.createElement("canvas");c.width=640;c.height=860;var x=c.getContext("2d");x.fillStyle="#f4f4f0";x.fillRect(0,0,640,860);x.fillStyle="#333";x.font="28px sans-serif";x.fillText("COMPROVANTE POS (exemplo)",60,100);for(var k=0;k<12;k++)x.fillRect(60,160+k*50,300+(k*37)%240,12);
-  var ph=c.toDataURL("image/jpeg",.7),fs=["Ana","Bruno","Carla"];
-  for(var i=0;i<18;i++)demo.push({id:i+1,uid:"x",loja:CFG.LOJAS[i%3],pdv:String(1+i%6).padStart(2,"0"),t:new Date(Date.now()-(i%9)*864e5-i*36e5),fiscal:fs[i%3],url:ph});
+if(MODO_SEM_LOGIN){
+  $("demo").classList.remove("hide");
+  $("demo").textContent="Modo sem login: registros salvos neste navegador."
+  $("lblE").textContent="Nome do fiscal";
+  $("email").type="text";
+  $("boxS").classList.add("hide");
+  var fiscalSalvo=localStorage.getItem(FISCAL_KEY);
+  if(fiscalSalvo){me={id:"fiscal-"+fiscalSalvo.toLowerCase().replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"")||"fiscal",nome:fiscalSalvo,role:"fiscal"};iniciar()}
+}else if(!sb){
+  $("demo").classList.remove("hide");
 }else{
   sb.auth.getSession().then(function(r){if(r.data.session)entrarCom(r.data.session.user,r.data.session.user.email)});
 }
