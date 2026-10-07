@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Escala Mensal</title>
+<style>
+*{box-sizing:border-box}body{font:14px system-ui,sans-serif;margin:0;background:#f4f5f7;color:#222}
+header{background:#1f2937;color:#fff;padding:10px 16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}.brand{width:84px;height:44px;object-fit:contain;background:#fff;border-radius:5px;padding:2px}.sync-status{margin-left:auto;font-size:11px;color:#cbd5e1}.sync-status[data-state=error]{color:#fecaca}.sync-status[data-state=ok]{color:#bbf7d0}
+header h1{font-size:17px;margin:0}nav button{background:none;border:0;color:#cbd5e1;padding:8px 12px;cursor:pointer;font-size:14px;border-radius:6px}
+nav button.on{background:#374151;color:#fff}main{padding:16px}
+.bar{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+button.p{background:#2563eb;color:#fff;border:0;padding:8px 14px;border-radius:6px;cursor:pointer}
+button.s{background:#fff;border:1px solid #cbd5e1;padding:7px 12px;border-radius:6px;cursor:pointer}
+button.x{background:none;border:0;color:#b91c1c;cursor:pointer}
+input,select{padding:6px;border:1px solid #cbd5e1;border-radius:6px;font:inherit}
+.scroll{overflow:auto;background:#fff;border-radius:8px;border:1px solid #e2e8f0}
+table{border-collapse:collapse}th,td{border:1px solid #e5e7eb;padding:3px 4px;text-align:center;font-size:12px;min-width:46px}
+th{background:#f1f5f9;position:sticky;top:0}.nm{position:sticky;left:0;background:#fff;text-align:left;min-width:150px;z-index:1;white-space:nowrap}
+th.nm{background:#f1f5f9;z-index:2}.sun{background:#fde8e8}tr.sec td{background:#1f2937;color:#fff;text-align:left;font-weight:600}
+tr.cov td{background:#f8fafc;color:#64748b}td.c{cursor:pointer}td.t0{background:#dbeafe}td.t1{background:#dcfce7}td.t2{background:#fef3c7}td.t3{background:#fae8ff}
+td.f{background:#e5e7eb;color:#6b7280;font-weight:700;cursor:pointer}.w{color:#dc2626;cursor:help}.ok{color:#15803d;font-weight:700}.check{min-width:72px!important;white-space:nowrap}.stat{font-size:11px;line-height:1.15}.stat.work{color:#166534}.stat.off{color:#6b7280}.filter{min-width:190px}.summary{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}.summary .box{background:#fff;border:1px solid #dbe3ec;border-radius:8px;padding:7px 10px;font-size:12px}.summary b{font-size:13px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px}.card h3{margin:0 0 8px}
+.colab-list{padding:8px 10px;border:1px solid #e2e8f0;border-radius:7px;margin:6px 0}.colab-list .row{margin:4px 0}.colab-list input[type=text]{min-width:220px}.filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.subsec td{background:#e2e8f0;color:#334155;text-align:left;font-weight:600}.emp-link{cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
+.row{display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap}.bad{color:#dc2626;font-weight:600}.hint{color:#64748b;font-size:12px}
+dialog{border:0;border-radius:10px;padding:18px;box-shadow:0 10px 40px #0005}dialog label{display:block;margin:8px 0 3px}
+</style></head><body>
+<header><img class="brand" src="Logo.png" alt="Paulistão Atacadista"><h1>Escala Mensal</h1><nav>
+<button data-t="escala" class="on">Escala</button><button data-t="colab">Colaboradores</button><button data-t="setores">Setores e horários</button></nav><span id="syncStatus" class="sync-status" aria-live="polite">Iniciando…</span></header>
+<main id="m"></main>
+<dialog id="dlg"><b id="dlgT"></b>
+<label>Situação</label><select id="dSt"><option value="T">Trabalha</option><option value="F">Folga</option></select>
+<label>Turno (vale deste dia em diante)</label><select id="dSh"></select>
+<div class="row" style="margin-top:14px"><button class="p" onclick="applyEdit()">Salvar</button><button class="s" onclick="dlg.close()">Cancelar</button></div></dialog>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const $=s=>document.querySelector(s),LS='escala_v1',WD=['D','S','T','Q','Q','S','S'];
+const supabaseConfigured=!!(window.supabase&&window.ESCALA_SUPABASE_URL&&window.ESCALA_SUPABASE_PUBLISHABLE_KEY&&!window.ESCALA_SUPABASE_PUBLISHABLE_KEY.includes('SUBSTITUA_'));
+const supabaseClient=supabaseConfigured?window.supabase.createClient(window.ESCALA_SUPABASE_URL,window.ESCALA_SUPABASE_PUBLISHABLE_KEY):null;
+let cloudReady=false,cloudSaveTimer=null,cloudChange=0;
+const pad=n=>String(n).padStart(2,'0'),fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x},monOf=d=>addD(d,-((d.getDay()+6)%7));
+const toMin=t=>{const[a,b]=t.split(':').map(Number);return a*60+b},toHM=m=>pad(Math.floor(m/60))+':'+pad(m%60);
+const uid=()=>Math.random().toString(36).slice(2,8),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function def(){const sh=(p,a)=>a.map(([n,s],i)=>({id:p+i,name:n,start:s}));
+return{ym:fmt(new Date()).slice(0,7),cfg:{work:538,lunch:70},macros:[{id:'m1',name:'Frente de Caixa'}],sectors:[
+{id:'s1',name:'Operadores',macro:'m1',shifts:sh('a',[['Entrada','08:00'],['Intermediário','10:00'],['Saída','11:50']])},
+{id:'s2',name:'Fiscais',macro:'m1',shifts:sh('b',[['Entrada','08:00'],['Intermediário','10:00'],['Saída','11:50']])},
+{id:'s3',name:'Portaria',macro:'m1',shifts:sh('c',[['Entrada','08:00'],['Intermediário','10:00'],['Saída','11:50']])}],emps:[],days:{}}}
+let S;try{S=JSON.parse(localStorage.getItem(LS))||def()}catch(e){S=def()}
+function setSyncStatus(message,state=''){const el=$('#syncStatus');if(el){el.textContent=message;el.dataset.state=state}}
+const save=()=>{try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}
+ if(cloudReady){cloudChange++;const seq=cloudChange;clearTimeout(cloudSaveTimer);setSyncStatus('Salvando na nuvem…');cloudSaveTimer=setTimeout(()=>syncCloud(seq),600)}};
+function ensureHierarchy(){let changed=false;if(!Array.isArray(S.macros)||!S.macros.length){
+ const macro={id:'m'+uid(),name:'Frente de Caixa'};S.macros=[macro];
+ const oldFront=S.sectors.find(s=>s.name.trim().toLocaleLowerCase('pt-BR')==='frente de caixa');
+ if(oldFront&&!S.sectors.some(s=>s!==oldFront&&s.name.trim().toLocaleLowerCase('pt-BR')==='operadores'))oldFront.name='Operadores';
+ S.sectors.forEach(s=>s.macro=macro.id);changed=true;
+ }else{const fallback=S.macros[0];S.sectors.forEach(s=>{if(!S.macros.some(m=>m.id===s.macro)){s.macro=fallback.id;changed=true}})}if(changed)save();return changed}
+ensureHierarchy();
+const endOf=st=>toHM(toMin(st)+S.cfg.work+S.cfg.lunch),secOf=id=>S.sectors.find(s=>s.id===id),macroOf=id=>S.macros.find(m=>m.id===id);
+function shiftOn(e,date){const sec=secOf(e.sector);let id=e.shifts[0].shift;for(const c of e.shifts)if(c.from<=date)id=c.shift;return sec.shifts.find(x=>x.id===id)||sec.shifts[0]}
+const newEmp=(name,sector,shift)=>({id:uid(),name,sector,shifts:[{from:'0000-00-00',shift}]});
+const sortEmps=emps=>[...emps].sort((a,b)=>a.name.localeCompare(b.name,'pt-BR',{sensitivity:'base'}));
+
+/* ---------- GERAÇÃO ---------- */
+function gen(){
+ if(!S.emps.length)return alert('Cadastre colaboradores primeiro.');
+ const[y,m]=S.ym.split('-').map(Number),first=new Date(y,m-1,1),last=new Date(y,m,0);
+ for(let w=monOf(first);w<=last;w=addD(w,7)){
+  const wn=Math.floor(Date.UTC(w.getFullYear(),w.getMonth(),w.getDate())/864e5/7);
+  S.sectors.forEach(sec=>{
+   const people=S.emps.filter(e=>e.sector===sec.id);
+   const load=[0,0,0,0,0];
+   const rows=people.map((e,i)=>({e,i,sunWork:((i+wn)%2===0)}));
+   const ordered=[...rows].sort((a,b)=>(b.sunWork?2:1)-(a.sunWork?2:1)||a.i-b.i);
+   ordered.forEach(r=>{
+    const need=r.sunWork?2:1,chosen=[];
+    for(let n=0;n<need;n++){
+     let best=null;
+     for(let d=0;d<5;d++){
+      if(chosen.includes(d))continue;
+      let score=load[d]*1000;
+      if(chosen.length&&Math.abs(d-chosen[0])===1)score+=180;
+      if(chosen.length)score-=Math.abs(d-chosen[0])*25;
+      score+=((d-r.i-wn+50)%5);
+      if(best===null||score<best.score)best={d,score};
+     }
+     chosen.push(best.d);load[best.d]++;
+    }
+    const D=S.days[r.e.id]??={};
+    for(let d=0;d<7;d++){
+     const k=fmt(addD(w,d));
+     D[k]=d===6?(r.sunWork?'T':'F'):(chosen.includes(d)?'F':'T');
+    }
+   });
+  });
+ }
+ save();render();
+}
+
+/* ---------- ESCALA ---------- */
+function weekCheck(e,y,m){
+ const D=S.days[e.id]||{},last=new Date(y,m,0),first=new Date(y,m-1,1),bad=[];
+ for(let w=monOf(first);w<=last;w=addD(w,7)){
+  const dates=[0,1,2,3,4,5,6].map(d=>addD(w,d));
+  if(!dates.every(dt=>dt.getFullYear()===y&&dt.getMonth()===m-1))continue;
+  const ds=dates.map(dt=>D[fmt(dt)]);
+  if(!ds.every(Boolean))continue;
+  const sundayOff=ds[6]==='F',weekOff=ds.slice(0,6).filter(v=>v==='F').length;
+  if((sundayOff&&weekOff!==1)||(!sundayOff&&weekOff!==2))bad.push(fmt(w).split('-').reverse().slice(0,2).join('/'));
+ }
+ return bad.length?`<span class="w check" title="Semana(s) fora da regra 5x2: ${bad.join(', ')}">⚠ 5x2</span>`:`<span class="ok check" title="Semanas completas dentro da regra 5x2">✓ 5x2</span>`;
+}
+function renderEscala(){
+ const[y,m]=S.ym.split('-').map(Number),n=new Date(y,m,0).getDate();
+ const filter=window.escalaSetorFilter||'todos';
+ let empFilter=window.escalaEmpFilter||'todos';if(empFilter!=='todos'&&!S.emps.some(e=>e.id===empFilter)){empFilter='todos';window.escalaEmpFilter='todos'}
+ const visible=S.emps.filter(e=>{if(empFilter!=='todos'&&e.id!==empFilter)return false;if(filter==='todos')return true;if(filter.startsWith('macro:'))return secOf(e.sector)?.macro===filter.slice(6);if(filter.startsWith('area:'))return e.sector===filter.slice(5);return e.sector===filter});
+ const total=visible.length;
+ let h=`<div class="bar"><input type="month" value="${S.ym}" onchange="S.ym=this.value;save();render()">
+ <button class="p" onclick="if(confirm('Reorganizar as folgas deste mês? A distribuição atual será recalculada.'))gen()">Reorganizar folgas</button>
+ <button class="s" onclick="exp()">Exportar backup (JSON)</button>
+ <button class="s" onclick="$('#backupFile').click()">Importar backup JSON</button><input id="backupFile" type="file" accept="application/json,.json" hidden onchange="impBackup(this)">
+ <label class="hint"><b>Filtro macro/ilha:</b> <select class="filter" onchange="window.escalaSetorFilter=this.value;window.escalaEmpFilter='todos';render()">
+ <option value="todos" ${filter==='todos'?'selected':''}>Todas as áreas</option>
+ ${S.macros.map(m=>`<option value="macro:${m.id}" ${filter==='macro:'+m.id?'selected':''}>Macro: ${esc(m.name)}</option>`).join('')}
+ ${S.sectors.map(s=>`<option value="area:${s.id}" ${filter==='area:'+s.id?'selected':''}>${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}
+ </select></label>
+ ${empFilter!=='todos'?`<span class="hint">Exibindo somente: <b>${esc(S.emps.find(e=>e.id===empFilter)?.name||'')}</b> <button class=s onclick="limparFiltroColaboradorEscala()">Mostrar todos</button></span>`:''}
+ <span class="hint">F = folga. Clique numa célula para editar.</span></div>`;
+ if(!visible.length){h+=`<div class="card">Nenhum colaborador encontrado para este filtro.</div>`;$('#m').innerHTML=h;return}
+ const stats=[];
+ for(let d=1;d<=n;d++){
+  const k=fmt(new Date(y,m-1,d));let work=0,off=0;
+  visible.forEach(e=>{const v=(S.days[e.id]||{})[k];if(v==='F')off++;else work++});
+  stats.push({work,off});
+ }
+ h+=`<div class="summary"><div class="box"><b>Total:</b> ${total}</div><div class="box"><b>Regra:</b> semana segunda–domingo / 5x2</div><div class="box"><b>Folgas:</b> distribuídas entre segunda e sábado</div></div>`;
+ h+='<div class="scroll"><table><thead><tr><th class="nm">Colaborador</th>';
+ for(let d=1;d<=n;d++){const w=new Date(y,m-1,d).getDay();h+=`<th class="${w?'':'sun'}">${d}<br><small>${WD[w]}</small></th>`}
+ h+='<th class="check">5x2</th></tr>';
+ h+='<tr class="cov"><th class="nm">TOTAL</th>';stats.forEach(()=>h+=`<th>${total}</th>`);h+='<th class="check">—</th></tr>';
+ h+='<tr class="cov"><th class="nm">TRABALHANDO</th>';stats.forEach(x=>h+=`<th class="stat work">${x.work}<br><small>${total?Math.round(x.work/total*100):0}%</small></th>`);h+='<th class="check">—</th></tr>';
+ h+='<tr class="cov"><th class="nm">FOLGA</th>';stats.forEach(x=>h+=`<th class="stat off">${x.off}<br><small>${total?Math.round(x.off/total*100):0}%</small></th>`);h+='<th class="check">—</th></tr></thead><tbody>';
+ S.macros.forEach(macro=>{
+  const areas=S.sectors.filter(s=>s.macro===macro.id),macroCount=areas.reduce((sum,s)=>sum+visible.filter(e=>e.sector===s.id).length,0);if(!macroCount)return;
+  h+=`<tr class="sec"><td colspan="${n+2}">${esc(macro.name)}</td></tr>`;
+  areas.forEach(sec=>{
+  const emps=sortEmps(visible.filter(e=>e.sector===sec.id));if(!emps.length)return;
+  h+=`<tr class="subsec"><td colspan="${n+2}">${esc(sec.name)} — ${emps.length} colaborador(es)</td></tr>`;
+  const cnt=Array(n+1).fill(0);
+  emps.forEach(e=>{
+   h+=`<tr><td class="nm emp-link" title="Clique para mostrar somente este colaborador" onclick="filtrarColaboradorEscala('${e.id}')">${esc(e.name)}</td>`;
+   for(let d=1;d<=n;d++){
+    const k=fmt(new Date(y,m-1,d)),v=(S.days[e.id]||{})[k],sun=new Date(y,m-1,d).getDay()?'':' sun';
+    if(!v)h+=`<td class="c${sun}" onclick="edit('${e.id}','${k}')"></td>`;
+    else if(v==='F')h+=`<td class="f${sun}" onclick="edit('${e.id}','${k}')">F</td>`;
+    else{const s=shiftOn(e,k);cnt[d]++;h+=`<td class="c t${sec.shifts.indexOf(s)%4}" title="${esc(s.name)} ${s.start}–${endOf(s.start)}" onclick="edit('${e.id}','${k}')">${s.start}</td>`}
+   }
+   h+=`<td class="check">${weekCheck(e,y,m)}</td></tr>`;
+  });
+  h+=`<tr class="cov"><td class="nm">Trabalhando</td>${cnt.slice(1).map(c=>`<td>${c}</td>`).join('')}<td class="check">—</td></tr>`;
+  });
+ });
+ $('#m').innerHTML=h+'</tbody></table></div>';
+}
+function filtrarColaboradorEscala(id){window.escalaEmpFilter=id;window.escalaSetorFilter='todos';render()}
+function limparFiltroColaboradorEscala(){window.escalaEmpFilter='todos';render()}
+let cur;
+function edit(eid,k){const e=S.emps.find(x=>x.id===eid),sec=secOf(e.sector);cur={e,k};
+ $('#dlgT').textContent=e.name+' — '+k.split('-').reverse().join('/');
+ $('#dSt').value=(S.days[e.id]||{})[k]||'T';
+ $('#dSh').innerHTML=sec.shifts.map(s=>`<option value="${s.id}">${esc(s.name)} ${s.start}–${endOf(s.start)}</option>`).join('');
+ $('#dSh').value=shiftOn(e,k).id;$('#dlg').showModal()}
+function applyEdit(){const{e,k}=cur;(S.days[e.id]??={})[k]=$('#dSt').value;const sid=$('#dSh').value;
+ if(sid!==shiftOn(e,k).id){e.shifts=e.shifts.filter(c=>c.from<k);e.shifts.push({from:k,shift:sid})}
+ save();$('#dlg').close();render()}
+function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));a.download='escala-backup.json';a.click()}
+async function impBackup(input){const file=input.files&&input.files[0];if(!file)return;
+ try{const imported=JSON.parse(await file.text());if(!imported||!imported.cfg||!Array.isArray(imported.sectors)||!Array.isArray(imported.emps)||!imported.days)throw new Error('O arquivo não tem o formato de backup esperado.');
+  if(!confirm('Importar este backup vai substituir a escala atual neste navegador e na nuvem. Continuar?'))return;
+  S=imported;ensureHierarchy();save();render();alert('Backup importado. A sincronização com a nuvem será iniciada.');
+ }catch(e){alert('Não foi possível importar o backup: '+e.message)}finally{input.value=''}}
+
+/* ---------- COLABORADORES ---------- */
+function sample(){const q={s1:8,s2:4,s3:3};S.sectors.forEach(sec=>{for(let i=0;i<q[sec.id];i++)S.emps.push(newEmp(sec.name.split(' ')[0]+' '+(i+1),sec.id,sec.shifts[i%sec.shifts.length].id))});save();render()}
+function renderColab(){
+ let h=`<div class=card><h3>Novo colaborador</h3><div class=row><input id=nN placeholder="Nome"><select id=nS>${S.sectors.map(s=>`<option value="${s.id}">${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}</select>
+ <button class=p onclick="addEmp()">Adicionar</button></div><span class=hint>Escolha a ilha/sub-setor. O turno é definido na lista abaixo; mudanças durante o mês são feitas na escala.</span></div>
+ <div class=card><h3>Colaboradores (${S.emps.length})</h3>
+ <div class="filters"><input id="colabSearch" type="text" placeholder="Pesquisar colaborador" value="${esc(window.colabNameFilter||'')}" onkeydown="if(event.key==='Enter')searchColabs()">
+ <button class=p onclick="searchColabs()">Pesquisar colaborador</button>
+ <button class=s onclick="clearColabSearch()">Limpar</button>
+ <label class=hint>Setor macro: <select class=filter onchange="setColabMacroFilter(this.value)"><option value="todos" ${(window.colabMacroFilter||'todos')==='todos'?'selected':''}>Todos</option>${S.macros.map(m=>`<option value="${m.id}" ${(window.colabMacroFilter||'todos')===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select></label>
+ <label class=hint>Sub-setor/ilha: <select class=filter onchange="window.colabAreaFilter=this.value;render()"><option value="todos">Todas</option>${S.sectors.filter(s=>(window.colabMacroFilter||'todos')==='todos'||s.macro===window.colabMacroFilter).map(s=>`<option value="${s.id}" ${(window.colabAreaFilter||'todos')===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label></div>`;
+ const q=(window.colabNameFilter||'').trim().toLocaleLowerCase('pt-BR'),mf=window.colabMacroFilter||'todos',af=window.colabAreaFilter||'todos';
+ const matches=S.emps.filter(e=>{const area=secOf(e.sector);return area&&(mf==='todos'||area.macro===mf)&&(af==='todos'||e.sector===af)&&(!q||e.name.toLocaleLowerCase('pt-BR').includes(q))});
+ if(!matches.length)h+=`<p class=hint>Nenhum colaborador encontrado. Ajuste os filtros ou a pesquisa.</p>`;
+ S.macros.forEach(macro=>{const macroEmps=matches.filter(e=>secOf(e.sector)?.macro===macro.id);if(!macroEmps.length)return;
+  h+=`<h3 style="margin:16px 0 6px">${esc(macro.name)}</h3>`;
+  S.sectors.filter(s=>s.macro===macro.id).forEach(sec=>{const emps=sortEmps(macroEmps.filter(e=>e.sector===sec.id));if(!emps.length)return;
+  h+=`<h4 style="margin:8px 0 4px">${esc(sec.name)} <span class=hint>(${emps.length})</span></h4>`;
+  emps.forEach(e=>{const currentSec=secOf(e.sector);
+   h+=`<div class="colab-list"><div class=row><input type=text aria-label="Nome do colaborador" value="${esc(e.name)}" onchange="setE('${e.id}','name',this.value)">
+   <select aria-label="Sub-setor ou ilha" onchange="setE('${e.id}','sector',this.value)">${S.sectors.map(s=>`<option value="${s.id}" ${s.id===e.sector?'selected':''}>${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}</select>
+   <select aria-label="Turno" onchange="setE('${e.id}','shift',this.value)">${currentSec.shifts.map(s=>`<option value="${s.id}" ${s.id===e.shifts[0].shift?'selected':''}>${esc(s.name)} ${s.start}–${endOf(s.start)}</option>`).join('')}</select>
+   <button class=x onclick="delE('${e.id}')">Excluir</button></div></div>`});
+  });
+ });
+ $('#m').innerHTML=h+'</div>'}
+function searchColabs(){window.colabNameFilter=$('#colabSearch').value.trim();render()}
+function setColabMacroFilter(id){window.colabMacroFilter=id;window.colabAreaFilter='todos';render()}
+function clearColabSearch(){window.colabNameFilter='';window.colabMacroFilter='todos';window.colabAreaFilter='todos';render()}
+function addEmp(){const n=$('#nN').value.trim(),s=$('#nS').value;if(!n)return;S.emps.push(newEmp(n,s,secOf(s).shifts[0].id));save();render()}
+function setE(id,f,v){const e=S.emps.find(x=>x.id===id);
+ if(f==='name')e.name=v;else if(f==='sector'){e.sector=v;e.shifts=[{from:'0000-00-00',shift:secOf(v).shifts[0].id}]}else e.shifts[0].shift=v;
+ save();render()}
+function delE(id){if(!confirm('Excluir colaborador?'))return;S.emps=S.emps.filter(e=>e.id!==id);delete S.days[id];save();render()}
+
+/* ---------- SETORES E HORÁRIOS ---------- */
+function renderSetores(){
+ let h=`<div class=card><h3>Jornada</h3><div class=row><label>Horas trabalhadas <input type=time value="${toHM(S.cfg.work)}" onchange="S.cfg.work=toMin(this.value);save();render()"></label>
+ <label>Almoço <input type=time value="${toHM(S.cfg.lunch)}" onchange="S.cfg.lunch=toMin(this.value);save();render()"></label></div>
+ <span class=hint>Loja 08:00–21:00, com cobertura até 21:58. A saída é calculada: entrada + trabalhadas + almoço. Em vermelho: passa de 21:58.</span></div>`;
+ h+=`<div class=card><h3>Adicionar setor macro</h3><div class=row><input id="newMacro" placeholder="Nome do setor macro" onkeydown="if(event.key==='Enter')addMacro()"><button class=p onclick="addMacro()">Adicionar macro</button></div><span class=hint>Dentro de cada macro, cadastre sub-setores ou ilhas; eles usarão os mesmos filtros, escalas e turnos.</span></div>`;
+ S.macros.forEach(macro=>{
+  h+=`<div class=card><div class=row><b>Setor macro:</b><input value="${esc(macro.name)}" onchange="macroOf('${macro.id}').name=this.value;save();render()"></div>
+  <div class=row><input id="newArea-${macro.id}" placeholder="Nome do sub-setor ou ilha" onkeydown="if(event.key==='Enter')addSector('${macro.id}')"><button class=s onclick="addSector('${macro.id}')">+ Sub-setor/ilha</button></div>`;
+  S.sectors.filter(s=>s.macro===macro.id).forEach(sec=>{
+   h+=`<div class=colab-list><div class=row><b>Sub-setor/ilha:</b><input value="${esc(sec.name)}" onchange="secOf('${sec.id}').name=this.value;save();render()">
+   <label class=hint>Mover para macro: <select onchange="secOf('${sec.id}').macro=this.value;save();render()">${S.macros.map(m=>`<option value="${m.id}" ${m.id===sec.macro?'selected':''}>${esc(m.name)}</option>`).join('')}</select></label>
+   <button class=x onclick="delSector('${sec.id}')">Excluir sub-setor/ilha</button></div>`;
+   sec.shifts.forEach(s=>{const en=endOf(s.start);
+    h+=`<div class=row><input value="${esc(s.name)}" onchange="shOf('${sec.id}','${s.id}').name=this.value;save()">
+    <input type=time value="${s.start}" onchange="shOf('${sec.id}','${s.id}').start=this.value;save();render()">
+    <span class="${toMin(en)>toMin('21:58')?'bad':''}">até ${en}</span>
+    ${sec.shifts.length>1?`<button class=x onclick="delSh('${sec.id}','${s.id}')">Remover</button>`:''}</div>`});
+   h+=`<button class=s onclick="addSh('${sec.id}')">+ Turno</button></div>`
+  });
+  h+=`</div>`;
+ });
+ $('#m').innerHTML=h}
+const shOf=(sid,id)=>secOf(sid).shifts.find(x=>x.id===id);
+function addMacro(){const name=$('#newMacro').value.trim();if(!name)return;if(S.macros.some(m=>m.name.trim().toLocaleLowerCase('pt-BR')===name.toLocaleLowerCase('pt-BR')))return alert('Já existe um setor macro com esse nome.');S.macros.push({id:'m'+uid(),name});save();render()}
+function addSector(macroId){const input=$('#newArea-'+macroId),name=input.value.trim();if(!name)return;
+ if(S.sectors.some(s=>s.macro===macroId&&s.name.trim().toLocaleLowerCase('pt-BR')===name.toLocaleLowerCase('pt-BR')))return alert('Já existe uma ilha/sub-setor com esse nome neste macro.');
+ const p=uid();S.sectors.push({id:'s'+uid(),macro:macroId,name,shifts:[{id:p+'0',name:'Entrada',start:'08:00'},{id:p+'1',name:'Intermediário',start:'10:00'},{id:p+'2',name:'Saída',start:'11:50'}]});save();render()}
+function delSector(id){const sec=secOf(id);if(!sec)return;const count=S.emps.filter(e=>e.sector===id).length;
+ if(count)return alert(`Não é possível excluir "${sec.name}": há ${count} colaborador(es) vinculado(s). Mova-os para outra ilha/sub-setor e tente novamente.`);
+ if(!confirm(`Excluir o sub-setor/ilha "${sec.name}" e seus turnos?`))return;
+ S.sectors=S.sectors.filter(s=>s.id!==id);if(window.escalaSetorFilter==='area:'+id)window.escalaSetorFilter='todos';if(window.colabAreaFilter===id)window.colabAreaFilter='todos';save();render()}
+function addSh(sid){secOf(sid).shifts.push({id:uid(),name:'Novo turno',start:'09:00'});save();render()}
+function delSh(sid,id){const sec=secOf(sid);sec.shifts=sec.shifts.filter(s=>s.id!==id);save();render()}
+
+let tab='escala';window.escalaSetorFilter='todos';window.escalaEmpFilter='todos';window.colabMacroFilter='todos';window.colabAreaFilter='todos';window.colabNameFilter='';
+function render(){({escala:renderEscala,colab:renderColab,setores:renderSetores})[tab]()}
+async function syncCloud(seq=cloudChange){if(!cloudReady||!supabaseClient)return false;
+ try{const {error}=await supabaseClient.from('escala_app_state').upsert({id:1,state:S,updated_at:new Date().toISOString()},{onConflict:'id'});if(error)throw error;
+  if(seq===cloudChange)setSyncStatus('Nuvem sincronizada','ok');return true
+ }catch(e){console.error('Falha ao salvar no Supabase:',e);if(seq===cloudChange)setSyncStatus('Falha ao sincronizar; verifique o Supabase','error');return false}}
+async function boot(){render();if(!supabaseClient){setSyncStatus('Supabase não configurado — dados ficam neste navegador');return}
+ setSyncStatus('Conectando ao Supabase…');const localState=S;
+ try{const {data,error}=await supabaseClient.from('escala_app_state').select('state').eq('id',1).maybeSingle();if(error)throw error;
+  const remote=data&&data.state;
+  if(remote&&typeof remote==='object'&&!Array.isArray(remote)&&Object.keys(remote).length){
+   if(!remote.cfg||!Array.isArray(remote.sectors)||!Array.isArray(remote.emps)||!remote.days)throw new Error('O estado salvo na nuvem está incompleto.');
+   S=remote;const migrated=ensureHierarchy();save();cloudReady=true;
+   if(migrated){cloudChange++;await syncCloud(cloudChange)}else setSyncStatus('Nuvem sincronizada','ok');
+  }else{S=localState;ensureHierarchy();cloudReady=true;cloudChange++;await syncCloud(cloudChange)}
+  render();
+ }catch(e){S=localState;cloudReady=false;console.error('Falha ao conectar ao Supabase:',e);setSyncStatus('Nuvem indisponível — dados locais não sincronizados','error');render()}}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));render()});
+boot();
+</script></body></html>
