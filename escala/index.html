@@ -29,7 +29,7 @@ dialog{border:0;border-radius:10px;padding:18px;box-shadow:0 10px 40px #0005}dia
 <label>Situação</label><select id="dSt"><option value="T">Trabalha</option><option value="F">Folga</option></select>
 <label>Turno (vale deste dia em diante)</label><select id="dSh"></select>
 <div class="row" style="margin-top:14px"><button class="p" onclick="applyEdit()">Salvar</button><button class="s" onclick="dlg.close()">Cancelar</button></div></dialog>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
 <script src="config.js"></script>
 <script>
 const $=s=>document.querySelector(s),LS='escala_v1',WD=['D','S','T','Q','Q','S','S'];
