@@ -33,7 +33,8 @@ dialog{border:0;border-radius:10px;padding:18px;box-shadow:0 10px 40px #0005}dia
 <script src="config.js"></script>
 <script>
 const $=s=>document.querySelector(s),LS='escala_v1',WD=['D','S','T','Q','Q','S','S'];
-const supabaseConfigured=!!(window.supabase&&window.ESCALA_SUPABASE_URL&&window.ESCALA_SUPABASE_PUBLISHABLE_KEY&&!window.ESCALA_SUPABASE_PUBLISHABLE_KEY.includes('SUBSTITUA_'));
+const supabaseLibraryLoaded=!!(window.supabase&&typeof window.supabase.createClient==='function');
+const supabaseConfigured=!!(supabaseLibraryLoaded&&window.ESCALA_SUPABASE_URL&&window.ESCALA_SUPABASE_PUBLISHABLE_KEY&&!window.ESCALA_SUPABASE_PUBLISHABLE_KEY.includes('SUBSTITUA_'));
 const supabaseClient=supabaseConfigured?window.supabase.createClient(window.ESCALA_SUPABASE_URL,window.ESCALA_SUPABASE_PUBLISHABLE_KEY):null;
 let cloudReady=false,cloudSaveTimer=null,cloudChange=0;
 const pad=n=>String(n).padStart(2,'0'),fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -257,7 +258,8 @@ async function syncCloud(seq=cloudChange){if(!cloudReady||!supabaseClient)return
  try{const {error}=await supabaseClient.from('escala_app_state').upsert({id:1,state:S,updated_at:new Date().toISOString()},{onConflict:'id'});if(error)throw error;
   if(seq===cloudChange)setSyncStatus('Nuvem sincronizada','ok');return true
  }catch(e){console.error('Falha ao salvar no Supabase:',e);if(seq===cloudChange)setSyncStatus('Falha ao sincronizar; verifique o Supabase','error');return false}}
-async function boot(){render();if(!supabaseClient){setSyncStatus('Supabase não configurado — dados ficam neste navegador');return}
+async function boot(){render();if(!supabaseLibraryLoaded){setSyncStatus('Arquivo supabase.js não carregou — envie-o para /escala/','error');return}
+ if(!supabaseConfigured){setSyncStatus('Supabase não configurado — confira escala/config.js','error');return}
  setSyncStatus('Conectando ao Supabase…');const localState=S;
  try{const {data,error}=await supabaseClient.from('escala_app_state').select('state').eq('id',1).maybeSingle();if(error)throw error;
   const remote=data&&data.state;
