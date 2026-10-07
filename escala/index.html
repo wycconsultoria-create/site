@@ -24,8 +24,8 @@ dialog{border:0;border-radius:10px;padding:18px;box-shadow:0 10px 40px #0005}dia
 :root{--p:#e3101a;--dark:#2f2388;--acc:#e3101a;--bg:#f3f4fa}
 header{border-bottom:4px solid var(--acc)}header h1{color:var(--acc)}
 .hol{background:#ffe9a8!important}th.hol{background:#ffc20e!important;color:#4a3000}.summary .box.hol{border-color:#ffc20e}
-.dsh{font-weight:600;background:var(--dark);color:#fff;padding:7px 10px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;margin-top:10px}
-.drow{display:flex;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid #eee;flex-wrap:wrap;background:#fff}.drow .n{min-width:150px;font-weight:500}
+.dsh{font-weight:600;font-size:12px;background:var(--dark);color:#fff;padding:2px 10px;border-radius:5px 5px 0 0;display:flex;justify-content:space-between;margin-top:6px;line-height:1.5}
+.drow{display:flex;gap:8px;align-items:center;padding:3px 10px;font-size:13px;border-bottom:1px solid #eee;flex-wrap:wrap;background:#fff}.drow .n{min-width:150px;font-weight:500}.drow select,.drow input{padding:2px 4px;font-size:12px}
 .drow.F{background:#fde2e4}.drow.A{background:#fff0d6}.drow.brk{background:#fff8d6}.drow input.pdv{width:70px}
 .tag{border-radius:10px;padding:2px 8px;font-size:11px;font-weight:600;background:#dde1fa;color:var(--dark)}.tag.r{background:var(--p);color:#fff}
 .hbadge{background:#ffc20e;color:#4a3000;padding:4px 10px;border-radius:12px;font-weight:700}
@@ -70,15 +70,23 @@ const newEmp=(name,sector,shift)=>({id:uid(),name,sector,shifts:[{from:'0000-00-
 const sortEmps=emps=>[...emps].sort((a,b)=>a.name.localeCompare(b.name,'pt-BR',{sensitivity:'base'}));
 
 /* ---------- GERAÇÃO ---------- */
+function balanceShifts(){const[y,m]=S.ym.split('-'),ms=y+'-'+m+'-01',mi=(+y)*12+(+m);
+ S.sectors.forEach(sec=>{const es=sortEmps(S.emps.filter(e=>e.sector===sec.id)),N=es.length,L=sec.shifts.length-1;if(N<3||L<1)return;
+  const close=Math.round(N*5/7),rest=N-close,ids=[];
+  for(let i=0;i<L;i++){const c=Math.floor(rest/L)+(i<rest%L?1:0);for(let j=0;j<c;j++)ids.push(sec.shifts[i].id)}
+  for(let j=0;j<close;j++)ids.push(sec.shifts[L].id);
+  es.forEach((e,i)=>{const id=ids[(i+mi)%N];e.shifts=e.shifts.filter(c=>c.from<ms);e.shifts.push({from:ms,shift:id})})})}
 function gen(){
  if(!S.emps.length)return alert('Cadastre colaboradores primeiro.');
+ if(S.cfg.bal!==false)balanceShifts();
  const[y,m]=S.ym.split('-').map(Number),first=new Date(y,m-1,1),last=new Date(y,m,0);
  for(let w=monOf(first);w<=last;w=addD(w,7)){
   const wn=Math.floor(Date.UTC(w.getFullYear(),w.getMonth(),w.getDate())/864e5/7);
   S.sectors.forEach(sec=>{
    const people=S.emps.filter(e=>e.sector===sec.id);
    const load=[0,0,0,0,0];
-   const rows=people.map((e,i)=>({e,i,sunWork:((i+wn)%2===0)}));
+   const N=people.length,k=N<2?0:Math.max(1,Math.round(N*0.3)),o0=N?(wn*k)%N:0;
+    const rows=people.map((e,i)=>({e,i,sunWork:!(k&&((i-o0)%N+N)%N<k)}));
    const ordered=[...rows].sort((a,b)=>(b.sunWork?2:1)-(a.sunWork?2:1)||a.i-b.i);
    ordered.forEach(r=>{
     const need=r.sunWork?2:1,chosen=[];
@@ -126,6 +134,7 @@ function renderEscala(){
  let h=`<div class="bar"><input type="month" value="${S.ym}" onchange="S.ym=this.value;save();render()">
  <button class="p" onclick="if(confirm('Reorganizar as folgas deste mês? A distribuição atual será recalculada.'))gen()">Reorganizar folgas</button>
  <button class="s" onclick="exp()">Exportar backup (JSON)</button>
+ <label class="hint"><input type="checkbox" ${S.cfg.bal!==false?'checked':''} onchange="S.cfg.bal=this.checked;save()"> Equilibrar turnos ao gerar (folga 30% · abertura/interm. 20% · fechamento 50%)</label>
  <label class="hint"><b>Filtro macro/ilha:</b> <select class="filter" onchange="window.escalaSetorFilter=this.value;render()">
  <option value="todos" ${filter==='todos'?'selected':''}>Todas as áreas</option>
  ${S.macros.map(m=>`<option value="macro:${m.id}" ${filter==='macro:'+m.id?'selected':''}>Macro: ${esc(m.name)}</option>`).join('')}
@@ -275,6 +284,8 @@ function editHol(id,f,v){const x=S.hol.find(h=>h.id===id);if(v)x[f]=v;save();ren
 function delHol(id){S.hol=S.hol.filter(h=>h.id!==id);save();render()}
 
 /* ---------- ESCALA DIÁRIA ---------- */
+const pc=(a,t)=>t?Math.round(a/t*100):0;
+function pctBoxes(t,o,a,c){return `<div class=box><b>Folga:</b> ${pc(o,t)}% <small>(meta 30%)</small></div><div class=box><b>Abertura/Interm.:</b> ${pc(a,t)}% <small>(meta 20%)</small></div><div class=box><b>Fechamento:</b> ${pc(c,t)}% <small>(meta 50%)</small></div>`}
 window.dDay=fmt(new Date());window.dSec='todos';
 const DN=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const dg=(id,k)=>(S.daily[k]||{})[id]||{};
@@ -282,13 +293,13 @@ function setD(id,f,v){const k=window.dDay,o=((S.daily[k]??={})[id]??={});o[f]=v;
 function goDay(v){if(v){window.dDay=v;renderDiario()}}
 function moveDay(n){window.dDay=fmt(addD(new Date(window.dDay+'T12:00'),n));renderDiario()}
 function renderDiario(){
- const k=window.dDay,dt=new Date(k+'T12:00'),hh=holOf(k);let nP=0,nF=0,nA=0,nL=0,nJ=0,body='',any=false;
+ const k=window.dDay,dt=new Date(k+'T12:00'),hh=holOf(k);let nP=0,nF=0,nA=0,nL=0,nJ=0,body='',any=false,tot=0,nOff=0,nOpen=0,nClose=0;
  S.sectors.filter(s=>window.dSec==='todos'||s.id===window.dSec).forEach(sec=>{
   const es=S.emps.filter(e=>e.sector===sec.id);if(!es.length)return;
   es.forEach(e=>{if((S.days[e.id]||{})[k])any=true});
-  const work=es.filter(e=>(S.days[e.id]||{})[k]==='T'),off=es.filter(e=>(S.days[e.id]||{})[k]!=='T');
+  const work=es.filter(e=>(S.days[e.id]||{})[k]==='T'),off=es.filter(e=>(S.days[e.id]||{})[k]!=='T');tot+=es.length;nOff+=off.length;
   body+=`<h3 style="margin:16px 0 0">${esc(macroOf(sec.macro)?.name||'')} › ${esc(sec.name)}</h3>`;
-  sec.shifts.forEach(s=>{const ps=work.filter(e=>shiftOn(e,k).id===s.id);
+  sec.shifts.forEach((s,si)=>{const ps=work.filter(e=>shiftOn(e,k).id===s.id);if(si===sec.shifts.length-1)nClose+=ps.length;else nOpen+=ps.length;
    body+=`<div class=dsh><span>${esc(s.name)} · ${s.start}–${endOf(s.start)}</span><span>${ps.length}</span></div>`;
    if(!ps.length)body+=`<div class=drow><span class=hint>Ninguém neste turno</span></div>`;
    ps.forEach(e=>{const o=dg(e.id,k),st=o.st||'P',br=o.brk||'';
@@ -303,7 +314,7 @@ function renderDiario(){
  const dsel=`<select onchange="window.dSec=this.value;renderDiario()"><option value=todos>Todos os setores</option>${S.sectors.map(s=>`<option value="${s.id}" ${window.dSec===s.id?'selected':''}>${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}</select>`;
  let h=`<div class=bar><button class=s onclick="moveDay(-1)">◀</button><input type=date value="${k}" onchange="goDay(this.value)"><button class=s onclick="moveDay(1)">▶</button>
  <button class=s onclick="goDay(fmt(new Date()))">Hoje</button>${dsel}<b>${DN[dt.getDay()]}</b>${hh?`<span class=hbadge>★ ${esc(hh.n)}</span>`:''}</div>
- <div class=summary><div class=box><b>Presentes:</b> ${nP}</div><div class=box><b>Faltas:</b> ${nF}</div><div class=box><b>Atestados:</b> ${nA}</div><div class=box><b>Em almoço:</b> ${nL}</div><div class=box><b>Em janta:</b> ${nJ}</div></div>`;
+ <div class=summary><div class=box><b>Presentes:</b> ${nP}</div><div class=box><b>Faltas:</b> ${nF}</div><div class=box><b>Atestados:</b> ${nA}</div><div class=box><b>Em almoço:</b> ${nL}</div><div class=box><b>Em janta:</b> ${nJ}</div>${pctBoxes(tot,nOff,nOpen,nClose)}</div>`;
  if(!any)h+=`<div class=card>A escala mensal deste dia ainda não foi gerada. Vá em Escala mensal e clique em Reorganizar folgas.</div>`;
  $('#m').innerHTML=h+body}
 
