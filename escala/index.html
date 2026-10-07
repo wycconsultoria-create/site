@@ -293,7 +293,7 @@ function pctBoxes(t,o,a,c){return `<div class=box><b>Folga:</b> ${pc(o,t)}% <sma
 window.dDay=fmt(new Date());window.dSec='todos';
 const DN=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const dg=(id,k)=>(S.daily[k]||{})[id]||{};
-function setD(id,f,v){const k=window.dDay,o=((S.daily[k]??={})[id]??={});o[f]=v;if(f==='st'&&v!=='P'){o.brk='';o.pdv=''}save();renderDiario()}
+function setD(id,f,v){const k=window.dDay,o=((S.daily[k]??={})[id]??={});o[f]=v;if(f==='st'&&v!=='P'){o.brk='';o.pdv='';o.pdv2=''}save();renderDiario()}
 function goDay(v){if(v){window.dDay=v;renderDiario()}}
 function moveDay(n){window.dDay=fmt(addD(new Date(window.dDay+'T12:00'),n));renderDiario()}
 function renderDiario(){
@@ -311,7 +311,8 @@ function renderDiario(){
     body+=`<div class="drow ${st!=='P'?st:br?'brk':''}"><span class=n>${esc(e.name)}</span>
     <select onchange="setD('${e.id}','st',this.value)"><option value=P ${st==='P'?'selected':''}>Presente</option><option value=F ${st==='F'?'selected':''}>Faltou</option><option value=A ${st==='A'?'selected':''}>Atestado</option></select>
     ${st==='P'?`<select onchange="setD('${e.id}','brk',this.value)"><option value="">—</option><option value=L ${br==='L'?'selected':''}>Almoço</option><option value=J ${br==='J'?'selected':''}>Janta</option></select>
-    <input class=pdv placeholder="PDV" value="${esc(o.pdv||'')}" onchange="setD('${e.id}','pdv',this.value)">
+    <input class=pdv placeholder="PDV 1" value="${esc(o.pdv||'')}" onchange="setD('${e.id}','pdv',this.value)">
+    <input class=pdv placeholder="PDV 2" value="${esc(o.pdv2||'')}" onchange="setD('${e.id}','pdv2',this.value)">
     ${br?`<span class=tag>${br==='L'?'em almoço':'em janta'}</span>`:''}`:`<span class="tag r">${st==='F'?'faltou':'atestado'}</span>`}</div>`});
   });
   if(off.length)body+=`<div class=hint style="margin-top:6px">Folga: ${off.map(e=>esc(e.name)).join(', ')}</div>`});
@@ -336,11 +337,11 @@ function monthData(){const[y,m]=S.ym.split('-').map(Number),n=new Date(y,m,0).ge
  foot.forEach(f=>f.push(''));
  const hs=S.hol.filter(h=>h.d.startsWith(y+'-'+pad(m))).map(h=>h.d.slice(8)+'/'+pad(m)+' '+h.n).join(' · ');
  return{file:'escala_'+S.ym,title:'Escala '+pad(m)+'/'+y,sub:hs?'Feriados (★): '+hs:'',cols,rows,foot,orient:'l'}}
-function dayData(){const k=window.dDay,rows=[],cols=['Turno','Colaborador','Status','Pausa','PDV'],stl={P:'Presente',F:'Faltou',A:'Atestado'};
+function dayData(){const k=window.dDay,rows=[],cols=['Colaborador','Turno','Status','Pausa','PDV 1','PDV 2'],stl={P:'Presente',F:'Faltou',A:'Atestado'};
  S.sectors.filter(s=>window.dSec==='todos'||s.id===window.dSec).forEach(sec=>{const ma=macroOf(sec.macro)?.name||'',es=S.emps.filter(e=>e.sector===sec.id);
   sec.shifts.forEach(s=>sortEmps(es.filter(e=>(S.days[e.id]||{})[k]==='T'&&shiftOn(e,k).id===s.id)).forEach(e=>{const o=((S.daily[k]||{})[e.id])||{};
-   rows.push({macro:ma,sub:sec.name,cells:[s.name+' '+s.start+'–'+endOf(s.start),e.name,stl[o.st||'P'],o.brk==='L'?'Almoço':o.brk==='J'?'Janta':'',o.pdv||'']})}));
-  sortEmps(es.filter(e=>(S.days[e.id]||{})[k]!=='T')).forEach(e=>rows.push({macro:ma,sub:sec.name,cells:['Folga',e.name,'','','']}))});
+   rows.push({macro:ma,sub:sec.name,cells:[e.name,s.name+' '+s.start+'–'+endOf(s.start),stl[o.st||'P'],o.brk==='L'?'Almoço':o.brk==='J'?'Janta':'',o.pdv||'',o.pdv2||'']})}));
+  sortEmps(es.filter(e=>(S.days[e.id]||{})[k]!=='T')).forEach(e=>rows.push({macro:ma,sub:sec.name,cells:[e.name,'Folga','','','','']}))});
  const dt=new Date(k+'T12:00'),h=holOf(k);
  return{file:'escala_diaria_'+k,title:'Escala diária '+k.split('-').reverse().join('/')+' · '+DN[dt.getDay()],sub:h?'Feriado: '+h.n:'',cols,rows,foot:[],orient:'p'}}
 function doExp(kind,f){const D=kind==='m'?monthData():dayData();
@@ -354,7 +355,7 @@ function pdfOut(D){if(!window.jspdf){alert('A biblioteca de PDF não carregou (p
  doc.setFontSize(13);doc.text(D.title,6,10);doc.setFontSize(8);if(D.sub)doc.text(D.sub,6,15,{maxWidth:doc.internal.pageSize.getWidth()-12});
  const body=[];let last='';D.rows.forEach(r=>{const key=r.macro+' › '+r.sub;if(key!==last){body.push([{content:key,colSpan:nc,styles:{halign:'left',fillColor:[47,35,136],textColor:255,fontStyle:'bold'}}]);last=key}body.push(r.cells)});
  D.foot.forEach(r=>body.push(r.map(c=>({content:String(c),styles:{fillColor:[228,230,248],fontStyle:'bold'}}))));
- doc.autoTable({head:[D.cols],body,startY:18,theme:'grid',margin:{left:6,right:6},styles:{fontSize:L?5:8,cellPadding:L?0.5:1,halign:'center',lineWidth:0.1},headStyles:{fillColor:[227,16,26]},columnStyles:{[L?0:1]:{halign:'left',cellWidth:L?34:55}},
+ doc.autoTable({head:[D.cols],body,startY:18,theme:'grid',margin:{left:6,right:6},styles:{fontSize:L?5:8,cellPadding:L?0.5:1,halign:'center',lineWidth:0.1},headStyles:{fillColor:[227,16,26]},columnStyles:{0:{halign:'left',cellWidth:L?34:50}},
   didParseCell:h=>{if(h.section!=='body')return;if(h.cell.raw==='F')h.cell.styles.fillColor=[220,220,226];if(h.cell.raw==='REVISAR'||h.cell.raw==='Faltou')h.cell.styles.textColor=[200,0,0]}});
  doc.save(D.file+'.pdf')}
 
