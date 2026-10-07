@@ -24,15 +24,18 @@ dialog{border:0;border-radius:10px;padding:18px;box-shadow:0 10px 40px #0005}dia
 :root{--p:#e3101a;--dark:#2f2388;--acc:#e3101a;--bg:#f3f4fa}
 header{border-bottom:4px solid var(--acc)}header h1{color:var(--acc)}
 .hol{background:#ffe9a8!important}th.hol{background:#ffc20e!important;color:#4a3000}.summary .box.hol{border-color:#ffc20e}
-.dsh{font-weight:600;font-size:12px;background:var(--dark);color:#fff;padding:2px 10px;border-radius:5px 5px 0 0;display:flex;justify-content:space-between;margin-top:6px;line-height:1.5}
-.drow{display:flex;gap:8px;align-items:center;padding:3px 10px;font-size:13px;border-bottom:1px solid #eee;flex-wrap:wrap;background:#fff}.drow .n{min-width:150px;font-weight:500}.drow select,.drow input{padding:2px 4px;font-size:12px}
+.dsh{font-weight:600;font-size:12px;background:var(--dark);color:#fff;padding:0 8px;border-radius:4px;display:flex;justify-content:space-between;margin-top:3px;line-height:1.45;font-size:11px}
+.drow{display:flex;gap:8px;align-items:center;padding:2px 8px;font-size:13px;border-bottom:1px solid #eee;flex-wrap:wrap;background:#fff}.drow .n{min-width:150px;font-weight:500}.drow select,.drow input{padding:2px 4px;font-size:12px}
 .drow.F{background:#fde2e4}.drow.A{background:#fff0d6}.drow.brk{background:#fff8d6}.drow input.pdv{width:70px}
 .tag{border-radius:10px;padding:2px 8px;font-size:11px;font-weight:600;background:#dde1fa;color:var(--dark)}.tag.r{background:var(--p);color:#fff}
 .hbadge{background:#ffc20e;color:#4a3000;padding:4px 10px;border-radius:12px;font-weight:700}
 header{background:#fff;border-bottom:5px solid var(--p);padding:8px 16px;gap:20px}
 header h1{color:var(--dark);font-size:24px}header .logo{height:140px;width:140px;display:block}
 nav button{color:var(--dark);font-weight:600}nav button.on{background:var(--dark);color:#fff}nav button:hover{background:#e4e6f8}nav button.on:hover{background:var(--dark)}
-</style></head><body>
+</style><script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head><body>
 <header><img class="logo" alt="Paulistão Atacadista" src="data:image/png;base64,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"><h1>Escala de Colaboradores</h1><nav>
 <button data-t="escala" class="on">Escala mensal</button><button data-t="diario">Escala diária</button><button data-t="colab">Colaboradores</button><button data-t="setores">Setores e horários</button><button data-t="feriados">Feriados</button></nav></header>
 <main id="m"></main>
@@ -133,7 +136,8 @@ function renderEscala(){
  const total=visible.length;
  let h=`<div class="bar"><input type="month" value="${S.ym}" onchange="S.ym=this.value;save();render()">
  <button class="p" onclick="if(confirm('Reorganizar as folgas deste mês? A distribuição atual será recalculada.'))gen()">Reorganizar folgas</button>
- <button class="s" onclick="exp()">Exportar backup (JSON)</button>
+ <button class="s" onclick="exp()">Backup (JSON)</button>
+ <button class="s" onclick="doExp('m','xlsx')">Excel (.xlsx)</button><button class="s" onclick="doExp('m','ods')">LibreOffice (.ods)</button><button class="s" onclick="doExp('m','pdf')">PDF</button>
  <label class="hint"><input type="checkbox" ${S.cfg.bal!==false?'checked':''} onchange="S.cfg.bal=this.checked;save()"> Equilibrar turnos ao gerar (folga 30% · abertura/interm. 20% · fechamento 50%)</label>
  <label class="hint"><b>Filtro macro/ilha:</b> <select class="filter" onchange="window.escalaSetorFilter=this.value;render()">
  <option value="todos" ${filter==='todos'?'selected':''}>Todas as áreas</option>
@@ -298,10 +302,10 @@ function renderDiario(){
   const es=S.emps.filter(e=>e.sector===sec.id);if(!es.length)return;
   es.forEach(e=>{if((S.days[e.id]||{})[k])any=true});
   const work=es.filter(e=>(S.days[e.id]||{})[k]==='T'),off=es.filter(e=>(S.days[e.id]||{})[k]!=='T');tot+=es.length;nOff+=off.length;
-  body+=`<h3 style="margin:16px 0 0">${esc(macroOf(sec.macro)?.name||'')} › ${esc(sec.name)}</h3>`;
+  body+=`<h3 style="margin:10px 0 2px;font-size:14px">${esc(macroOf(sec.macro)?.name||'')} › ${esc(sec.name)}</h3>`;
   sec.shifts.forEach((s,si)=>{const ps=work.filter(e=>shiftOn(e,k).id===s.id);if(si===sec.shifts.length-1)nClose+=ps.length;else nOpen+=ps.length;
-   body+=`<div class=dsh><span>${esc(s.name)} · ${s.start}–${endOf(s.start)}</span><span>${ps.length}</span></div>`;
-   if(!ps.length)body+=`<div class=drow><span class=hint>Ninguém neste turno</span></div>`;
+   body+=`<div class=dsh><span>${esc(s.name)} · ${s.start}–${endOf(s.start)}${ps.length?'':' · ninguém'}</span><span>${ps.length}</span></div>`;
+   
    ps.forEach(e=>{const o=dg(e.id,k),st=o.st||'P',br=o.brk||'';
     if(st==='F')nF++;else if(st==='A')nA++;else{nP++;if(br==='L')nL++;if(br==='J')nJ++}
     body+=`<div class="drow ${st!=='P'?st:br?'brk':''}"><span class=n>${esc(e.name)}</span>
@@ -313,10 +317,46 @@ function renderDiario(){
   if(off.length)body+=`<div class=hint style="margin-top:6px">Folga: ${off.map(e=>esc(e.name)).join(', ')}</div>`});
  const dsel=`<select onchange="window.dSec=this.value;renderDiario()"><option value=todos>Todos os setores</option>${S.sectors.map(s=>`<option value="${s.id}" ${window.dSec===s.id?'selected':''}>${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}</select>`;
  let h=`<div class=bar><button class=s onclick="moveDay(-1)">◀</button><input type=date value="${k}" onchange="goDay(this.value)"><button class=s onclick="moveDay(1)">▶</button>
- <button class=s onclick="goDay(fmt(new Date()))">Hoje</button>${dsel}<b>${DN[dt.getDay()]}</b>${hh?`<span class=hbadge>★ ${esc(hh.n)}</span>`:''}</div>
+ <button class=s onclick="goDay(fmt(new Date()))">Hoje</button>${dsel}<button class=s onclick="doExp('d','xlsx')">Excel</button><button class=s onclick="doExp('d','ods')">LibreOffice</button><button class=s onclick="doExp('d','pdf')">PDF</button><b>${DN[dt.getDay()]}</b>${hh?`<span class=hbadge>★ ${esc(hh.n)}</span>`:''}</div>
  <div class=summary><div class=box><b>Presentes:</b> ${nP}</div><div class=box><b>Faltas:</b> ${nF}</div><div class=box><b>Atestados:</b> ${nA}</div><div class=box><b>Em almoço:</b> ${nL}</div><div class=box><b>Em janta:</b> ${nJ}</div>${pctBoxes(tot,nOff,nOpen,nClose)}</div>`;
  if(!any)h+=`<div class=card>A escala mensal deste dia ainda não foi gerada. Vá em Escala mensal e clique em Reorganizar folgas.</div>`;
  $('#m').innerHTML=h+body}
+
+/* ---------- EXPORTAÇÃO ---------- */
+function visEmps(){const f=window.escalaSetorFilter||'todos';return S.emps.filter(e=>{if(f==='todos')return true;if(f.startsWith('macro:'))return secOf(e.sector)?.macro===f.slice(6);if(f.startsWith('area:'))return e.sector===f.slice(5);return e.sector===f})}
+function monthData(){const[y,m]=S.ym.split('-').map(Number),n=new Date(y,m,0).getDate(),vis=visEmps(),cols=['Colaborador'],rows=[];
+ for(let d=1;d<=n;d++){const dt=new Date(y,m-1,d);cols.push(d+' '+WD[dt.getDay()]+(holOf(fmt(dt))?'★':''))}
+ cols.push('5x2');
+ S.macros.forEach(ma=>S.sectors.filter(s=>s.macro===ma.id).forEach(sec=>sortEmps(vis.filter(e=>e.sector===sec.id)).forEach(e=>{
+  const c=[e.name];for(let d=1;d<=n;d++){const k=fmt(new Date(y,m-1,d)),v=(S.days[e.id]||{})[k];c.push(!v?'':v==='F'?'F':shiftOn(e,k).start)}
+  c.push(weekCheck(e,y,m).includes('⚠')?'REVISAR':'OK');rows.push({macro:ma.name,sub:sec.name,cells:c})})));
+ const T=vis.length,foot=[['TOTAL'],['TRABALHANDO'],['FOLGA']];
+ for(let d=1;d<=n;d++){const k=fmt(new Date(y,m-1,d));let off=0;vis.forEach(e=>{if((S.days[e.id]||{})[k]==='F')off++});
+  foot[0].push(T);foot[1].push((T-off)+' ('+pc(T-off,T)+'%)');foot[2].push(off+' ('+pc(off,T)+'%)')}
+ foot.forEach(f=>f.push(''));
+ const hs=S.hol.filter(h=>h.d.startsWith(y+'-'+pad(m))).map(h=>h.d.slice(8)+'/'+pad(m)+' '+h.n).join(' · ');
+ return{file:'escala_'+S.ym,title:'Escala '+pad(m)+'/'+y,sub:hs?'Feriados (★): '+hs:'',cols,rows,foot,orient:'l'}}
+function dayData(){const k=window.dDay,rows=[],cols=['Turno','Colaborador','Status','Pausa','PDV'],stl={P:'Presente',F:'Faltou',A:'Atestado'};
+ S.sectors.filter(s=>window.dSec==='todos'||s.id===window.dSec).forEach(sec=>{const ma=macroOf(sec.macro)?.name||'',es=S.emps.filter(e=>e.sector===sec.id);
+  sec.shifts.forEach(s=>sortEmps(es.filter(e=>(S.days[e.id]||{})[k]==='T'&&shiftOn(e,k).id===s.id)).forEach(e=>{const o=((S.daily[k]||{})[e.id])||{};
+   rows.push({macro:ma,sub:sec.name,cells:[s.name+' '+s.start+'–'+endOf(s.start),e.name,stl[o.st||'P'],o.brk==='L'?'Almoço':o.brk==='J'?'Janta':'',o.pdv||'']})}));
+  sortEmps(es.filter(e=>(S.days[e.id]||{})[k]!=='T')).forEach(e=>rows.push({macro:ma,sub:sec.name,cells:['Folga',e.name,'','','']}))});
+ const dt=new Date(k+'T12:00'),h=holOf(k);
+ return{file:'escala_diaria_'+k,title:'Escala diária '+k.split('-').reverse().join('/')+' · '+DN[dt.getDay()],sub:h?'Feriado: '+h.n:'',cols,rows,foot:[],orient:'p'}}
+function doExp(kind,f){const D=kind==='m'?monthData():dayData();
+ if(f==='pdf')return pdfOut(D);
+ if(!window.XLSX)return alert('A biblioteca de planilhas não carregou (precisa de internet). Recarregue a página ou use o PDF.');
+ const aoa=[[D.title],[D.sub],[],['Setor macro','Sub-setor',...D.cols],...D.rows.map(r=>[r.macro,r.sub,...r.cells]),...D.foot.map(r=>['','',...r])];
+ const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:18},{wch:16},{wch:26},...D.cols.slice(1).map(()=>({wch:kind==='m'?7:14}))];
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Escala');XLSX.writeFile(wb,D.file+'.'+f,{bookType:f})}
+function pdfOut(D){if(!window.jspdf){alert('A biblioteca de PDF não carregou (precisa de internet). Vou abrir a impressão do navegador: escolha "Salvar como PDF".');return window.print()}
+ const L=D.orient==='l',doc=new jspdf.jsPDF({orientation:L?'landscape':'portrait',unit:'mm',format:'a4'}),nc=D.cols.length;
+ doc.setFontSize(13);doc.text(D.title,6,10);doc.setFontSize(8);if(D.sub)doc.text(D.sub,6,15,{maxWidth:doc.internal.pageSize.getWidth()-12});
+ const body=[];let last='';D.rows.forEach(r=>{const key=r.macro+' › '+r.sub;if(key!==last){body.push([{content:key,colSpan:nc,styles:{halign:'left',fillColor:[47,35,136],textColor:255,fontStyle:'bold'}}]);last=key}body.push(r.cells)});
+ D.foot.forEach(r=>body.push(r.map(c=>({content:String(c),styles:{fillColor:[228,230,248],fontStyle:'bold'}}))));
+ doc.autoTable({head:[D.cols],body,startY:18,theme:'grid',margin:{left:6,right:6},styles:{fontSize:L?5:8,cellPadding:L?0.5:1,halign:'center',lineWidth:0.1},headStyles:{fillColor:[227,16,26]},columnStyles:{[L?0:1]:{halign:'left',cellWidth:L?34:55}},
+  didParseCell:h=>{if(h.section!=='body')return;if(h.cell.raw==='F')h.cell.styles.fillColor=[220,220,226];if(h.cell.raw==='REVISAR'||h.cell.raw==='Faltou')h.cell.styles.textColor=[200,0,0]}});
+ doc.save(D.file+'.pdf')}
 
 let tab='escala';window.escalaSetorFilter='todos';window.colabMacroFilter='todos';window.colabAreaFilter='todos';window.colabNameFilter='';
 function render(){({escala:renderEscala,diario:renderDiario,colab:renderColab,setores:renderSetores,feriados:renderFeriados})[tab]()}
