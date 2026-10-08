@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="config.js"></script>
 <style>
 :root{--bg:#F2F4F8;--card:#fff;--ink:#16203A;--mute:#5B667D;--line:#D5DBE7;--az:#1B3A8F;--vm:#D6202B;--on:#fff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -139,8 +140,8 @@ a{color:var(--az);font-weight:600}
 <div id="toast" class="hide" role="status"></div>
 
 <script>
-/* CONFIGURAÇÃO: cole aqui os dados do Supabase (veja o guia). Vazio = modo demonstração. */
-var CFG={URL:"",KEY:"",EMAIL:"paulistao14.frente@paulistaoatacadista.com.br",LOJAS:["313 - Indaiatuba","120 - Campinas","087 - Valinhos"]};
+/* Os dados do Supabase ficam no arquivo config.js (veja o guia). Sem config.js = modo demonstração. */
+var CFG=window.CFG||{URL:"",KEY:"",EMAIL:"paulistao14.frente@paulistaoatacadista.com.br",LOJAS:["313 - Indaiatuba"]};
 
 var $=function(i){return document.getElementById(i)};
 var sb=(CFG.URL&&window.supabase)?supabase.createClient(CFG.URL,CFG.KEY):null;
@@ -346,8 +347,10 @@ $("per").onchange=painel;$("busca").onclick=pesquisar;
 $("pdfres").onclick=function(){pdf(resL,"Resultado da pesquisa",$("pdfres"))};
 
 /* ---------- início ---------- */
+var falha=!!CFG.URL&&!window.supabase;
 $("email").value=CFG.EMAIL;$("email").readOnly=true;carregarNomes();
-if(!sb){
+if(falha){$("demo").textContent="Não foi possível conectar ao banco de dados. Atualize a página e verifique a internet.";$("demo").classList.remove("hide");$("login").classList.add("hide")}
+else if(!sb){
   $("demo").classList.remove("hide");$("boxE").classList.add("hide");$("boxS").classList.add("hide");
   var c=document.createElement("canvas");c.width=640;c.height=860;var x=c.getContext("2d");x.fillStyle="#f4f4f0";x.fillRect(0,0,640,860);x.fillStyle="#333";x.font="28px sans-serif";x.fillText("COMPROVANTE POS (exemplo)",60,100);for(var k=0;k<12;k++)x.fillRect(60,160+k*50,300+(k*37)%240,12);
   var ph=c.toDataURL("image/jpeg",.7),fs=["Ana","Bruno","Carla"];
