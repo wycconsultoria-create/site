@@ -78,7 +78,7 @@ a{color:var(--az);font-weight:600}
 </main>
 
 <main id="app" class="hide">
-  <div class="tabs hide" id="tabs"><button data-t="reg">Registrar</button><button data-t="pai">Painel</button><button data-t="pes">Pesquisar</button><button data-t="fis">Fiscais</button></div>
+  <div class="tabs hide" id="tabs"><button data-t="reg">Registrar</button><button data-t="pai">Painel</button><button data-t="pes">Pesquisar</button><button data-t="fis">Cadastros</button></div>
 
   <section id="p-reg">
     <h2>Novo registro</h2>
@@ -117,13 +117,20 @@ a{color:var(--az);font-weight:600}
     <div style="height:10px"></div><button class="sec" id="pdfres" disabled>Baixar PDF dos resultados</button>
   </section>
   <section id="p-fis" class="hide">
-    <h2>Fiscais</h2>
+    <h2>Cadastro de fiscais</h2>
     <div class="card">
       <label for="nf">Nome do novo fiscal</label><input type="text" id="nf" placeholder="Ex.: Wilson">
       <div style="height:14px"></div><button class="pri" id="addf">Adicionar fiscal</button>
     </div>
     <h2>Lista de fiscais</h2>
     <div class="card" id="lf"></div>
+    <h2>Cadastro de lojas</h2>
+    <div class="card">
+      <label for="nl">Nova loja (número e nome)</label><input type="text" id="nl" placeholder="Ex.: 120 - Campinas">
+      <div style="height:14px"></div><button class="pri" id="addl">Adicionar loja</button>
+    </div>
+    <h2>Lista de lojas</h2>
+    <div class="card" id="lj"></div>
   </section>
 </main>
 
@@ -227,13 +234,13 @@ function aba(n){
   ["reg","pai","pes","fis"].forEach(function(k){$("p-"+k).classList.toggle("hide",k!==n)});
   document.querySelectorAll(".tabs button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-t")===n)});
   $("bar").classList.toggle("hide",n!=="reg");
-  if(n==="reg")hoje();if(n==="pai")painel();if(n==="fis")fisRender();
+  if(n==="reg")hoje();if(n==="pai")painel();if(n==="fis"){fisRender();lojasRender()}
   if(n==="pes"){if(!$("de").value){var h=new Date(),s=h.getFullYear()+"-"+String(h.getMonth()+1).padStart(2,"0")+"-"+String(h.getDate()).padStart(2,"0");$("de").value=s;$("ate").value=s}pesquisar()}
 }
-function iniciar(){
+async function iniciar(){await carregarLojas();
   $("login").classList.add("hide");$("app").classList.remove("hide");$("ub").classList.remove("hide");$("quem").textContent=me.nome;
   $("tabs").classList.toggle("hide",me.role!=="admin");$("mov").value=iso(new Date());$("mov").max=iso(new Date());
-  $("loja").innerHTML=CFG.LOJAS.map(function(l){return"<option>"+esc(l)+"</option>"}).join("");aba("reg");
+  aba("reg");
 }
 async function entrarCom(u,email,nome){
   var p=await sb.from("profiles").select("nome,role").eq("id",u.id).single(),role=p.data?p.data.role:"fiscal";
@@ -246,6 +253,21 @@ var demoF=[{id:1,nome:"Ana"},{id:2,nome:"Bruno"},{id:3,nome:"Carla"}],admMode=fa
 async function listaF(){if(!sb)return demoF.slice();var q=await sb.from("fiscais").select("id,nome").order("nome");return q.data||[]}
 async function carregarNomes(){var l=await listaF();$("fiscal").innerHTML='<option value="">Selecione seu nome</option>'+l.map(function(f){return"<option>"+esc(f.nome)+"</option>"}).join("")}
 async function fisRender(){var l=await listaF();$("lf").innerHTML=l.length?l.map(function(f){return'<div class="row"><b>'+esc(f.nome)+'</b><div class="ac"><button class="x" data-i="'+f.id+'">Remover</button></div></div>'}).join(""):"<p>Nenhum fiscal cadastrado.</p>"}
+
+var demoL=CFG.LOJAS.map(function(n,i){return{id:i+1,nome:n}}),LOJAS=CFG.LOJAS.slice();
+async function listaL(){if(!sb)return demoL.slice();var q=await sb.from("lojas").select("id,nome").order("nome");return q.data||[]}
+function fillLoja(){$("loja").innerHTML=LOJAS.map(function(l){return"<option>"+esc(l)+"</option>"}).join("")}
+async function carregarLojas(){var l=await listaL();if(l.length)LOJAS=l.map(function(x){return x.nome});fillLoja()}
+async function lojasRender(){var l=await listaL();$("lj").innerHTML=l.length?l.map(function(f){return'<div class="row" data-id="'+f.id+'" data-n="'+esc(f.nome)+'"><b>'+esc(f.nome)+'</b><div class="ac"><button class="ed" data-a="le">Editar</button><button class="x" data-a="lx">Remover</button></div></div>'}).join(""):"<p>Nenhuma loja cadastrada ainda.</p>"}
+async function renomearLoja(id,velho,novo){
+  if(!sb){demoL.forEach(function(x){if(String(x.id)===id)x.nome=novo});demo.forEach(function(r){if(r.loja===velho)r.loja=novo})}
+  else{
+    var q=await sb.from("lojas").update({nome:novo}).eq("id",id);
+    if(q.error){toast(q.error.code==="23505"?"Essa loja já existe.":"Erro: "+q.error.message);return}
+    await sb.from("registros").update({loja:novo}).eq("loja",velho);
+  }
+  toast("Loja atualizada.");await carregarLojas();lojasRender();
+}
 
 /* ---------- eventos ---------- */
 document.querySelectorAll(".tabs button").forEach(function(b){b.onclick=function(){aba(b.getAttribute("data-t"))}});
@@ -288,8 +310,24 @@ $("salvar").onclick=async function(){
   catch(e){toast("Erro ao salvar: "+(e.message||e))}
   b.disabled=false;
 };
+$("addl").onclick=async function(){
+  var n=$("nl").value.trim();if(!n)return;
+  if(!sb)demoL.push({id:Date.now(),nome:n});
+  else{var q=await sb.from("lojas").insert({nome:n});if(q.error){toast(q.error.code==="23505"?"Essa loja já existe.":"Erro: "+q.error.message);return}}
+  $("nl").value="";toast("Loja adicionada.");await carregarLojas();lojasRender();
+};
+$("lj").onclick=async function(e){
+  var b=e.target.closest("button[data-a]");if(!b)return;
+  var row=b.closest(".row"),id=row.getAttribute("data-id"),n=row.getAttribute("data-n"),a=b.getAttribute("data-a");
+  if(a==="le"){row.innerHTML='<input type="text" value="'+esc(n)+'" aria-label="Nome da loja" style="flex:1"><div class="ac"><button class="ed" data-a="ls">Salvar</button><button class="x" data-a="lc">Cancelar</button></div>';return}
+  if(a==="lc"){lojasRender();return}
+  if(a==="ls"){var nv=row.querySelector("input").value.trim();if(nv&&nv!==n)await renomearLoja(id,n,nv);else lojasRender();return}
+  if(b.textContent!=="Confirmar?"){b.textContent="Confirmar?";setTimeout(function(){b.textContent="Remover"},3000);return}
+  if(!sb)demoL=demoL.filter(function(x){return String(x.id)!==id});else await sb.from("lojas").delete().eq("id",id);
+  await carregarLojas();lojasRender();
+};
 var edR=null,edF=null;
-function abrirEd(r,f){edR=r;edF=f;var l=CFG.LOJAS.slice();if(l.indexOf(r.loja)<0)l.push(r.loja);$("eloja").innerHTML=l.map(function(o){return"<option"+(o===r.loja?" selected":"")+">"+esc(o)+"</option>"}).join("");$("epdv").value=r.pdv;$("emov").value=iso(r.m);$("emov").max=iso(new Date());$("ed").classList.remove("hide")}
+function abrirEd(r,f){edR=r;edF=f;var l=LOJAS.slice();if(l.indexOf(r.loja)<0)l.push(r.loja);$("eloja").innerHTML=l.map(function(o){return"<option"+(o===r.loja?" selected":"")+">"+esc(o)+"</option>"}).join("");$("epdv").value=r.pdv;$("emov").value=iso(r.m);$("emov").max=iso(new Date());$("ed").classList.remove("hide")}
 $("ecancel").onclick=function(){$("ed").classList.add("hide")};
 $("esalvar").onclick=async function(){var p=$("epdv").value.trim();if(!p){toast("Informe o PDV.");return}
   if(!$("emov").value){toast("Informe a data do movimento.");return}
