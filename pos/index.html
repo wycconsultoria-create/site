@@ -85,6 +85,7 @@ a{color:var(--az);font-weight:600}
     <div class="card">
       <label for="loja">Loja</label><select id="loja"></select>
       <label for="pdv">PDV</label><input type="text" id="pdv" inputmode="numeric" placeholder="Ex.: 04">
+      <label for="mov">Data do movimento</label><input type="date" id="mov">
       <label>Foto do POS</label>
       <div class="shot"><span id="shotTxt">Toque para tirar a foto</span><input type="file" id="foto" accept="image/*" capture="environment" aria-label="Tirar foto do POS"></div>
       <div class="shot alt"><span>Ou escolher da galeria</span><input type="file" id="foto2" accept="image/*" aria-label="Escolher foto da galeria"></div>
@@ -107,8 +108,8 @@ a{color:var(--az);font-weight:600}
     <h2>Pesquisar registros</h2>
     <div class="card">
       <label for="q">Loja, PDV ou fiscal</label><input type="text" id="q" placeholder="Ex.: Indaiatuba">
-      <label for="de">De</label><input type="date" id="de">
-      <label for="ate">Até</label><input type="date" id="ate">
+      <label for="de">Movimento de</label><input type="date" id="de">
+      <label for="ate">Movimento até</label><input type="date" id="ate">
       <div style="height:14px"></div><button class="pri" id="busca">Pesquisar</button>
     </div>
     <h2 id="resn">Resultados</h2>
@@ -127,12 +128,12 @@ a{color:var(--az);font-weight:600}
 </main>
 
 <div class="bar hide" id="bar"><button class="pri" id="gerar" disabled>Baixar PDF do dia</button></div>
-<div id="ed" class="ov hide"><div class="card"><h2 style="margin-top:0">Editar legenda</h2><label for="eloja">Loja</label><select id="eloja"></select><label for="epdv">PDV</label><input type="text" id="epdv" inputmode="numeric"><div style="height:14px"></div><button class="pri" id="esalvar">Salvar alteração</button><div style="height:8px"></div><button class="sec" id="ecancel">Cancelar</button></div></div>
+<div id="ed" class="ov hide"><div class="card"><h2 style="margin-top:0">Editar legenda</h2><label for="eloja">Loja</label><select id="eloja"></select><label for="epdv">PDV</label><input type="text" id="epdv" inputmode="numeric"><label for="emov">Data do movimento</label><input type="date" id="emov"><div style="height:14px"></div><button class="pri" id="esalvar">Salvar alteração</button><div style="height:8px"></div><button class="sec" id="ecancel">Cancelar</button></div></div>
 <div id="toast" class="hide" role="status"></div>
 
 <script>
 /* CONFIGURAÇÃO: cole aqui os dados do Supabase (veja o guia). Vazio = modo demonstração. */
-var CFG={URL:"https://fdqnwzvqmcucdmcnvoql.supabase.co",KEY:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkcW53enZxbWN1Y2RtY252b3FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNzE4MjcsImV4cCI6MjEwNjk0NzgyN30.nNPVxrLQcaSUvPB_RL1Kpij2ZbwzT7HguzgbpExSkNw",EMAIL:"paulistao14.frente@paulistaoatacadista.com.br",LOJAS:["313 - Indaiatuba","309 - Campinas","300 - Rio Claro"]};
+var CFG={URL:"",KEY:"",EMAIL:"paulistao14.frente@paulistaoatacadista.com.br",LOJAS:["313 - Indaiatuba","120 - Campinas","087 - Valinhos"]};
 
 var $=function(i){return document.getElementById(i)};
 var sb=(CFG.URL&&window.supabase)?supabase.createClient(CFG.URL,CFG.KEY):null;
@@ -141,32 +142,38 @@ function toast(t){var e=$("toast");e.textContent=t;e.classList.remove("hide");se
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function fmt(d){return d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}
 function fmtC(d){return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"2-digit"})+", "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function pdata(s){var a=s.split("-");return new Date(+a[0],+a[1]-1,+a[2])}
+function fmtD(d){return d.toLocaleDateString("pt-BR")}
 function dia(n){var d=new Date();d.setHours(0,0,0,0);return new Date(d.getTime()-n*864e5)}
 
 /* ---------- dados ---------- */
-async function buscar(de,ate,comFoto){
-  if(!sb)return demo.filter(function(r){return r.t>=de&&r.t<=ate}).sort(function(a,b){return b.t-a.t});
-  var q=await sb.from("registros").select("id,user_id,loja,pdv,criado_em,foto_path,fiscal").gte("criado_em",de.toISOString()).lte("criado_em",ate.toISOString()).order("criado_em",{ascending:false}).limit(1000);
+async function buscar(de,ate,comFoto,campo){
+  var mv=campo==="movimento";
+  if(!sb){var k=mv?"m":"t";return demo.filter(function(r){return r[k]>=de&&r[k]<=ate}).sort(function(a,b){return b.t-a.t})}
+  var q=sb.from("registros").select("id,user_id,loja,pdv,criado_em,foto_path,fiscal,movimento");
+  q=mv?q.gte("movimento",iso(de)).lte("movimento",iso(ate)).order("movimento",{ascending:false}).order("criado_em",{ascending:false}):q.gte("criado_em",de.toISOString()).lte("criado_em",ate.toISOString()).order("criado_em",{ascending:false});
+  q=await q.limit(1000);
   if(q.error){toast(q.error.message);return[]}
   var s={data:[]};
   if(comFoto&&q.data.length)s=await sb.storage.from("pos-fotos").createSignedUrls(q.data.map(function(r){return r.foto_path}),3600);
-  return q.data.map(function(r,i){return{id:r.id,uid:r.user_id,loja:r.loja,pdv:r.pdv,t:new Date(r.criado_em),fiscal:r.fiscal||"-",path:r.foto_path,url:s.data[i]?s.data[i].signedUrl:""}});
+  return q.data.map(function(r,i){return{id:r.id,uid:r.user_id,loja:r.loja,pdv:r.pdv,t:new Date(r.criado_em),m:pdata(r.movimento),fiscal:r.fiscal||"-",path:r.foto_path,url:s.data[i]?s.data[i].signedUrl:""}});
 }
-async function gravar(loja,pdv,f){
-  if(!sb){demo.push({id:Date.now(),uid:me.id,loja:loja,pdv:pdv,t:new Date(),fiscal:me.nome,url:f.url});return}
+async function gravar(loja,pdv,f,mov){
+  if(!sb){demo.push({id:Date.now(),uid:me.id,loja:loja,pdv:pdv,t:new Date(),m:pdata(mov),fiscal:me.nome,url:f.url});return}
   var p=me.id+"/"+Date.now()+".jpg",u=await sb.storage.from("pos-fotos").upload(p,f.blob,{contentType:"image/jpeg"});
   if(u.error)throw u.error;
-  var i=await sb.from("registros").insert({loja:loja,pdv:pdv,foto_path:p,fiscal:me.nome});
+  var i=await sb.from("registros").insert({loja:loja,pdv:pdv,foto_path:p,fiscal:me.nome,movimento:mov});
   if(i.error)throw i.error;
 }
 async function apagar(r){
   if(!sb){demo=demo.filter(function(x){return x.id!==r.id});return}
   await sb.storage.from("pos-fotos").remove([r.path]);await sb.from("registros").delete().eq("id",r.id);
 }
-async function editar(r,loja,pdv){
-  if(!sb){r.loja=loja;r.pdv=pdv;return true}
-  var q=await sb.from("registros").update({loja:loja,pdv:pdv}).eq("id",r.id).select("id");
-  if(q.error||!q.data.length){toast("Sem permissão para editar. Falta rodar o SQL do guia (passo 2).");return false}
+async function editar(r,loja,pdv,mov){
+  if(!sb){r.loja=loja;r.pdv=pdv;r.m=pdata(mov);return true}
+  var q=await sb.from("registros").update({loja:loja,pdv:pdv,movimento:mov}).eq("id",r.id).select("id");
+  if(q.error||!q.data.length){toast("Sem permissão para editar. Falta rodar o SQL do guia.");return false}
   return true;
 }
 function comprimir(f){return new Promise(function(ok){var im=new Image();im.onload=function(){var s=Math.min(1,1280/im.width),c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);c.toBlob(function(b){ok({blob:b,url:c.toDataURL("image/jpeg",.7)})},"image/jpeg",.7)};im.src=URL.createObjectURL(f)})}
@@ -177,8 +184,9 @@ function medida(u){return new Promise(function(ok){var im=new Image();im.onload=
 async function pdf(lista,titulo,btn){
   var t0=btn.textContent;btn.disabled=true;btn.textContent="Gerando PDF...";
   try{
+    lista=lista.slice().sort(function(a,b){return a.m-b.m||a.t-b.t});
     var d=new jspdf.jsPDF({unit:"mm",format:"a4"}),X=[10,108],n=0,y0=22;
-    var ts=lista.map(function(r){return r.t.getTime()}),da=new Date(Math.min.apply(null,ts)).toLocaleDateString("pt-BR"),db=new Date(Math.max.apply(null,ts)).toLocaleDateString("pt-BR");
+    var ts=lista.map(function(r){return r.m.getTime()}),da=fmtD(new Date(Math.min.apply(null,ts))),db=fmtD(new Date(Math.max.apply(null,ts)));
     d.setFontSize(16);d.text("Paulistão Atacadista - POS - Movimento: "+(da===db?da:da+" a "+db),10,14);
     for(var i=0;i<lista.length;i++){
       var r=lista[i],u=await paraDataUrl(r.url),m=await medida(u),s=Math.min(60/m.w,80/m.h);
@@ -194,7 +202,7 @@ async function pdf(lista,titulo,btn){
 }
 
 /* ---------- telas ---------- */
-function linha(r,x){return'<div class="row"><img src="'+r.url+'" alt="Foto do POS"><div><b>Loja '+esc(r.loja)+'</b><small>PDV '+esc(r.pdv)+' · '+esc(r.fiscal)+'<br>'+fmt(r.t)+'</small></div>'+(x?'<div class="ac"><button class="ed" data-a="e" data-i="'+r.id+'">Editar</button><button class="x" data-a="x" data-i="'+r.id+'">Excluir</button></div>':'')+'</div>'}
+function linha(r,x){return'<div class="row"><img src="'+r.url+'" alt="Foto do POS"><div><b>Loja '+esc(r.loja)+'</b><small>PDV '+esc(r.pdv)+' · '+esc(r.fiscal)+'<br>Movimento '+fmtD(r.m)+' · foto '+fmt(r.t)+'</small></div>'+(x?'<div class="ac"><button class="ed" data-a="e" data-i="'+r.id+'">Editar</button><button class="x" data-a="x" data-i="'+r.id+'">Excluir</button></div>':'')+'</div>'}
 async function hoje(){
   hojeL=(await buscar(dia(0),new Date(dia(0).getTime()+864e5-1),true)).filter(function(r){return r.fiscal===me.nome});
   $("lista").innerHTML=hojeL.length?hojeL.map(function(r){return linha(r,true)}).join(""):"<p>Nenhum registro ainda. Tire a primeira foto acima.</p>";
@@ -203,14 +211,14 @@ async function hoje(){
 }
 function barras(o,cron){var k=Object.keys(o);if(!cron)k.sort(function(a,b){return o[b]-o[a]});k=k.slice(0,10);var m=Math.max.apply(null,k.map(function(n){return o[n]}))||1;return k.map(function(n){return'<div class="b"><span>'+esc(n)+'</span><i style="width:'+(o[n]/m*100)+'%"></i><b>'+o[n]+'</b></div>'}).join("")||"<p>Sem dados no período.</p>"}
 async function painel(){
-  var n=+$("per").value,l=await buscar(dia(n),new Date(),false),a={},b={},c={};
-  l.forEach(function(r){a[r.loja]=(a[r.loja]||0)+1;b[r.fiscal]=(b[r.fiscal]||0)+1;var k=r.t.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});c[k]=(c[k]||0)+1});
+  var n=+$("per").value,l=await buscar(dia(n),new Date(),false,"movimento"),a={},b={},c={};
+  l.forEach(function(r){a[r.loja]=(a[r.loja]||0)+1;b[r.fiscal]=(b[r.fiscal]||0)+1;var k=r.m.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});c[k]=(c[k]||0)+1});
   $("k1").textContent=l.length;$("k2").textContent=Object.keys(a).length;$("k3").textContent=Object.keys(b).length;
   $("g1").innerHTML=barras(a);$("g2").innerHTML=barras(b);$("g3").innerHTML=barras(c,true);
 }
 async function pesquisar(){
   var de=$("de").value?new Date($("de").value+"T00:00:00"):dia(30),ate=$("ate").value?new Date($("ate").value+"T23:59:59"):new Date(),q=$("q").value.toLowerCase();
-  resL=(await buscar(de,ate,true)).filter(function(r){return(r.loja+" "+r.pdv+" "+r.fiscal).toLowerCase().indexOf(q)>-1});
+  resL=(await buscar(de,ate,true,"movimento")).filter(function(r){return(r.loja+" "+r.pdv+" "+r.fiscal).toLowerCase().indexOf(q)>-1});
   $("resn").textContent=resL.length+" resultado(s)";
   $("res").innerHTML=resL.length?resL.map(function(r){return linha(r,true)}).join(""):"<p>Nada encontrado.</p>";
   $("pdfres").disabled=!resL.length;
@@ -224,7 +232,7 @@ function aba(n){
 }
 function iniciar(){
   $("login").classList.add("hide");$("app").classList.remove("hide");$("ub").classList.remove("hide");$("quem").textContent=me.nome;
-  $("tabs").classList.toggle("hide",me.role!=="admin");
+  $("tabs").classList.toggle("hide",me.role!=="admin");$("mov").value=iso(new Date());$("mov").max=iso(new Date());
   $("loja").innerHTML=CFG.LOJAS.map(function(l){return"<option>"+esc(l)+"</option>"}).join("");aba("reg");
 }
 async function entrarCom(u,email,nome){
@@ -274,16 +282,18 @@ $("salvar").onclick=async function(){
   var p=$("pdv").value.trim();
   if(!p){toast("Informe o número do PDV.");return}
   if(!foto){toast("Tire a foto do POS antes de salvar.");return}
+  if(!$("mov").value){toast("Informe a data do movimento.");return}
   var b=$("salvar");b.disabled=true;
-  try{await gravar($("loja").value,p,foto);foto=null;$("pdv").value="";$("foto").value="";$("foto2").value="";$("shotTxt").textContent="Toque para tirar a foto";toast("Registro salvo.");hoje()}
+  try{await gravar($("loja").value,p,foto,$("mov").value);foto=null;$("pdv").value="";$("foto").value="";$("foto2").value="";$("shotTxt").textContent="Toque para tirar a foto";toast("Registro salvo.");hoje()}
   catch(e){toast("Erro ao salvar: "+(e.message||e))}
   b.disabled=false;
 };
 var edR=null,edF=null;
-function abrirEd(r,f){edR=r;edF=f;var l=CFG.LOJAS.slice();if(l.indexOf(r.loja)<0)l.push(r.loja);$("eloja").innerHTML=l.map(function(o){return"<option"+(o===r.loja?" selected":"")+">"+esc(o)+"</option>"}).join("");$("epdv").value=r.pdv;$("ed").classList.remove("hide")}
+function abrirEd(r,f){edR=r;edF=f;var l=CFG.LOJAS.slice();if(l.indexOf(r.loja)<0)l.push(r.loja);$("eloja").innerHTML=l.map(function(o){return"<option"+(o===r.loja?" selected":"")+">"+esc(o)+"</option>"}).join("");$("epdv").value=r.pdv;$("emov").value=iso(r.m);$("emov").max=iso(new Date());$("ed").classList.remove("hide")}
 $("ecancel").onclick=function(){$("ed").classList.add("hide")};
 $("esalvar").onclick=async function(){var p=$("epdv").value.trim();if(!p){toast("Informe o PDV.");return}
-  if(await editar(edR,$("eloja").value,p)){$("ed").classList.add("hide");toast("Legenda atualizada.");edF()}};
+  if(!$("emov").value){toast("Informe a data do movimento.");return}
+  if(await editar(edR,$("eloja").value,p,$("emov").value)){$("ed").classList.add("hide");toast("Legenda atualizada.");edF()}};
 async function acao(e,get,refresh){
   var b=e.target.closest("button[data-a]");if(!b)return;
   var r=get().filter(function(x){return String(x.id)===b.getAttribute("data-i")})[0];if(!r)return;
@@ -303,7 +313,7 @@ if(!sb){
   $("demo").classList.remove("hide");$("boxE").classList.add("hide");$("boxS").classList.add("hide");
   var c=document.createElement("canvas");c.width=640;c.height=860;var x=c.getContext("2d");x.fillStyle="#f4f4f0";x.fillRect(0,0,640,860);x.fillStyle="#333";x.font="28px sans-serif";x.fillText("COMPROVANTE POS (exemplo)",60,100);for(var k=0;k<12;k++)x.fillRect(60,160+k*50,300+(k*37)%240,12);
   var ph=c.toDataURL("image/jpeg",.7),fs=["Ana","Bruno","Carla"];
-  for(var i=0;i<18;i++)demo.push({id:i+1,uid:"x",loja:CFG.LOJAS[i%3],pdv:String(1+i%6).padStart(2,"0"),t:new Date(Date.now()-(i%9)*864e5-i*36e5),fiscal:fs[i%3],url:ph});
+  for(var i=0;i<18;i++){var tt=new Date(Date.now()-(i%9)*864e5-i*36e5);demo.push({id:i+1,uid:"x",loja:CFG.LOJAS[i%3],pdv:String(1+i%6).padStart(2,"0"),t:tt,m:new Date(tt.getFullYear(),tt.getMonth(),tt.getDate()),fiscal:fs[i%3],url:ph})}
 }else{
   sb.auth.getSession().then(function(r){if(r.data.session){var n=null;try{n=localStorage.getItem("pos_fiscal")}catch(e){}entrarCom(r.data.session.user,r.data.session.user.email,n)}});
 }
