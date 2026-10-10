@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paulistão - Registros</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="config.js"></script>
+<style>
+:root{--bg:#F2F4F8;--card:#fff;--ink:#16203A;--mute:#5B667D;--line:#D5DBE7;--az:#1B3A8F;--vm:#D6202B;--on:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1424;--card:#171F36;--ink:#E8ECF6;--mute:#9AA6C0;--line:#2A3556;--az:#8AA6FF;--vm:#FF6B73;--on:#0E1424}}
+:root[data-theme="dark"]{--bg:#0E1424;--card:#171F36;--ink:#E8ECF6;--mute:#9AA6C0;--line:#2A3556;--az:#8AA6FF;--vm:#FF6B73;--on:#0E1424}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.4 Archivo,system-ui,sans-serif}
+header{background:var(--card);border-bottom:3px solid var(--vm);padding:14px 16px 10px;display:flex;flex-direction:column;align-items:center;gap:8px}
+header img{height:76px;max-width:100%;background:#fff;border-radius:8px}
+.ub{display:flex;align-items:center;gap:12px;font-weight:600;font-size:14px}
+header button{width:auto;padding:6px 12px;background:transparent;color:var(--az);border:1px solid var(--line)}
+main{max-width:520px;margin:0 auto;padding:16px 16px 110px}
+h1{font-size:24px;font-weight:800;margin:0 0 4px;color:var(--az)}
+h2{font-size:17px;font-weight:600;margin:22px 0 10px}
+p{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+label{display:block;font-weight:600;font-size:14px;margin:12px 0 6px}
+input[type=text],input[type=email],input[type=password],input[type=date],select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+button{font:inherit;font-weight:600;border:0;border-radius:12px;padding:14px;cursor:pointer;width:100%}
+.pri{background:var(--az);color:var(--on)}
+.red{background:var(--vm);color:#fff}
+.sec{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--vm);outline-offset:2px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px}
+a{color:var(--az);font-weight:600}
+.tabs button{padding:11px 2px;font-size:14px;background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.tabs button.on{background:var(--az);color:var(--on);border-color:var(--az)}
+.shot{position:relative;display:flex;align-items:center;justify-content:center;min-height:150px;border:2px dashed var(--line);border-radius:12px;color:var(--mute);overflow:hidden;text-align:center;padding:8px}
+.shot input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+.shot.alt{min-height:0;margin-top:8px;padding:12px;border-style:solid}
+.shot img{width:100%;max-height:260px;object-fit:cover;border-radius:8px}
+.row{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row img{width:64px;height:64px;object-fit:cover;border-radius:8px;flex:none;background:var(--line)}
+.row b{display:block}.row small{color:var(--mute)}
+.x{width:auto;padding:8px 10px;background:transparent;color:var(--vm);margin-left:auto}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.kpi div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;border-top:3px solid var(--vm)}
+.kpi b{display:block;font-size:26px;color:var(--az)}.kpi small{color:var(--mute)}
+.b{display:grid;grid-template-columns:1fr 1.6fr auto;gap:8px;align-items:center;margin:8px 0;font-size:14px}
+.b i{height:12px;background:var(--az);border-radius:6px;display:block}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line)}
+.bar button{max-width:488px;display:block;margin:0 auto}
+.ac{margin-left:auto;display:flex;flex-direction:column;gap:2px}
+.ed{width:auto;padding:8px 10px;background:transparent;color:var(--az)}
+.ac button{white-space:nowrap}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:5}
+.ov .card{width:100%;max-width:420px}
+.home{display:grid;gap:14px;margin-top:18px}
+.opt{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:24px 18px;border-radius:16px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-left:8px solid var(--az)}
+.opt.rec{border-left-color:var(--vm)}
+.opt b{font-size:30px;color:var(--az)}.opt.rec b{color:var(--vm)}
+.opt span{color:var(--mute);font-weight:400}
+.modt{display:inline-block;background:var(--az);color:var(--on);border-radius:999px;padding:3px 14px;font-size:14px;font-weight:600;margin:0 0 10px}
+.modt.rec{background:var(--vm);color:#fff}
+.hide{display:none!important}
+.demo{background:var(--vm);color:#fff;text-align:center;font-size:13px;padding:6px}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(90px + env(safe-area-inset-bottom,0px));max-width:488px;margin:0 auto;background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:10px;font-size:14px}
+</style>
+</head>
+<body>
+<header><img src="data:image/png;base64,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" alt="Paulistão Atacadista"><div class="ub hide" id="ub"><span id="quem"></span><button id="inicio" class="hide">Início</button><button id="sair">Sair</button></div></header>
+<div class="demo hide" id="demo">Modo demonstração: dados fictícios, nada é salvo de verdade.</div>
+
+<main id="login">
+  <h1>Registros</h1>
+  <p id="lp">Escolha seu nome e digite a senha.</p>
+  <div class="card" style="margin-top:18px">
+    <div id="boxE"><label for="email">Acesso</label><input type="email" id="email" autocomplete="username"></div>
+    <div id="boxN"><label for="fiscal">Seu nome</label><select id="fiscal"></select></div>
+    <div id="boxS"><label for="senha">Senha</label><input type="password" id="senha" autocomplete="current-password"></div>
+    <div style="height:14px"></div><button class="pri" id="entrar">Entrar</button>
+  </div>
+  <p style="text-align:center;margin-top:16px"><a href="#" id="adm">Sou administrador</a></p>
+</main>
+
+<main id="home" class="hide">
+  <h1>O que você vai registrar?</h1>
+  <p>Escolha uma opção.</p>
+  <div class="home">
+    <button class="opt" data-m="pos"><b>POS</b><span>Fotos das maquininhas, por loja e PDV</span></button>
+    <button class="opt rec" data-m="rec"><b>Rec</b><span>Fotos por nome do cliente</span></button>
+  </div>
+</main>
+
+<main id="app" class="hide">
+  <div class="modt" id="modt">POS</div>
+  <div class="tabs hide" id="tabs"><button data-t="reg">Registrar</button><button data-t="pai">Painel</button><button data-t="pes">Pesquisar</button><button data-t="fis">Cadastros</button></div>
+
+  <section id="p-reg">
+    <h2>Novo registro</h2>
+    <div class="card">
+      <label for="loja">Loja</label><select id="loja"></select>
+      <div id="gPdv"><label for="pdv">PDV</label><input type="text" id="pdv" inputmode="numeric" placeholder="Ex.: 04"></div>
+      <div id="gCli" class="hide"><label for="cli">Nome do cliente</label><input type="text" id="cli" placeholder="Ex.: André" autocomplete="off"></div>
+      <div id="gMov"><label for="mov">Data do movimento</label><input type="date" id="mov"></div>
+      <label id="fotoLbl">Foto do POS</label>
+      <div class="shot"><span id="shotTxt">Toque para tirar a foto</span><input type="file" id="foto" accept="image/*" capture="environment" aria-label="Tirar foto do POS"></div>
+      <div class="shot alt"><span>Ou escolher da galeria</span><input type="file" id="foto2" accept="image/*" aria-label="Escolher foto da galeria"></div>
+      <div style="height:14px"></div><button class="red" id="salvar">Salvar registro</button>
+    </div>
+    <h2 id="tit">Meus registros de hoje</h2>
+    <div class="card" id="lista"></div>
+  </section>
+
+  <section id="p-pai" class="hide">
+    <h2>Painel de quantidade</h2>
+    <select id="per" aria-label="Período"><option value="0">Hoje</option><option value="7" selected>Últimos 7 dias</option><option value="30">Últimos 30 dias</option></select>
+    <div class="kpi"><div><b id="k1">0</b><small>fotos</small></div><div><b id="k2">0</b><small>lojas</small></div><div><b id="k3">0</b><small>fiscais</small></div></div>
+    <div class="card"><b>Por loja</b><div id="g1"></div></div>
+    <div class="card" style="margin-top:10px"><b>Por fiscal</b><div id="g2"></div></div>
+    <div class="card" style="margin-top:10px"><b>Por dia</b><div id="g3"></div></div>
+  </section>
+
+  <section id="p-pes" class="hide">
+    <h2>Pesquisar registros</h2>
+    <div class="card">
+      <label for="q" id="lq">Loja, PDV ou fiscal</label><input type="text" id="q" placeholder="Ex.: Indaiatuba">
+      <label for="de" id="lde">Movimento de</label><input type="date" id="de">
+      <label for="ate" id="late">Movimento até</label><input type="date" id="ate">
+      <div style="height:14px"></div><button class="pri" id="busca">Pesquisar</button>
+    </div>
+    <h2 id="resn">Resultados</h2>
+    <div class="card" id="res"><p>Sem busca ainda. Por padrão mostra os últimos 30 dias.</p></div>
+    <div id="boxPdfRes"><div style="height:10px"></div><button class="sec" id="pdfres" disabled>Baixar PDF dos resultados</button></div>
+  </section>
+  <section id="p-fis" class="hide">
+    <h2>Cadastro de fiscais</h2>
+    <div class="card">
+      <label for="nf">Nome do novo fiscal</label><input type="text" id="nf" placeholder="Ex.: Wilson">
+      <div style="height:14px"></div><button class="pri" id="addf">Adicionar fiscal</button>
+    </div>
+    <h2>Lista de fiscais</h2>
+    <div class="card" id="lf"></div>
+    <h2>Cadastro de lojas</h2>
+    <div class="card">
+      <label for="nl">Nova loja (número e nome)</label><input type="text" id="nl" placeholder="Ex.: 120 - Campinas">
+      <div style="height:14px"></div><button class="pri" id="addl">Adicionar loja</button>
+    </div>
+    <h2>Lista de lojas</h2>
+    <div class="card" id="lj"></div>
+  </section>
+</main>
+
+<div class="bar hide" id="bar"><button class="pri" id="gerar" disabled>Baixar PDF do dia</button></div>
+<div id="ed" class="ov hide"><div class="card"><h2 style="margin-top:0">Editar legenda</h2><label for="eloja">Loja</label><select id="eloja"></select><div id="eP"><label for="epdv">PDV</label><input type="text" id="epdv" inputmode="numeric"><label for="emov">Data do movimento</label><input type="date" id="emov"></div><div id="eC" class="hide"><label for="ecli">Nome do cliente</label><input type="text" id="ecli"></div><div style="height:14px"></div><button class="pri" id="esalvar">Salvar alteração</button><div style="height:8px"></div><button class="sec" id="ecancel">Cancelar</button></div></div>
+<div id="toast" class="hide" role="status"></div>
+
+<script>
+/* Os dados do Supabase ficam no arquivo config.js (veja o guia). Sem config.js = modo demonstração. */
+var semCfg=!window.CFG;
+var CFG=window.CFG||{URL:"",KEY:"",SENHA:"",EMAIL:"paulistao14.frente@paulistaoatacadista.com.br",LOJAS:["313 - Indaiatuba"]};
+
+var $=function(i){return document.getElementById(i)};
+var sb=(CFG.URL&&window.supabase)?supabase.createClient(CFG.URL,CFG.KEY):null;
+var me=null,demo=[],foto=null,hojeL=[],resL=[],mod="pos";
+function toast(t){var e=$("toast");e.textContent=t;e.classList.remove("hide");setTimeout(function(){e.classList.add("hide")},2800)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function fmt(d){return d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}
+function fmtC(d){return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"2-digit"})+", "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function pdata(s){var a=s.split("-");return new Date(+a[0],+a[1]-1,+a[2])}
+function fmtD(d){return d.toLocaleDateString("pt-BR")}
+function dia(n){var d=new Date();d.setHours(0,0,0,0);return new Date(d.getTime()-n*864e5)}
+
+/* ---------- dados ---------- */
+async function buscar(de,ate,comFoto,campo){
+  var mv=campo==="movimento";
+  if(!sb){var k=mv?"m":"t";return demo.filter(function(r){return r.tipo===mod&&r[k]>=de&&r[k]<=ate}).sort(function(a,b){return b.t-a.t})}
+  var q=sb.from("registros").select("id,user_id,loja,pdv,criado_em,foto_path,fiscal,movimento,tipo,cliente").eq("tipo",mod);
+  q=mv?q.gte("movimento",iso(de)).lte("movimento",iso(ate)).order("movimento",{ascending:false}).order("criado_em",{ascending:false}):q.gte("criado_em",de.toISOString()).lte("criado_em",ate.toISOString()).order("criado_em",{ascending:false});
+  q=await q.limit(1000);
+  if(q.error){toast(/tipo|cliente/.test(q.error.message)?"Falta rodar o SQL do passo 14 do guia (colunas tipo e cliente).":q.error.message);return[]}
+  var s={data:[]};
+  if(comFoto&&q.data.length)s=await sb.storage.from("pos-fotos").createSignedUrls(q.data.map(function(r){return r.foto_path}),3600);
+  return q.data.map(function(r,i){return{id:r.id,uid:r.user_id,loja:r.loja,pdv:r.pdv,cliente:r.cliente||"",tipo:r.tipo,t:new Date(r.criado_em),m:pdata(r.movimento),fiscal:r.fiscal||"-",path:r.foto_path,url:s.data[i]?s.data[i].signedUrl:""}});
+}
+async function gravar(loja,pdv,f,mov,cli){
+  if(!sb){demo.push({id:Date.now(),uid:me.id,tipo:mod,cliente:cli||"",loja:loja,pdv:pdv,t:new Date(),m:pdata(mov),fiscal:me.nome,url:f.url});return}
+  var p=me.id+"/"+Date.now()+".jpg",u=await sb.storage.from("pos-fotos").upload(p,f.blob,{contentType:"image/jpeg"});
+  if(u.error)throw u.error;
+  var i=await sb.from("registros").insert({loja:loja,pdv:pdv,foto_path:p,fiscal:me.nome,movimento:mov,tipo:mod,cliente:cli||null});
+  if(i.error)throw i.error;
+}
+async function apagar(r){
+  if(!sb){demo=demo.filter(function(x){return x.id!==r.id});return}
+  await sb.storage.from("pos-fotos").remove([r.path]);await sb.from("registros").delete().eq("id",r.id);
+}
+async function editar(r,loja,pdv,mov,cli){
+  var rec=mod==="rec";
+  if(!sb){r.loja=loja;if(rec)r.cliente=cli;else{r.pdv=pdv;r.m=pdata(mov)}return true}
+  var d=rec?{loja:loja,cliente:cli}:{loja:loja,pdv:pdv,movimento:mov};
+  var q=await sb.from("registros").update(d).eq("id",r.id).select("id");
+  if(q.error||!q.data.length){toast("Sem permissão para editar. Falta rodar o SQL do guia.");return false}
+  return true;
+}
+function comprimir(f){return new Promise(function(ok){var im=new Image();im.onload=function(){var s=Math.min(1,1280/im.width),c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);c.toBlob(function(b){ok({blob:b,url:c.toDataURL("image/jpeg",.7)})},"image/jpeg",.7)};im.src=URL.createObjectURL(f)})}
+
+/* ---------- PDF ---------- */
+function paraDataUrl(u){if(u.indexOf("data:")===0)return Promise.resolve(u);return fetch(u).then(function(r){return r.blob()}).then(function(b){return new Promise(function(ok){var fr=new FileReader();fr.onload=function(){ok(fr.result)};fr.readAsDataURL(b)})})}
+function medida(u){return new Promise(function(ok){var im=new Image();im.onload=function(){ok({w:im.width,h:im.height})};im.src=u})}
+async function pdf(lista,titulo,btn){
+  var t0=btn.textContent;btn.disabled=true;btn.textContent="Gerando PDF...";
+  try{
+    lista=lista.slice().sort(function(a,b){return a.m-b.m||a.t-b.t});
+    var d=new jspdf.jsPDF({unit:"mm",format:"a4"}),X=[10,108],n=0,y0=22;
+    var ts=lista.map(function(r){return r.m.getTime()}),da=fmtD(new Date(Math.min.apply(null,ts))),db=fmtD(new Date(Math.max.apply(null,ts)));
+    d.setFontSize(16);d.text("Paulistão Atacadista - POS - Movimento: "+(da===db?da:da+" a "+db),10,14);
+    for(var i=0;i<lista.length;i++){
+      var r=lista[i],u=await paraDataUrl(r.url),m=await medida(u),s=Math.min(60/m.w,80/m.h);
+      if(n===4){d.addPage();n=0;y0=10}
+      var x=X[n%2],y=y0+Math.floor(n/2)*105;
+      d.setFontSize(10);
+      d.text("Loja "+r.loja.split(" - ")[0]+" - PDV "+r.pdv,x,y+4);
+      d.addImage(u,"JPEG",x,y+8,m.w*s,m.h*s);n++;
+    }
+    d.save("pos-"+new Date().toISOString().slice(0,10)+".pdf");
+  }catch(e){toast("Não foi possível gerar o PDF.")}
+  btn.disabled=false;btn.textContent=t0;
+}
+
+async function pdfRec(r,btn){
+  var t0=btn.textContent;btn.disabled=true;btn.textContent="Gerando...";
+  try{
+    var u=await paraDataUrl(r.url),m=await medida(u),s=Math.min(190/m.w,250/m.h);
+    var d=new jspdf.jsPDF({unit:"mm",format:"a4"});
+    d.setFontSize(14);d.text("Paulistão Atacadista - Rec - "+r.cliente,10,14);
+    d.addImage(u,"JPEG",10,22,m.w*s,m.h*s);
+    var nome=String(r.cliente||"").replace(/[\\\/:*?"<>|]+/g,"").trim().replace(/\s+/g,"_");
+    d.save("Rec_"+(nome||"cliente")+".pdf");
+  }catch(e){toast("Não foi possível gerar o PDF.")}
+  btn.disabled=false;btn.textContent=t0;
+}
+
+/* ---------- telas ---------- */
+function linha(r,x){
+  var rec=mod==="rec",i=' data-i="'+r.id+'"';
+  var txt=rec?'<b>Cliente '+esc(r.cliente||"-")+'</b><small>Loja '+esc(r.loja)+' · '+esc(r.fiscal)+'<br>Foto '+fmt(r.t)+'</small>'
+    :'<b>Loja '+esc(r.loja)+'</b><small>PDV '+esc(r.pdv)+' · '+esc(r.fiscal)+'<br>Movimento '+fmtD(r.m)+' · foto '+fmt(r.t)+'</small>';
+  var bt=x?'<div class="ac">'+(rec?'<button class="ed" data-a="d"'+i+'>Baixar PDF</button>':'')+'<button class="ed" data-a="e"'+i+'>Editar</button><button class="x" data-a="x"'+i+'>Excluir</button></div>':'';
+  return'<div class="row"><img src="'+r.url+'" alt="Foto"><div>'+txt+'</div>'+bt+'</div>';
+}
+async function hoje(){
+  hojeL=(await buscar(dia(0),new Date(dia(0).getTime()+864e5-1),true)).filter(function(r){return r.fiscal===me.nome});
+  $("lista").innerHTML=hojeL.length?hojeL.map(function(r){return linha(r,true)}).join(""):"<p>Nenhum registro ainda. Tire a primeira foto acima.</p>";
+  $("tit").textContent="Meus registros de hoje ("+hojeL.length+")";
+  $("gerar").disabled=!hojeL.length;
+}
+function barras(o,cron){var k=Object.keys(o);if(!cron)k.sort(function(a,b){return o[b]-o[a]});k=k.slice(0,10);var m=Math.max.apply(null,k.map(function(n){return o[n]}))||1;return k.map(function(n){return'<div class="b"><span>'+esc(n)+'</span><i style="width:'+(o[n]/m*100)+'%"></i><b>'+o[n]+'</b></div>'}).join("")||"<p>Sem dados no período.</p>"}
+async function painel(){
+  var n=+$("per").value,l=await buscar(dia(n),new Date(),false,"movimento"),a={},b={},c={};
+  l.forEach(function(r){a[r.loja]=(a[r.loja]||0)+1;b[r.fiscal]=(b[r.fiscal]||0)+1;var k=r.m.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});c[k]=(c[k]||0)+1});
+  $("k1").textContent=l.length;$("k2").textContent=Object.keys(a).length;$("k3").textContent=Object.keys(b).length;
+  $("g1").innerHTML=barras(a);$("g2").innerHTML=barras(b);$("g3").innerHTML=barras(c,true);
+}
+async function pesquisar(){
+  var de=$("de").value?new Date($("de").value+"T00:00:00"):dia(30),ate=$("ate").value?new Date($("ate").value+"T23:59:59"):new Date(),q=$("q").value.toLowerCase();
+  resL=(await buscar(de,ate,true,"movimento")).filter(function(r){return(r.loja+" "+r.pdv+" "+(r.cliente||"")+" "+r.fiscal).toLowerCase().indexOf(q)>-1});
+  $("resn").textContent=resL.length+" resultado(s)";
+  $("res").innerHTML=resL.length?resL.map(function(r){return linha(r,true)}).join(""):"<p>Nada encontrado.</p>";
+  $("pdfres").disabled=!resL.length;
+}
+function aba(n){
+  ["reg","pai","pes","fis"].forEach(function(k){$("p-"+k).classList.toggle("hide",k!==n)});
+  document.querySelectorAll(".tabs button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-t")===n)});
+  $("bar").classList.toggle("hide",n!=="reg"||mod!=="pos");
+  if(n==="reg")hoje();if(n==="pai")painel();if(n==="fis"){fisRender();lojasRender()}
+  if(n==="pes"){if(!$("de").value){var h=new Date(),s=h.getFullYear()+"-"+String(h.getMonth()+1).padStart(2,"0")+"-"+String(h.getDate()).padStart(2,"0");$("de").value=s;$("ate").value=s}pesquisar()}
+}
+async function iniciar(){await carregarLojas();
+  $("login").classList.add("hide");$("ub").classList.remove("hide");$("quem").textContent=me.nome;
+  $("mov").value=iso(new Date());$("mov").max=iso(new Date());
+  irInicio();
+}
+function irModulo(m){
+  mod=m;var rec=m==="rec";
+  $("modt").textContent=rec?"Rec":"POS";$("modt").className="modt"+(rec?" rec":"");
+  $("gPdv").classList.toggle("hide",rec);$("gMov").classList.toggle("hide",rec);$("gCli").classList.toggle("hide",!rec);
+  $("fotoLbl").textContent=rec?"Foto":"Foto do POS";
+  $("lq").textContent=rec?"Loja, cliente ou fiscal":"Loja, PDV ou fiscal";
+  $("lde").textContent=rec?"De":"Movimento de";$("late").textContent=rec?"Até":"Movimento até";
+  $("boxPdfRes").classList.toggle("hide",rec);
+  $("home").classList.add("hide");$("app").classList.remove("hide");$("inicio").classList.remove("hide");
+  $("tabs").classList.toggle("hide",me.role!=="admin");
+  foto=null;$("shotTxt").textContent="Toque para tirar a foto";$("foto").value="";$("foto2").value="";
+  $("res").innerHTML="<p>Sem busca ainda.</p>";resL=[];$("pdfres").disabled=true;
+  aba("reg");
+}
+function irInicio(){$("app").classList.add("hide");$("bar").classList.add("hide");$("inicio").classList.add("hide");$("home").classList.remove("hide")}
+async function entrarCom(u,email,nome){
+  var p=await sb.from("profiles").select("nome,role").eq("id",u.id).single(),role=p.data?p.data.role:"fiscal";
+  if(role!=="admin"&&!nome){await sb.auth.signOut();if(admMode)toast("Este acesso não é de administrador.");return}
+  me={id:u.id,role:role,nome:role==="admin"?((p.data&&p.data.nome)||email):nome};
+  if(role!=="admin"){try{localStorage.setItem("pos_fiscal",nome)}catch(e){}}
+  iniciar();
+}
+var demoF=[{id:1,nome:"Ana"},{id:2,nome:"Bruno"},{id:3,nome:"Carla"}],admMode=false;
+async function listaF(){if(!sb)return demoF.slice();var q=await sb.from("fiscais").select("id,nome").order("nome");return q.data||[]}
+async function carregarNomes(){var l=await listaF();$("fiscal").innerHTML='<option value="">Selecione seu nome</option>'+l.map(function(f){return"<option>"+esc(f.nome)+"</option>"}).join("")}
+async function fisRender(){var l=await listaF();$("lf").innerHTML=l.length?l.map(function(f){return'<div class="row"><b>'+esc(f.nome)+'</b><div class="ac"><button class="x" data-i="'+f.id+'">Remover</button></div></div>'}).join(""):"<p>Nenhum fiscal cadastrado.</p>"}
+
+var demoL=CFG.LOJAS.map(function(n,i){return{id:i+1,nome:n}}),LOJAS=CFG.LOJAS.slice();
+async function listaL(){if(!sb)return demoL.slice();var q=await sb.from("lojas").select("id,nome").order("nome");return q.data||[]}
+function fillLoja(){$("loja").innerHTML=LOJAS.map(function(l){return"<option>"+esc(l)+"</option>"}).join("")}
+async function carregarLojas(){var l=await listaL();if(l.length)LOJAS=l.map(function(x){return x.nome});fillLoja()}
+async function lojasRender(){var l=await listaL();$("lj").innerHTML=l.length?l.map(function(f){return'<div class="row" data-id="'+f.id+'" data-n="'+esc(f.nome)+'"><b>'+esc(f.nome)+'</b><div class="ac"><button class="ed" data-a="le">Editar</button><button class="x" data-a="lx">Remover</button></div></div>'}).join(""):"<p>Nenhuma loja cadastrada ainda.</p>"}
+async function renomearLoja(id,velho,novo){
+  if(!sb){demoL.forEach(function(x){if(String(x.id)===id)x.nome=novo});demo.forEach(function(r){if(r.loja===velho)r.loja=novo})}
+  else{
+    var q=await sb.from("lojas").update({nome:novo}).eq("id",id);
+    if(q.error){toast(q.error.code==="23505"?"Essa loja já existe.":"Erro: "+q.error.message);return}
+    await sb.from("registros").update({loja:novo}).eq("loja",velho);
+  }
+  toast("Loja atualizada.");await carregarLojas();lojasRender();
+}
+
+/* ---------- eventos ---------- */
+document.querySelectorAll(".tabs button").forEach(function(b){b.onclick=function(){aba(b.getAttribute("data-t"))}});
+$("entrar").onclick=async function(){
+  var nome=$("fiscal").value;
+  if(!sb){
+    if(admMode)me={id:"d",nome:"Administrador",role:"admin"};
+    else{if(!nome){toast("Escolha seu nome na lista.");return}me={id:"d",nome:nome,role:"fiscal"}}
+    iniciar();return;
+  }
+  if(!admMode&&!nome){toast("Escolha seu nome na lista.");return}
+  var e=$("email").value.trim(),pw=(!admMode&&CFG.SENHA)?CFG.SENHA:$("senha").value,r=await sb.auth.signInWithPassword({email:e,password:pw});
+  if(r.error){toast(!admMode&&CFG.SENHA?"Não foi possível entrar. Confira a SENHA no config.js.":"E-mail ou senha incorretos.");return}
+  entrarCom(r.data.user,e,admMode?null:nome);
+};
+$("adm").onclick=function(e){e.preventDefault();admMode=!admMode;$("boxN").classList.toggle("hide",admMode);$("boxS").classList.toggle("hide",!admMode&&!!CFG.SENHA);$("email").readOnly=!admMode;$("email").value=admMode?"":CFG.EMAIL;$("adm").textContent=admMode?"Voltar ao acesso dos fiscais":"Sou administrador";$("lp").textContent=admMode?"Entre com o e-mail e a senha do administrador.":(CFG.SENHA?"Escolha seu nome para entrar.":"Escolha seu nome e digite a senha.")};
+$("inicio").onclick=irInicio;
+document.querySelectorAll(".opt").forEach(function(b){b.onclick=function(){irModulo(b.getAttribute("data-m"))}});
+$("addf").onclick=async function(){
+  var n=$("nf").value.trim();if(!n)return;
+  if(!sb)demoF.push({id:Date.now(),nome:n});
+  else{var q=await sb.from("fiscais").insert({nome:n});if(q.error){toast(q.error.code==="23505"?"Esse nome já existe.":"Erro: "+q.error.message);return}}
+  $("nf").value="";toast("Fiscal adicionado.");fisRender();
+};
+$("lf").onclick=async function(e){
+  var b=e.target.closest("button[data-i]");if(!b)return;
+  if(b.textContent!=="Confirmar?"){b.textContent="Confirmar?";setTimeout(function(){b.textContent="Remover"},3000);return}
+  var i=b.getAttribute("data-i");
+  if(!sb)demoF=demoF.filter(function(f){return String(f.id)!==i});else await sb.from("fiscais").delete().eq("id",i);
+  fisRender();
+};
+$("sair").onclick=async function(){try{localStorage.removeItem("pos_fiscal")}catch(e){}if(sb)await sb.auth.signOut();location.reload()};
+function lerFoto(e){var f=e.target.files[0];if(!f)return;comprimir(f).then(function(c){foto=c;$("shotTxt").innerHTML='<img src="'+c.url+'" alt="Pré-visualização">'})}
+$("foto").onchange=lerFoto;$("foto2").onchange=lerFoto;
+$("salvar").onclick=async function(){
+  var rec=mod==="rec",p=$("pdv").value.trim(),c=$("cli").value.trim();
+  if(rec){if(!c){toast("Informe o nome do cliente.");return}}else if(!p){toast("Informe o número do PDV.");return}
+  if(!foto){toast("Tire a foto antes de salvar.");return}
+  if(!rec&&!$("mov").value){toast("Informe a data do movimento.");return}
+  var b=$("salvar");b.disabled=true;
+  try{await gravar($("loja").value,rec?"":p,foto,rec?iso(new Date()):$("mov").value,rec?c:null);foto=null;$("pdv").value="";$("cli").value="";$("foto").value="";$("foto2").value="";$("shotTxt").textContent="Toque para tirar a foto";toast("Registro salvo.");hoje()}
+  catch(e){toast("Erro ao salvar: "+(e.message||e))}
+  b.disabled=false;
+};
+$("addl").onclick=async function(){
+  var n=$("nl").value.trim();if(!n)return;
+  if(!sb)demoL.push({id:Date.now(),nome:n});
+  else{var q=await sb.from("lojas").insert({nome:n});if(q.error){toast(q.error.code==="23505"?"Essa loja já existe.":"Erro: "+q.error.message);return}}
+  $("nl").value="";toast("Loja adicionada.");await carregarLojas();lojasRender();
+};
+$("lj").onclick=async function(e){
+  var b=e.target.closest("button[data-a]");if(!b)return;
+  var row=b.closest(".row"),id=row.getAttribute("data-id"),n=row.getAttribute("data-n"),a=b.getAttribute("data-a");
+  if(a==="le"){row.innerHTML='<input type="text" value="'+esc(n)+'" aria-label="Nome da loja" style="flex:1"><div class="ac"><button class="ed" data-a="ls">Salvar</button><button class="x" data-a="lc">Cancelar</button></div>';return}
+  if(a==="lc"){lojasRender();return}
+  if(a==="ls"){var nv=row.querySelector("input").value.trim();if(nv&&nv!==n)await renomearLoja(id,n,nv);else lojasRender();return}
+  if(b.textContent!=="Confirmar?"){b.textContent="Confirmar?";setTimeout(function(){b.textContent="Remover"},3000);return}
+  if(!sb)demoL=demoL.filter(function(x){return String(x.id)!==id});else await sb.from("lojas").delete().eq("id",id);
+  await carregarLojas();lojasRender();
+};
+var edR=null,edF=null;
+function abrirEd(r,f){
+  edR=r;edF=f;var rec=mod==="rec",l=LOJAS.slice();if(l.indexOf(r.loja)<0)l.push(r.loja);
+  $("eloja").innerHTML=l.map(function(o){return"<option"+(o===r.loja?" selected":"")+">"+esc(o)+"</option>"}).join("");
+  $("eP").classList.toggle("hide",rec);$("eC").classList.toggle("hide",!rec);
+  if(rec)$("ecli").value=r.cliente||"";else{$("epdv").value=r.pdv;$("emov").value=iso(r.m);$("emov").max=iso(new Date())}
+  $("ed").classList.remove("hide");
+}
+$("ecancel").onclick=function(){$("ed").classList.add("hide")};
+$("esalvar").onclick=async function(){
+  var rec=mod==="rec",p=$("epdv").value.trim(),c=$("ecli").value.trim();
+  if(rec){if(!c){toast("Informe o nome do cliente.");return}}
+  else{if(!p){toast("Informe o PDV.");return}if(!$("emov").value){toast("Informe a data do movimento.");return}}
+  if(await editar(edR,$("eloja").value,p,$("emov").value,c)){$("ed").classList.add("hide");toast("Legenda atualizada.");edF()}
+};
+async function acao(e,get,refresh){
+  var b=e.target.closest("button[data-a]");if(!b)return;
+  var r=get().filter(function(x){return String(x.id)===b.getAttribute("data-i")})[0];if(!r)return;
+  if(b.getAttribute("data-a")==="d"){pdfRec(r,b);return}
+  if(b.getAttribute("data-a")==="e"){abrirEd(r,refresh);return}
+  if(b.textContent!=="Confirmar?"){b.textContent="Confirmar?";setTimeout(function(){b.textContent="Excluir"},3000);return}
+  await apagar(r);refresh();
+}
+$("lista").onclick=function(e){acao(e,function(){return hojeL},hoje)};
+$("res").onclick=function(e){acao(e,function(){return resL},pesquisar)};
+$("gerar").onclick=function(){pdf(hojeL,"POS do dia "+new Date().toLocaleDateString("pt-BR")+" ("+me.nome+")",$("gerar"))};
+$("per").onchange=painel;$("busca").onclick=pesquisar;
+$("pdfres").onclick=function(){pdf(resL,"Resultado da pesquisa",$("pdfres"))};
+
+/* ---------- início ---------- */
+var falha=!!CFG.URL&&!window.supabase;
+$("email").value=CFG.EMAIL;$("email").readOnly=true;carregarNomes();
+if(CFG.SENHA){$("boxS").classList.add("hide");$("lp").textContent="Escolha seu nome para entrar."}
+if(falha){$("demo").textContent="Não foi possível conectar ao banco de dados. Atualize a página e verifique a internet.";$("demo").classList.remove("hide");$("login").classList.add("hide")}
+else if(!sb){
+  if(semCfg)$("demo").textContent="Modo demonstração: o arquivo config.js não foi lido (confira aspas e vírgulas). Dados fictícios, nada é salvo.";
+  $("demo").classList.remove("hide");$("boxE").classList.add("hide");$("boxS").classList.add("hide");
+  var c=document.createElement("canvas");c.width=640;c.height=860;var x=c.getContext("2d");x.fillStyle="#f4f4f0";x.fillRect(0,0,640,860);x.fillStyle="#333";x.font="28px sans-serif";x.fillText("COMPROVANTE POS (exemplo)",60,100);for(var k=0;k<12;k++)x.fillRect(60,160+k*50,300+(k*37)%240,12);
+  var ph=c.toDataURL("image/jpeg",.7),fs=["Ana","Bruno","Carla"];
+  var cs=["André","Marcos","Patrícia","Joana"];
+  for(var i=0;i<18;i++){var tt=new Date(Date.now()-(i%9)*864e5-i*36e5);demo.push({id:i+1,uid:"x",tipo:i%3===2?"rec":"pos",cliente:i%3===2?cs[i%4]:"",loja:CFG.LOJAS[i%3],pdv:String(1+i%6).padStart(2,"0"),t:tt,m:new Date(tt.getFullYear(),tt.getMonth(),tt.getDate()),fiscal:fs[i%3],url:ph})}
+}else{
+  sb.auth.getSession().then(function(r){if(r.data.session){var n=null;try{n=localStorage.getItem("pos_fiscal")}catch(e){}entrarCom(r.data.session.user,r.data.session.user.email,n)}});
+}
+</script>
+</body>
+</html>
