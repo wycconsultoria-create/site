@@ -93,77 +93,85 @@ const activeFrom=e=>e.startDate||'0000-00-00';
 function shiftOn(e,date){const sec=secOf(e.sector);if(!sec?.shifts?.length)return null;const changes=(e.shifts||[]).filter(c=>c.from<=date).sort((a,b)=>String(a.from).localeCompare(String(b.from)));const id=changes.length?changes[changes.length-1].shift:sec.shifts[0].id;return sec.shifts.find(x=>x.id===id)||sec.shifts[0]}
 
 /* ---------- GERAÇÃO ---------- */
-function balanceShifts(){const[y,m]=S.ym.split('-'),ms=y+'-'+m+'-01',mi=(+y)*12+(+m);
- S.sectors.forEach(sec=>{const es=sortEmps(S.emps.filter(e=>e.sector===sec.id)),N=es.length,shifts=[...(sec.shifts||[])].sort((a,b)=>toMin(a.start||'00:00')-toMin(b.start||'00:00')||String(a.name).localeCompare(String(b.name),'pt-BR')),L=shifts.length;if(!N||!L)return;const ids=[];
-  shifts.forEach((sh,i)=>{const seats=Math.floor(N/L)+(i<N%L?1:0);for(let j=0;j<seats;j++)ids.push(sh.id)});
-  const offset=mi%N;es.forEach((e,i)=>{const id=ids[(i+offset)%N],from=activeFrom(e)>ms?activeFrom(e):ms;e.shifts=e.shifts.filter(c=>c.from<from);e.shifts.push({from,shift:id})})})}
-function gen(){
+/* ---- Turnos por tipo (Abertura / Intermediário / Fechamento) ---- */
+const SHIFT_KIND={A:'Abertura',I:'Intermediário',F:'Fechamento'};
+function shiftKind(sh,sec){if(!sh)return 'I';if(sh.kind in SHIFT_KIND)return sh.kind;
+ const n=String(sh.name||'').toLowerCase();if(n.includes('fech'))return 'F';if(n.includes('abert'))return 'A';if(n.includes('inter'))return 'I';
+ const ss=[...(sec?.shifts||[])].sort((a,b)=>toMin(a.start||'00:00')-toMin(b.start||'00:00')),i=ss.findIndex(x=>x.id===sh.id);
+ return ss.length<2?'F':i===ss.length-1?'F':i===0?'A':'I'}
+const balMode=()=>S.cfg.balMode||(S.cfg.bal===false?'off':'meta');
+// lista de vagas por turno para N pessoas. meta = 30% folga, 20% abertura/interm., 50% fechamento (50/70 de quem trabalha)
+function shiftSeats(sec,N,mode){const shifts=[...(sec.shifts||[])].sort((a,b)=>toMin(a.start||'00:00')-toMin(b.start||'00:00')||String(a.name).localeCompare(String(b.name),'pt-BR')),L=shifts.length;if(!N||!L)return[];
+ const spread=(list,n)=>{const out=[];list.forEach((sh,i)=>{const c=Math.floor(n/list.length)+(i<n%list.length?1:0);for(let j=0;j<c;j++)out.push(sh.id)});return out};
+ if(mode==='igual')return spread(shifts,N);
+ const F=shifts.filter(s=>shiftKind(s,sec)==='F'),O=shifts.filter(s=>shiftKind(s,sec)!=='F');if(!F.length||!O.length)return spread(shifts,N);
+ const close=Math.round(N*5/7);return[...spread(O,N-close),...spread(F,close)]}
+// aplica o equilíbrio SÓ de `from` em diante; dias anteriores mantêm o turno que tinham
+function balanceShifts(from){const mode=balMode();if(mode==='off')return;
+ const[y,m]=S.ym.split('-'),ms=y+'-'+m+'-01',mi=(+y)*12+(+m),last=fmt(new Date(+y,+m,0));from=from&&from>ms?from:ms;
+ S.sectors.forEach(sec=>{const es=sortEmps(S.emps.filter(e=>e.sector===sec.id&&activeFrom(e)<=last)),N=es.length;if(!N||!(sec.shifts||[]).length)return;
+  const seats=shiftSeats(sec,N,mode),fixed=es.filter(e=>e.pin),free=es.filter(e=>!e.pin);
+  fixed.forEach(e=>{const i=seats.indexOf(shiftOn(e,activeFrom(e)>from?activeFrom(e):from)?.id);if(i>=0)seats.splice(i,1)});
+  const rest=seats.slice(0,free.length),off=free.length?mi%free.length:0;
+  free.forEach((e,i)=>{const id=rest[(i+off)%free.length],f=activeFrom(e)>from?activeFrom(e):from;e.shifts=(e.shifts||[]).filter(c=>c.from<f);
+   if(!e.shifts.length||shiftOn(e,f)?.id!==id)e.shifts.push({from:f,shift:id})})})}
+function gen(from){
  if(!isAdmin())return denyWrite();
  if(!S.emps.length)return alert('Cadastre colaboradores primeiro.');
- if(S.cfg.bal!==false)balanceShifts();
- const[y,m]=S.ym.split('-').map(Number),first=new Date(y,m-1,1),last=new Date(y,m,0);
+ const[y,m]=S.ym.split('-').map(Number),first=new Date(y,m-1,1),last=new Date(y,m,0),firstKey=fmt(first);
+ from=(typeof from==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(from))?from:firstKey;if(from<firstKey)from=firstKey;if(from>fmt(last))return alert('A data inicial está depois do fim do mês.');
+ balanceShifts(from);
  for(let w=monOf(first);w<=last;w=addD(w,7)){
-  const wn=Math.floor(Date.UTC(w.getFullYear(),w.getMonth(),w.getDate())/864e5/7);
+  if(fmt(addD(w,6))<from)continue;                       // semana inteira já executada: não mexe
+  const wn=Math.floor(Date.UTC(w.getFullYear(),w.getMonth(),w.getDate())/864e5/7),wk=Array.from({length:7},(_,d)=>fmt(addD(w,d)));
   S.sectors.forEach(sec=>{
-   const people=S.emps.filter(e=>e.sector===sec.id);
-	   const load=[0,0,0,0,0];
-    const sunday=fmt(addD(w,6)),activeSunday=people.filter(e=>activeFrom(e)<=sunday),offSunday=Math.round(activeSunday.length*0.3),byShift=sec.shifts.map(sh=>activeSunday.filter(e=>shiftOn(e,sunday)?.id===sh.id)),exact=byShift.map(g=>activeSunday.length?offSunday*g.length/activeSunday.length:0),quota=exact.map(Math.floor);let remainder=offSunday-quota.reduce((a,b)=>a+b,0);
-    const rank=byShift.map((g,i)=>({i,frac:exact[i]-quota[i],tie:(i-(wn%Math.max(1,byShift.length))+byShift.length)%Math.max(1,byShift.length)})).filter(x=>byShift[x.i].length).sort((a,b)=>b.frac-a.frac||a.tie-b.tie);for(let i=0;i<remainder&&rank.length;i++)quota[rank[i%rank.length].i]++;
-    const sundayOff=new Set();byShift.forEach((group,si)=>{const q=Math.min(quota[si],group.length);if(!q)return;const start=((wn*q+si)%group.length+group.length)%group.length;for(let j=0;j<q;j++)sundayOff.add(group[(start+j)%group.length].id)});
-    const rows=people.map((e,i)=>({e,i,sunWork:!sundayOff.has(e.id)}));
-   const ordered=[...rows].sort((a,b)=>(b.sunWork?2:1)-(a.sunWork?2:1)||a.i-b.i);
+   const people=S.emps.filter(e=>e.sector===sec.id),load=[0,0,0,0,0];
+   const sunday=wk[6],activeSunday=people.filter(e=>activeFrom(e)<=sunday),offSunday=Math.round(activeSunday.length*0.3),byShift=sec.shifts.map(sh=>activeSunday.filter(e=>shiftOn(e,sunday)?.id===sh.id)),exact=byShift.map(g=>activeSunday.length?offSunday*g.length/activeSunday.length:0),quota=exact.map(Math.floor);let remainder=offSunday-quota.reduce((a,b)=>a+b,0);
+   const rank=byShift.map((g,i)=>({i,frac:exact[i]-quota[i],tie:(i-(wn%Math.max(1,byShift.length))+byShift.length)%Math.max(1,byShift.length)})).filter(x=>byShift[x.i].length).sort((a,b)=>b.frac-a.frac||a.tie-b.tie);for(let i=0;i<remainder&&rank.length;i++)quota[rank[i%rank.length].i]++;
+   const sundayOff=new Set();byShift.forEach((group,si)=>{const q=Math.min(quota[si],group.length);if(!q)return;const st=((wn*q+si)%group.length+group.length)%group.length;for(let j=0;j<q;j++)sundayOff.add(group[(st+j)%group.length].id)});
+   const rows=people.map((e,i)=>({e,i,sunWork:!sundayOff.has(e.id)})),ordered=[...rows].sort((a,b)=>(b.sunWork?2:1)-(a.sunWork?2:1)||a.i-b.i);
    ordered.forEach(r=>{
-    const need=r.sunWork?2:1,chosen=[];
-    for(let n=0;n<need;n++){
-     let best=null;
-     for(let d=0;d<5;d++){
-      if(chosen.includes(d))continue;
-      let score=load[d]*1000;
-      if(chosen.length&&Math.abs(d-chosen[0])===1)score+=180;
-      if(chosen.length)score-=Math.abs(d-chosen[0])*25;
-      score+=((d-r.i-wn+50)%5);
-      if(best===null||score<best.score)best={d,score};
-     }
-     chosen.push(best.d);load[best.d]++;
-    }
-    const D=S.days[r.e.id]??={};
-    for(let d=0;d<7;d++){
-     const k=fmt(addD(w,d));
-     if(k<activeFrom(r.e))continue;
-     D[k]=d===6?(r.sunWork?'T':'F'):(chosen.includes(d)?'F':'T');
-    }
-   });
-  });
- }
- save();render();
-}
+    const D=S.days[r.e.id]??={},lock=d=>wk[d]<from&&D[wk[d]]!==undefined,sunW=lock(6)?D[wk[6]]!=='F':r.sunWork;
+    let need=sunW?2:1;const prior=[];for(let d=0;d<6;d++)if(lock(d)&&D[wk[d]]==='F'){need--;prior.push(d);if(d<5)load[d]++}
+    need=Math.max(0,need);const chosen=[];
+    for(let n=0;n<need;n++){let best=null;
+     for(let d=0;d<5;d++){if(chosen.includes(d)||lock(d))continue;
+      const anchor=chosen.length?chosen[0]:prior[0];let score=load[d]*1000;
+      if(anchor!==undefined&&Math.abs(d-anchor)===1)score+=180;if(anchor!==undefined)score-=Math.abs(d-anchor)*25;
+      score+=((d-r.i-wn+50)%5);if(best===null||score<best.score)best={d,score}}
+     if(!best)break;chosen.push(best.d);load[best.d]++}
+    for(let d=0;d<7;d++){if(wk[d]<activeFrom(r.e)||lock(d))continue;D[wk[d]]=d===6?(sunW?'T':'F'):(chosen.includes(d)?'F':'T')}
+   })})}
+ save();render()}
 
 // Inclui apenas a escala do novo colaborador; nunca modifica as linhas existentes.
 function generateNewHire(e){
- const [y,m]=S.ym.split('-').map(Number),first=fmt(new Date(y,m-1,1)),last=fmt(new Date(y,m,0));
- const from=activeFrom(e)>first?activeFrom(e):first,sec=secOf(e.sector);if(!sec||from>last)return;
- const D=S.days[e.id]??={};
- for(let w=monOf(new Date(from+'T12:00:00'));w<=new Date(y,m-1,new Date(y,m,0).getDate());w=addD(w,7)){
-  const dates=Array.from({length:7},(_,i)=>fmt(addD(w,i))),sunday=dates[6],canSet=dates.map((k,i)=>({k,i})).filter(x=>x.k>=from&&x.k<=last);
+ const[y,m]=S.ym.split('-').map(Number),first=fmt(new Date(y,m-1,1)),last=fmt(new Date(y,m,0)),hire=activeFrom(e),from=hire>first?hire:first;
+ if(!secOf(e.sector)||from>last)return;const D=S.days[e.id]??={};
+ for(let w=monOf(new Date(from+'T12:00:00'));fmt(w)<=last;w=addD(w,7)){
+  const dates=Array.from({length:7},(_,i)=>fmt(addD(w,i))),sunday=dates[6],nSched=dates.filter(k=>k>=hire).length,canSet=dates.map((k,i)=>({k,i})).filter(x=>x.k>=from&&x.k<=last);
   if(!canSet.length)continue;
+  const target=nSched>=7?2:Math.max(0,nSched-5);                 // semana parcial: no máx. 5 dias de trabalho
   const peers=S.emps.filter(x=>x.id!==e.id&&x.sector===e.sector&&activeFrom(x)<=sunday),sunOff=peers.filter(x=>(S.days[x.id]||{})[sunday]==='F').length;
-  const sundayOff=sunday>=from&&sunday<=last&&sunOff<Math.round((peers.length+1)*0.3);
-  const weekdays=canSet.filter(x=>x.i<6),target=Math.min(weekdays.length,sundayOff?1:2);
-  const offLoad=x=>peers.reduce((n,p)=>n+((S.days[p.id]||{})[x.k]==='F'?1:0),0);
-  const chosen=[];
-  while(chosen.length<target){
-   const options=weekdays.filter(x=>!chosen.some(c=>Math.abs(c.i-x.i)===1));
-   const pool=options.length?options:weekdays.filter(x=>!chosen.some(c=>c.k===x.k));
-   if(!pool.length)break;
-   pool.sort((a,b)=>offLoad(b)-offLoad(a)||a.i-b.i);chosen.push(pool[0]);
-  }
-  canSet.forEach(x=>{D[x.k]=x.i===6?(sundayOff?'F':'T'):(chosen.some(c=>c.k===x.k)?'F':'T')});
- }
-}
-function leastUsedShift(sector,date){
- const counts=sector.shifts.map(()=>0);S.emps.filter(e=>e.sector===sector.id&&activeFrom(e)<=date).forEach(e=>{const sh=shiftOn(e,date),i=sector.shifts.findIndex(x=>x.id===sh?.id);if(i>=0)counts[i]++});
- return sector.shifts[counts.indexOf(Math.min(...counts))];
-}
+  const sundayOff=target>=1&&canSet.some(x=>x.i===6)&&sunOff<Math.round((peers.length+1)*0.3);
+  let weekdays=canSet.filter(x=>x.i<5);if(weekdays.length<target-(sundayOff?1:0))weekdays=canSet.filter(x=>x.i<6);   // folga de seg a sex (sábado só se não houver outro dia)
+  const spill=dates.filter((k,i)=>i<5&&k>last).length,wkTarget=Math.max(0,Math.min(weekdays.length,target-(sundayOff?1:0)-spill)),offLoad=x=>peers.reduce((n,p)=>n+((S.days[p.id]||{})[x.k]==='F'?1:0),0),chosen=[];
+  while(chosen.length<wkTarget){
+   const options=weekdays.filter(x=>!chosen.some(c=>c.k===x.k)&&!chosen.some(c=>Math.abs(c.i-x.i)===1)),pool=options.length?options:weekdays.filter(x=>!chosen.some(c=>c.k===x.k));
+   if(!pool.length)break;pool.sort((a,b)=>offLoad(a)-offLoad(b)||a.i-b.i);chosen.push(pool[0])}   // dias com MENOS folgas na equipe
+  canSet.forEach(x=>{D[x.k]=x.i===6?(sundayOff?'F':'T'):(chosen.some(c=>c.k===x.k)?'F':'T')})}}
+// turno do novo colaborador: o que mais falta para chegar na meta
+function leastUsedShift(sector,date){const act=S.emps.filter(e=>e.sector===sector.id&&activeFrom(e)<=date),mode=balMode()==='igual'?'igual':'meta',seats=shiftSeats(sector,act.length+1,mode);
+ if(!seats.length)return sector.shifts[0];const want={},have={};seats.forEach(id=>want[id]=(want[id]||0)+1);act.forEach(e=>{const id=shiftOn(e,date)?.id;if(id)have[id]=(have[id]||0)+1});
+ let best=null;sector.shifts.forEach(sh=>{const gap=(want[sh.id]||0)-(have[sh.id]||0);if(best===null||gap>best.gap)best={sh,gap}});return best.sh}
+function colabRef(){const t=fmt(new Date());return t.startsWith(S.ym+'-')?t:S.ym+'-01'}
+function quotaHint(sec){const ref=colabRef(),act=S.emps.filter(e=>e.sector===sec.id&&activeFrom(e)<=ref);if(!act.length)return '';
+ let f=0;act.forEach(e=>{if(shiftKind(shiftOn(e,ref),sec)==='F')f++});const n=act.length,tf=Math.round(n*5/7);
+ return` <span class=hint>· Fechamento ${f}/${n} (meta ${tf}) · Abertura/Interm. ${n-f}/${n} (meta ${n-tf})</span>`}
+function regDefault(){const t=fmt(new Date());return window.regFrom&&window.regFrom.startsWith(S.ym+'-')?window.regFrom:(t.startsWith(S.ym+'-')?t:S.ym+'-01')}
+function regenFrom(){const v=($('#regFrom')||{}).value||regDefault(),br=v.split('-').reverse().join('/');
+ if(confirm(`Recalcular a escala de ${br} em diante?\n\nOs dias anteriores (já executados) NÃO serão alterados. Folgas e turnos serão redistribuídos a partir dessa data, respeitando os turnos marcados como fixos.`))gen(v)}
+function setKind(sid,id,v){if(!isAdmin())return denyWrite();const s=shOf(sid,id);if(v)s.kind=v;else delete s.kind;save();render()}
 
 /* ---------- ESCALA ---------- */
 function weekCheck(e,y,m){
@@ -197,10 +205,10 @@ function renderEscala(){
  const visible=S.emps.filter(e=>{const area=secOf(e.sector);return area&&(filter==='todos'||(filter.startsWith('macro:')?area.macro===filter.slice(6):filter.startsWith('area:')?e.sector===filter.slice(5):e.sector===filter))&&(!q||e.name.toLocaleLowerCase('pt-BR').includes(q))});if(window.reportEmpId&&!visible.some(e=>e.id===window.reportEmpId))window.reportEmpId='';
  let h=`<div class="bar"><label>Mês <input type="month" value="${S.ym}" onchange="setScaleMonth(this.value)"></label>
 	 <input id="scaleNameFilter" type="search" placeholder="Pesquisar colaborador" value="${esc(window.scaleNameFilter||'')}" onkeydown="if(event.key==='Enter')applyScaleSearch()"><button class="s" onclick="applyScaleSearch()">Buscar</button><button class="s" onclick="clearScaleSearch()">Limpar busca</button>
-	 ${admin?`<button class="p admin-only" onclick="if(confirm('Recalcular a escala deste mês? As folgas serão redistribuídas e, com o equilíbrio ativado, as pessoas serão repartidas igualmente entre os turnos. A escala atual deste mês será substituída.'))gen()">Reorganizar folgas</button>`:''}
+	 ${admin?`<label class="hint admin-only" title="Dias anteriores a esta data não são alterados">Reorganizar a partir de <input type="date" id="regFrom" value="${regDefault()}" onchange="window.regFrom=this.value"></label><button class="p admin-only" onclick="regenFrom()">Reorganizar folgas</button>`:''}
 	 <button class="s" onclick="exp()">Backup (JSON)</button><button class="s" onclick="doExp('m','xlsx')">Excel (.xlsx)</button><button class="s" onclick="doExp('m','ods')">LibreOffice (.ods)</button><button class="s" onclick="doExp('m','pdf')">PDF da escala</button>
 	 <label class="hint">Relatório individual: <select id="reportEmpId" onchange="window.reportEmpId=this.value"><option value="">Selecione colaborador…</option>${sortEmps(visible).map(e=>`<option value="${esc(e.id)}" ${window.reportEmpId===e.id?'selected':''}>${esc(e.name)} · ${esc(secOf(e.sector)?.name||'')}</option>`).join('')}</select></label><button class="p" onclick="doEmpPdf()">Gerar PDF individual</button>
-	 ${admin?`<label class="hint admin-only" title="Diferença máxima de uma pessoa entre os turnos. A distribuição usa os horários cadastrados, em ordem cronológica."><input type="checkbox" ${S.cfg.bal!==false?'checked':''} onchange="S.cfg.bal=this.checked;save()"> Dividir igualmente por horários cadastrados</label>`:''}
+	 ${admin?`<label class="hint admin-only">Turnos: <select onchange="S.cfg.balMode=this.value;delete S.cfg.bal;save();render()"><option value="meta" ${balMode()==='meta'?'selected':''}>Meta: 20% abertura/interm. · 50% fechamento</option><option value="igual" ${balMode()==='igual'?'selected':''}>Dividir igualmente</option><option value="off" ${balMode()==='off'?'selected':''}>Não alterar turnos</option></select></label>`:''}
  <label class="hint"><b>Filtro macro/ilha:</b> <select class="filter" onchange="window.escalaSetorFilter=this.value;renderEscala()"><option value="todos" ${filter==='todos'?'selected':''}>Todas as áreas</option>${S.macros.map(m=>`<option value="macro:${m.id}" ${filter==='macro:'+m.id?'selected':''}>Macro: ${esc(m.name)}</option>`).join('')}${S.sectors.map(s=>`<option value="area:${s.id}" ${filter==='area:'+s.id?'selected':''}>${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}</select></label>
  ${window.scaleFocusDay!=='todos'?`<button class="s" onclick="toggleScaleDay('${window.scaleFocusDay}')">Exibir mês todo</button><b>Dia em foco: ${window.scaleFocusDay.split('-').reverse().join('/')}</b>`:'<span class="hint">Clique no cabeçalho de um dia para isolá-lo; clique de novo para voltar ao mês.</span>'}
  <span class="hint">— = ainda não ativo · F = folga · horário = trabalhando.${admin?' Clique numa célula para editar.':''}</span></div>`;
@@ -256,11 +264,11 @@ function renderColab(){
  S.macros.forEach(macro=>{const macroEmps=matches.filter(e=>secOf(e.sector)?.macro===macro.id);if(!macroEmps.length)return;
   h+=`<h3 style="margin:16px 0 6px">${esc(macro.name)}</h3>`;
   S.sectors.filter(s=>s.macro===macro.id).forEach(sec=>{const emps=sortEmps(macroEmps.filter(e=>e.sector===sec.id));if(!emps.length)return;
-  h+=`<h4 style="margin:8px 0 4px">${esc(sec.name)} <span class=hint>(${emps.length})</span></h4>`;
-  emps.forEach(e=>{const currentSec=secOf(e.sector),sh=shiftOn(e,fmt(new Date(S.ym+'-01')));
+  h+=`<h4 style="margin:8px 0 4px">${esc(sec.name)} <span class=hint>(${emps.length})</span>${quotaHint(sec)}</h4>`;
+  emps.forEach(e=>{const currentSec=secOf(e.sector),sh=shiftOn(e,activeFrom(e)>colabRef()?activeFrom(e):colabRef());
    h+=admin?`<div class="colab-list"><div class=row><input type=text aria-label="Nome do colaborador" value="${esc(e.name)}" onchange="setE('${e.id}','name',this.value)"><span class=hint>Admissão: ${activeFrom(e)==='0000-00-00'?'não informada':activeFrom(e).split('-').reverse().join('/')}</span>
    <select aria-label="Sub-setor ou ilha" onchange="setE('${e.id}','sector',this.value)">${S.sectors.map(s=>`<option value="${s.id}" ${s.id===e.sector?'selected':''}>${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}</select>
-   <select aria-label="Turno" onchange="setE('${e.id}','shift',this.value)">${currentSec.shifts.map(s=>`<option value="${s.id}" ${s.id===e.shifts[0].shift?'selected':''}>${esc(s.name)} ${s.start}–${endOf(s.start)}</option>`).join('')}</select>
+   <select aria-label="Turno vigente" title="Turno vigente em ${colabRef().split('-').reverse().join('/')}. Ao trocar, vale desta data em diante e fica fixo." onchange="setE('${e.id}','shift',this.value)">${currentSec.shifts.map(s=>`<option value="${s.id}" ${s.id===sh?.id?'selected':''}>${esc(s.name)} ${s.start}–${endOf(s.start)}</option>`).join('')}</select><label class=hint title="Turno fixo: não muda ao reorganizar"><input type=checkbox ${e.pin?'checked':''} onchange="setE('${e.id}','pin',this.checked)"> fixo</label>
    <button class=x onclick="delE('${e.id}')">Excluir</button></div></div>`:`<div class="colab-list"><div class=row><b>${esc(e.name)}</b><span class=hint>${esc(macroOf(currentSec?.macro)?.name||'')} › ${esc(currentSec?.name||'')}</span><span class=hint>Admissão: ${activeFrom(e)==='0000-00-00'?'não informada':activeFrom(e).split('-').reverse().join('/')}</span><span class=hint>Turno atual: ${sh?esc(sh.name)+' '+sh.start+'–'+endOf(sh.start):'—'}</span></div></div>`});
   });
  });
@@ -270,7 +278,7 @@ function setColabMacroFilter(id){window.colabMacroFilter=id;window.colabAreaFilt
 function clearColabSearch(){window.colabNameFilter='';window.colabMacroFilter='todos';window.colabAreaFilter='todos';render()}
 function addEmp(){if(!isAdmin())return denyWrite();const n=$('#nN').value.trim(),s=$('#nS').value,d=$('#nD').value;if(!n)return alert('Informe o nome do colaborador.');if(!s)return alert('Cadastre um sub-setor/ilha antes de adicionar colaboradores.');if(!d)return alert('Informe a data de admissão.');const sec=secOf(s),shift=leastUsedShift(sec,d);const e=newEmp(n,s,shift.id,d);S.emps.push(e);generateNewHire(e);save();render()}
 function setE(id,f,v){if(!isAdmin())return denyWrite();const e=S.emps.find(x=>x.id===id);
- if(f==='name')e.name=v;else if(f==='sector'){e.sector=v;e.shifts=[{from:activeFrom(e),shift:secOf(v).shifts[0].id}]}else e.shifts[0].shift=v;
+ if(f==='name')e.name=v;else if(f==='sector'){e.sector=v;e.shifts=[{from:activeFrom(e),shift:secOf(v).shifts[0].id}]}else if(f==='pin')e.pin=!!v;else if(f==='shift'){const r=colabRef(),f0=activeFrom(e)>r?activeFrom(e):r;e.shifts=(e.shifts||[]).filter(c=>c.from<f0);e.shifts.push({from:f0,shift:v});e.pin=true}
  save();render()}
 function delE(id){if(!isAdmin())return denyWrite();if(!confirm('Excluir colaborador?'))return;S.emps=S.emps.filter(e=>e.id!==id);delete S.days[id];save();render()}
 
@@ -292,6 +300,7 @@ function renderSetores(){
    sec.shifts.forEach(s=>{const en=endOf(s.start);
     h+=`<div class=row><input value="${esc(s.name)}" onchange="shOf('${sec.id}','${s.id}').name=this.value;save()">
     <input type=time value="${s.start}" onchange="shOf('${sec.id}','${s.id}').start=this.value;save();render()">
+    <select title="Tipo do turno (usado na meta 20% / 50%)" onchange="setKind('${sec.id}','${s.id}',this.value)"><option value="">Tipo: auto (${SHIFT_KIND[shiftKind(s,sec)]})</option>${Object.entries(SHIFT_KIND).map(([k,v])=>`<option value="${k}" ${s.kind===k?'selected':''}>${v}</option>`).join('')}</select>
     <span class="${toMin(en)>toMin('21:58')?'bad':''}">até ${en}</span>
     ${sec.shifts.length>1?`<button class=x onclick="delSh('${sec.id}','${s.id}')">Remover</button>`:''}</div>`});
    h+=`<button class=s onclick="addSh('${sec.id}')">+ Turno</button></div>`
@@ -355,7 +364,7 @@ function renderDiario(){
   es.forEach(e=>{if((S.days[e.id]||{})[k])any=true});
   const work=es.filter(e=>(S.days[e.id]||{})[k]==='T'),off=es.filter(e=>(S.days[e.id]||{})[k]!=='T');tot+=es.length;nOff+=off.length;
   body+=`<h3 style="margin:10px 0 2px;font-size:14px">${esc(macroOf(sec.macro)?.name||'')} › ${esc(sec.name)}</h3>`;
-  sec.shifts.forEach((s,si)=>{const ps=work.filter(e=>shiftOn(e,k).id===s.id);if(si===sec.shifts.length-1)nClose+=ps.length;else nOpen+=ps.length;
+  sec.shifts.forEach((s,si)=>{const ps=work.filter(e=>shiftOn(e,k).id===s.id);if(shiftKind(s,sec)==='F')nClose+=ps.length;else nOpen+=ps.length;
    body+=`<div class=dsh><span>${esc(s.name)} · ${s.start}–${endOf(s.start)}${ps.length?'':' · ninguém'}</span><span>${ps.length}</span></div>`;
    
    ps.forEach(e=>{const o=dg(e.id,k),st=o.st||'P',br=o.brk||'';
