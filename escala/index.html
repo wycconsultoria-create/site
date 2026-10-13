@@ -94,11 +94,9 @@ function shiftOn(e,date){const sec=secOf(e.sector);if(!sec?.shifts?.length)retur
 
 /* ---------- GERAÇÃO ---------- */
 function balanceShifts(){const[y,m]=S.ym.split('-'),ms=y+'-'+m+'-01',mi=(+y)*12+(+m);
- S.sectors.forEach(sec=>{const es=sortEmps(S.emps.filter(e=>e.sector===sec.id)),N=es.length,L=sec.shifts.length-1;if(N<3||L<1)return;
-  const close=Math.round(N*5/7),rest=N-close,ids=[];
-  for(let i=0;i<L;i++){const c=Math.floor(rest/L)+(i<rest%L?1:0);for(let j=0;j<c;j++)ids.push(sec.shifts[i].id)}
-  for(let j=0;j<close;j++)ids.push(sec.shifts[L].id);
-  es.forEach((e,i)=>{const id=ids[(i+mi)%N],from=activeFrom(e)>ms?activeFrom(e):ms;e.shifts=e.shifts.filter(c=>c.from<from);e.shifts.push({from,shift:id})})})}
+ S.sectors.forEach(sec=>{const es=sortEmps(S.emps.filter(e=>e.sector===sec.id)),N=es.length,shifts=sec.shifts||[],L=shifts.length;if(!N||!L)return;const ids=[];
+  shifts.forEach((sh,i)=>{const seats=Math.floor(N/L)+(i<N%L?1:0);for(let j=0;j<seats;j++)ids.push(sh.id)});
+  const offset=mi%N;es.forEach((e,i)=>{const id=ids[(i+offset)%N],from=activeFrom(e)>ms?activeFrom(e):ms;e.shifts=e.shifts.filter(c=>c.from<from);e.shifts.push({from,shift:id})})})}
 function gen(){
  if(!isAdmin())return denyWrite();
  if(!S.emps.length)return alert('Cadastre colaboradores primeiro.');
@@ -199,10 +197,10 @@ function renderEscala(){
  const visible=S.emps.filter(e=>{const area=secOf(e.sector);return area&&(filter==='todos'||(filter.startsWith('macro:')?area.macro===filter.slice(6):filter.startsWith('area:')?e.sector===filter.slice(5):e.sector===filter))&&(!q||e.name.toLocaleLowerCase('pt-BR').includes(q))});if(window.reportEmpId&&!visible.some(e=>e.id===window.reportEmpId))window.reportEmpId='';
  let h=`<div class="bar"><label>Mês <input type="month" value="${S.ym}" onchange="setScaleMonth(this.value)"></label>
 	 <input id="scaleNameFilter" type="search" placeholder="Pesquisar colaborador" value="${esc(window.scaleNameFilter||'')}" onkeydown="if(event.key==='Enter')applyScaleSearch()"><button class="s" onclick="applyScaleSearch()">Buscar</button><button class="s" onclick="clearScaleSearch()">Limpar busca</button>
-	 ${admin?`<button class="p admin-only" onclick="if(confirm('Reorganizar as folgas deste mês? A distribuição atual será recalculada.'))gen()">Reorganizar folgas</button>`:''}
+	 ${admin?`<button class="p admin-only" onclick="if(confirm('Recalcular a escala deste mês? As folgas serão redistribuídas e, com o equilíbrio ativado, as pessoas serão repartidas igualmente entre os turnos. A escala atual deste mês será substituída.'))gen()">Reorganizar folgas</button>`:''}
 	 <button class="s" onclick="exp()">Backup (JSON)</button><button class="s" onclick="doExp('m','xlsx')">Excel (.xlsx)</button><button class="s" onclick="doExp('m','ods')">LibreOffice (.ods)</button><button class="s" onclick="doExp('m','pdf')">PDF da escala</button>
 	 <label class="hint">Relatório individual: <select id="reportEmpId" onchange="window.reportEmpId=this.value"><option value="">Selecione colaborador…</option>${sortEmps(visible).map(e=>`<option value="${esc(e.id)}" ${window.reportEmpId===e.id?'selected':''}>${esc(e.name)} · ${esc(secOf(e.sector)?.name||'')}</option>`).join('')}</select></label><button class="p" onclick="doEmpPdf()">Gerar PDF individual</button>
-	 ${admin?`<label class="hint admin-only"><input type="checkbox" ${S.cfg.bal!==false?'checked':''} onchange="S.cfg.bal=this.checked;save()"> Equilibrar turnos ao gerar</label>`:''}
+	 ${admin?`<label class="hint admin-only" title="Diferença máxima de uma pessoa entre os turnos, por sub-setor."><input type="checkbox" ${S.cfg.bal!==false?'checked':''} onchange="S.cfg.bal=this.checked;save()"> Dividir igualmente entre turnos</label>`:''}
  <label class="hint"><b>Filtro macro/ilha:</b> <select class="filter" onchange="window.escalaSetorFilter=this.value;renderEscala()"><option value="todos" ${filter==='todos'?'selected':''}>Todas as áreas</option>${S.macros.map(m=>`<option value="macro:${m.id}" ${filter==='macro:'+m.id?'selected':''}>Macro: ${esc(m.name)}</option>`).join('')}${S.sectors.map(s=>`<option value="area:${s.id}" ${filter==='area:'+s.id?'selected':''}>${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}</select></label>
  ${window.scaleFocusDay!=='todos'?`<button class="s" onclick="toggleScaleDay('${window.scaleFocusDay}')">Exibir mês todo</button><b>Dia em foco: ${window.scaleFocusDay.split('-').reverse().join('/')}</b>`:'<span class="hint">Clique no cabeçalho de um dia para isolá-lo; clique de novo para voltar ao mês.</span>'}
  <span class="hint">— = ainda não ativo · F = folga · horário = trabalhando.${admin?' Clique numa célula para editar.':''}</span></div>`;
