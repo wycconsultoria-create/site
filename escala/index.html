@@ -36,12 +36,16 @@ nav button{color:var(--dark);font-weight:600}nav button.on{background:var(--dark
 .hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
 .hcard{background:#fff;border:1px solid #dbe3ec;border-left:5px solid var(--p);border-radius:8px;padding:14px;text-align:left;cursor:pointer;font:inherit}.hcard b{display:block;color:var(--dark);font-size:15px;margin-bottom:3px}
 @media(max-width:640px){header .logo{height:80px;width:80px}header h1{font-size:18px}main{padding:10px}}
+.sync{font-size:12px;font-weight:600}.sync.ok{color:#15803d!important}.sync.pending{color:#a16207!important}.sync.err{color:#b91c1c!important}
+.scroll.scale-scroll{max-height:calc(100vh - 260px);overflow:auto}.scale-scroll #scaleTable thead th{position:sticky;z-index:5}.scale-scroll #scaleTable thead th.nm{z-index:8}.scale-scroll #scaleTable tbody td.nm{z-index:3}
+body.readonly .admin-only{display:none!important}body.readonly td.c,body.readonly td.f{cursor:default}
+@media(max-width:640px){.scroll.scale-scroll{max-height:calc(100vh - 230px)}}
 </style><script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head><body>
 <header><img class="logo" alt="Paulistão Atacadista" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJQAAACUCAMAAABC4vDmAAAAyVBMVEX///88Kov/AACTirw5J4nl4vD//PwlBIL8/P0+LIw/Lo3/Fh8rF4IkAILv7fVmWKT/5uf/9fX/gIQ4JIn/AA4zH4b08/n/0dL/cHWakMP/sLP/dnv/7u7/tbj/jJFhUaH/YWb/3t94bqv/vL7/U1f/yMokC3//NTz/nJ/Y1ef/qKuhmcZaTphCM42GfLT/Wl/Dvtv/P0X/SU//lJixq9D/LDNOPZd0Z6tXR5xoXaFLPpHNyd7/JCi4s9KmoMUAAHTq2+PQLlbTgJhXAqdxAAAIjklEQVR4nO2YCXeqShLHWxZZg+yg4gIKikSCCi5xm5nv/6GmunHLffcmZs57c987p385QZqG5m9VdVW3CFEoFAqFQqFQKBQKhUKhUCgUCoVCoVAoFAqF8k9GJPxuFTd+0PI3UHaRIGp8CvAaaf5WWUSRyB+zPNq9EnYRW/K/VRL8u0U7en2XLce6ws1f8/Tjjc0rvxjoJz31leb15DuS0mzz3gAdXAOQGpKEP+HC9uR+ZyiMYRh/VPYo8ElVRb5tEEG1livQsuQHVU3U6Zr4rz/66TjN2O9OdX/51rmqQE09DAP41PvjfsfvGc9L2sytPwi66nLm+4d7h7aC/5RD9+bKq8/gaJiM7XsMo8zQtc8bThbwDQJTOdjM0kOXx77S5LKyhR32M0mArLLazR3GGCTZ8FaFudmqeT8GY0bpG7NZJ7yNHk+YRQw9o7AZegG6W/BzUdpAlX8hiJhK3fFBaNQDeQvFXoZh11aYKYr73W63H6JwNZ0GcFzNwoldTfXprNdsjkzf73so9g/2xPRAFNxsdvAw+DG4/3NVP4iSr9z8t03RKKxFjSqF6UNkYUuZ4A/GtiujwyiToNlnlDdPsRejqa2YQV/BncsVyIeznvd2YMC+9srQzcpmbGXifa7qQZQkcY6aCATVki6WwqJIhDbR6qDYZjxb4KCCl/RmzIEZgZwxMoaM0o0Ze+z54MKRzfjeVLH9Fdy6XI18hun2fIUZhqZtT/yJwrwFX1lKqqeakwjqvJVn5fFYtjeNpE4PasQjb6oTUaYCcg5wAHuFXhz0wY/eG0Q3Mib2oQ82G4YLplpNwXhmzzMQdELUG3oYh/EQnppObMVD/YNd6V+LkiRQNI/K1BWv8KyDVUlJ6cKErkMXJp/CYPoo9JeVDU1Fh48+0hW76phgrRBc2BthxyqVqccQZSNkzN4WB7jArLC1dDR9RpTcUF/W7N69FLrLKsFlHRCrDiCpB90QGypYwpum0+koQDEOGnMIztBhLo5Qj1EW8Zg59D0IJQ+F5gFCSOnEB2bsGX2YsUsfJskUrLUKwODM+Ev3qUmrICmSL/NWlF6r8HFuyVxyhDPd98jkg2Dw6/z3BnIQmtj20ANR3biylaVX2dUMXPjWM80RgkuHWQ9um83AZyAb2j3fZoZBvFCYzue5StsKG5If02zAgT4Iocv64Chz3EvmYjVDIqqDJx8UERivwt6pGGhjS+EJBfJsmHwQ9l3wXtWF9795EFz2AfysvA0hwU3CFTi8gtv9zw2FtA22BaR1RwV3yU6ugR7sPi23HKwJqxkT95kQTT2Sw9EUR5Y/AReiBZyN8fwCLUtvDAEX+CTw4Jv0IAQnM5ipTDU+MJVnmOB1xu4/U27E/TZRcRWGgGe1eh3D56qwLnAvqPFJXAa6rl+tHs46OrkA6XDmwQTTDQN3wz+8Mex1RuQRIwz1phHPYgPfDD16bzYyvkroxFFaJFyyJeecyLU0d85OGxsNBtDHs3sIiPfVcrNuo4e14IeVYfNhJVufXdrNZ9aOfOvsWDh5ypKUF6d8IJzP60y7DA15xXtikD8b9xgNrOSFpPIzYLUyvOi8mCOerEgMiPyfyJPrbD4tyux0Kou0NtHF0uC8qk6dea36f+HlI8J5q30t6Mct1bUNoaS/MTFIE1Hxzn2ymvgWstp6QtRVifhhz4ejO15AosNmc3cOGU8ilRuvI+BMkuu6KUv1RJHw1Xvn5RZZul/EJ1BQnxb1I6AlWCnMrE4qrMXBmI6qwsAqwcEnDn6vo9YnDZLr8E2qChPHUqF8kj44JXCS5UDPNyz1QRCe7kZnwlQxMSI6yXjFrG6yXOacPGu32xmk2zyLVFl2ttmxxHVdhm7QvoHufGtZO7jZ2WVF1nK2LH6EHTjbdjawnhXVfIC0DQ+Kqg1Zs4mzSzmH9ZXkyC5yXx2n9m/7PICCIEjOhuhuqdZORLykvpOUy2+sI9pzpECku4zUVjd6gfKRPeW+ZmA0PxB4s24Fq7hhjEiMY004HITSddFOlVsbEeXRWiiQhhrO1hUjp3BPwrxELt9KXvcu20qhdBbiSS5Quc3br9vdUdxHA67FuzBY4wlRwdBejIfd/grom/54ghdNysK8pczMsmQ8Z7ZuUaLcapzXSHSSZIDKI2qdWZS+qI313InEfanlwobnN1yJysFeYxtgGa0cOI5wRCWXqHu31GAaPyFKXzI2cwcWAIvhKib7JuwXPsJRC8AyJmLFjJOSHKWWJOyRnKH8DK8T5F1Lnh/dqC1mQi6m29fUZXc8HyVrNhXRfuCs9yiT1Y1WwNWd9YyoCi8hCYex2Z+OLrsXIskt1wnZgEEguAisX8jgRlSoyQb0gjPOJ5S+50hbR9DWxGPCQjyVaL/N3XQQFez6JBbbZAAqHasQXU10o2dEhYerJnty3c81SXIS3aKVOHUKaqh7scgKl3/nhBS11UQTy2wvpkILJzYtmhducYK2nEFbTKPkBPpzHrkuz1qw0ucjIefTsuQhAJ4Q5d0MZS9hRU0moIiNpB1biXr5XaFhzdusfLba7Jyz8mygrk+5cJYhB6jb8phtk/c260AZz9cRzP5NQ4XMEHHqgGQEzhqw+bsTZS1B2LRbXwc67ByZm6ixd11+uFqRr2GVddsUSo0k4WR8gOgSHJkTElm2BPCtCtUN2knSgLZqqUKS4B2aI0CihQ2JgEuBlSQW3OjAqj9xvk4JTbydvIoahkSPlpbROoGnL5u/y7ZQInWG1I57k5zhC6TS4CIi1wWG1BXcJV+qS12VcNV5QtT0Lsr/F58es81aBUW//H3hEe7h43rgHtu3j/sp90TyDMy7qH9vrURIcM2SGtxfxhOijE7XvPKfnGVZKFJ/Nd//Le7vwUMtFv8//O5vTKFQKBQKhUKhUCgUCoVCoVAoFAqFQqFQKBTKP5//Ardk7oGyXjcyAAAAAElFTkSuQmCC"><h1>Escala de Colaboradores</h1><nav>
-<button data-t="home" class="on">Home</button><button data-t="escala">Escala mensal</button><button data-t="diario">Escala diária</button><button data-t="colab">Colaboradores</button><button data-t="setores">Setores e horários</button><button data-t="feriados">Feriados</button></nav><div id="syncBox" style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span id="syncSt" class="hint"></span><button class="s" id="btnOut" onclick="sair()">Sair</button></div></header>
+<button data-t="home" class="on">Home</button><button data-t="escala">Escala mensal</button><button data-t="diario">Escala diária</button><button data-t="colab">Colaboradores</button><button data-t="setores">Setores e horários</button><button data-t="feriados">Feriados</button></nav><div id="syncBox" style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span id="profileBadge" class="tag">Consulta</span><span id="syncSt" class="hint sync" role="status" aria-live="polite"></span><button class="s" id="btnOut" onclick="sair()">Sair</button></div></header>
 <main id="m"></main>
 <dialog id="dlgDel"><b id="delT"></b><p id="delP" class="hint"></p>
 <label>O que fazer com eles?</label><select id="delDest"></select>
@@ -62,9 +66,12 @@ return{ym:fmt(new Date()).slice(0,7),cfg:{work:538,lunch:70},macros:[{id:'m1',na
 {id:'s2',name:'Fiscais',macro:'m1',shifts:sh('b',[['Abertura','08:00'],['Intermediário','10:00'],['Fechamento','11:50']])},
 {id:'s3',name:'Portaria',macro:'m1',shifts:sh('c',[['Abertura','08:00'],['Intermediário','10:00'],['Fechamento','11:50']])}],emps:[],days:{},hol:defHol(),daily:{}}}
 const HAD_LOCAL_STATE=!!localStorage.getItem(LS);
+let ACCESS={ready:false,role:'consulta',userId:'',note:'Perfil aguardando verificação.'};
+const isAdmin=()=>ACCESS.ready&&ACCESS.role==='admin';
+function denyWrite(){if(window.SYNC)setSt('Perfil de consulta: alteração bloqueada; nenhum dado foi enviado.',true);return false}
 let S;try{S=JSON.parse(localStorage.getItem(LS))||def()}catch(e){S=def()}
 S.hol??=defHol();S.daily??={};
-const save=()=>{try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}if(window.markDirty)markDirty()};
+const save=()=>{if(!isAdmin())return denyWrite();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){if(window.SYNC)setSt('Erro ao salvar neste aparelho; a alteração não foi encaminhada ao Supabase.',true);return false}if(window.markDirty)markDirty();else if(window.SYNC)setSt('Salvo somente neste aparelho; sem sessão na nuvem.',false);return true};
 function ensureHierarchy(){let changed=false;if(!Array.isArray(S.macros)||!S.macros.length){
  const macro={id:'m'+uid(),name:'Frente de Caixa'};S.macros=[macro];
  const oldFront=S.sectors.find(s=>s.name.trim().toLocaleLowerCase('pt-BR')==='frente de caixa');
@@ -86,6 +93,7 @@ function balanceShifts(){const[y,m]=S.ym.split('-'),ms=y+'-'+m+'-01',mi=(+y)*12+
   for(let j=0;j<close;j++)ids.push(sec.shifts[L].id);
   es.forEach((e,i)=>{const id=ids[(i+mi)%N],from=activeFrom(e)>ms?activeFrom(e):ms;e.shifts=e.shifts.filter(c=>c.from<from);e.shifts.push({from,shift:id})})})}
 function gen(){
+ if(!isAdmin())return denyWrite();
  if(!S.emps.length)return alert('Cadastre colaboradores primeiro.');
  if(S.cfg.bal!==false)balanceShifts();
  const[y,m]=S.ym.split('-').map(Number),first=new Date(y,m-1,1),last=new Date(y,m,0);
@@ -163,76 +171,64 @@ function weekCheck(e,y,m){
  }
  return bad.length?`<span class="w check" title="Semana(s) fora da regra 5x2: ${bad.join(', ')}">⚠ 5x2</span>`:`<span class="ok check" title="Semanas completas dentro da regra 5x2">✓ 5x2</span>`;
 }
+function applyScaleSearch(){window.scaleNameFilter=$('#scaleNameFilter').value.trim();renderEscala()}
+function clearScaleSearch(){window.scaleNameFilter='';renderEscala()}
+function setScaleMonth(v){S.ym=v;if(window.scaleFocusDay!=='todos'&&!window.scaleFocusDay.startsWith(v+'-'))window.scaleFocusDay='todos';if(isAdmin())save();renderEscala()}
+function toggleScaleDay(k){window.scaleFocusDay=window.scaleFocusDay===k?'todos':k;renderEscala()}
+function stickScaleHead(){const t=$('#scaleTable');if(!t?.tHead)return;let top=0;Array.from(t.tHead.rows).forEach(r=>{const h=r.getBoundingClientRect().height;r.querySelectorAll('th').forEach(th=>th.style.top=top+'px');top+=h})}
 function renderEscala(){
- const[y,m]=S.ym.split('-').map(Number),n=new Date(y,m,0).getDate();
- const filter=window.escalaSetorFilter||'todos';
- const visible=S.emps.filter(e=>{if(filter==='todos')return true;if(filter.startsWith('macro:'))return secOf(e.sector)?.macro===filter.slice(6);if(filter.startsWith('area:'))return e.sector===filter.slice(5);return e.sector===filter});
- const total=visible.length;
- let h=`<div class="bar"><input type="month" value="${S.ym}" onchange="S.ym=this.value;save();render()">
- <button class="p" onclick="if(confirm('Reorganizar as folgas deste mês? A distribuição atual será recalculada.'))gen()">Reorganizar folgas</button>
- <button class="s" onclick="exp()">Backup (JSON)</button>
- <button class="s" onclick="doExp('m','xlsx')">Excel (.xlsx)</button><button class="s" onclick="doExp('m','ods')">LibreOffice (.ods)</button><button class="s" onclick="doExp('m','pdf')">PDF</button>
- <label class="hint"><input type="checkbox" ${S.cfg.bal!==false?'checked':''} onchange="S.cfg.bal=this.checked;save()"> Equilibrar turnos ao gerar (folga 30% · abertura/interm. 20% · fechamento 50%)</label>
- <label class="hint"><b>Filtro macro/ilha:</b> <select class="filter" onchange="window.escalaSetorFilter=this.value;render()">
- <option value="todos" ${filter==='todos'?'selected':''}>Todas as áreas</option>
- ${S.macros.map(m=>`<option value="macro:${m.id}" ${filter==='macro:'+m.id?'selected':''}>Macro: ${esc(m.name)}</option>`).join('')}
- ${S.sectors.map(s=>`<option value="area:${s.id}" ${filter==='area:'+s.id?'selected':''}>${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}
- </select></label>
- <span class="hint">— = ainda não ativo · F = folga · horário = trabalhando. Clique numa célula ativa para editar.</span></div>`;
- if(!visible.length){h+=`<div class="card">Nenhum colaborador encontrado para este filtro.</div>`;$('#m').innerHTML=h;return}
- const stats=[];
- for(let d=1;d<=n;d++){
-  const k=fmt(new Date(y,m-1,d));let work=0,off=0,active=0;
-  visible.forEach(e=>{if(activeFrom(e)>k)return;active++;const v=(S.days[e.id]||{})[k];if(v==='F')off++;else work++});
-  stats.push({work,off,active});
- }
- h+=`<div class="summary"><div class="box"><b>Total:</b> ${total}</div><div class="box"><b>Regra:</b> semana segunda–domingo / 5x2</div><div class="box"><b>Folgas:</b> distribuídas entre segunda e sábado</div>${holBox(y,m)}</div>`;
- h+='<div class="scroll"><table><thead><tr><th class="nm">Colaborador</th>';
- for(let d=1;d<=n;d++){const w=new Date(y,m-1,d).getDay(),hh=holOf(fmt(new Date(y,m-1,d)));h+=`<th class="${(w?'':'sun')+(hh?' hol':'')}" ${hh?`title="${esc(hh.n)}"`:''}>${d}<br><small>${WD[w]}${hh?' ★':''}</small></th>`}
- h+='<th class="check">5x2</th></tr>';
- h+='<tr class="cov"><th class="nm">ATIVOS</th>';stats.forEach(x=>h+=`<th>${x.active}</th>`);h+='<th class="check">—</th></tr>';
- h+='<tr class="cov"><th class="nm">TRABALHANDO</th>';stats.forEach(x=>h+=`<th class="stat work">${x.work}<br><small>${x.active?Math.round(x.work/x.active*100):0}%</small></th>`);h+='<th class="check">—</th></tr>';
- h+='<tr class="cov"><th class="nm">FOLGA</th>';stats.forEach(x=>h+=`<th class="stat off">${x.off}<br><small>${x.active?Math.round(x.off/x.active*100):0}%</small></th>`);h+='<th class="check">—</th></tr></thead><tbody>';
- S.macros.forEach(macro=>{
-  const areas=S.sectors.filter(s=>s.macro===macro.id),macroCount=areas.reduce((sum,s)=>sum+visible.filter(e=>e.sector===s.id).length,0);if(!macroCount)return;
-  h+=`<tr class="sec"><td colspan="${n+2}">${esc(macro.name)}</td></tr>`;
-  areas.forEach(sec=>{
-  const emps=sortEmps(visible.filter(e=>e.sector===sec.id));if(!emps.length)return;
-  h+=`<tr class="subsec"><td colspan="${n+2}">${esc(sec.name)} — ${emps.length} colaborador(es)</td></tr>`;
-  const cnt=Array(n+1).fill(0);
-  emps.forEach(e=>{
-   h+=`<tr><td class="nm">${esc(e.name)}${activeFrom(e)!=='0000-00-00'?`<br><small class="hint">Admissão ${activeFrom(e).split('-').reverse().join('/')}</small>`:''}</td>`;
-   for(let d=1;d<=n;d++){
-    const k=fmt(new Date(y,m-1,d)),v=(S.days[e.id]||{})[k],sun=(new Date(y,m-1,d).getDay()?'':' sun')+(isHol(k)?' hol':'');
-    if(activeFrom(e)>k)h+=`<td class="inactive" title="Ainda não ativo — admissão em ${activeFrom(e).split('-').reverse().join('/')}">—</td>`;
-    else if(!v)h+=`<td class="c${sun}" onclick="edit('${e.id}','${k}')"></td>`;
-    else if(v==='F')h+=`<td class="f${sun}" onclick="edit('${e.id}','${k}')">F</td>`;
-    else{const s=shiftOn(e,k);cnt[d]++;h+=`<td class="c t${sec.shifts.indexOf(s)%4}" title="${esc(s.name)} ${s.start}–${endOf(s.start)}" onclick="edit('${e.id}','${k}')">${s.start}</td>`}
-   }
-   h+=`<td class="check">${weekCheck(e,y,m)}</td></tr>`;
-  });
-  h+=`<tr class="cov"><td class="nm">Trabalhando</td>${cnt.slice(1).map(c=>`<td>${c}</td>`).join('')}<td class="check">—</td></tr>`;
-  });
+ const[y,m]=S.ym.split('-').map(Number),n=new Date(y,m,0).getDate(),admin=isAdmin(),filter=window.escalaSetorFilter||'todos';
+ if(window.scaleFocusDay!=='todos'&&!window.scaleFocusDay.startsWith(S.ym+'-'))window.scaleFocusDay='todos';
+ const q=(window.scaleNameFilter||'').trim().toLocaleLowerCase('pt-BR'),dates=Array.from({length:n},(_,i)=>fmt(new Date(y,m-1,i+1))).filter(k=>window.scaleFocusDay==='todos'||k===window.scaleFocusDay),colspan=dates.length+2;
+ const visible=S.emps.filter(e=>{const area=secOf(e.sector);return area&&(filter==='todos'||(filter.startsWith('macro:')?area.macro===filter.slice(6):filter.startsWith('area:')?e.sector===filter.slice(5):e.sector===filter))&&(!q||e.name.toLocaleLowerCase('pt-BR').includes(q))});
+ let h=`<div class="bar"><label>Mês <input type="month" value="${S.ym}" onchange="setScaleMonth(this.value)"></label>
+ <input id="scaleNameFilter" type="search" placeholder="Pesquisar colaborador" value="${esc(window.scaleNameFilter||'')}" onkeydown="if(event.key==='Enter')applyScaleSearch()"><button class="s" onclick="applyScaleSearch()">Buscar</button><button class="s" onclick="clearScaleSearch()">Limpar busca</button>
+ ${admin?`<button class="p admin-only" onclick="if(confirm('Reorganizar as folgas deste mês? A distribuição atual será recalculada.'))gen()">Reorganizar folgas</button>`:''}
+ <button class="s" onclick="exp()">Backup (JSON)</button><button class="s" onclick="doExp('m','xlsx')">Excel (.xlsx)</button><button class="s" onclick="doExp('m','ods')">LibreOffice (.ods)</button><button class="s" onclick="doExp('m','pdf')">PDF</button>
+ ${admin?`<label class="hint admin-only"><input type="checkbox" ${S.cfg.bal!==false?'checked':''} onchange="S.cfg.bal=this.checked;save()"> Equilibrar turnos ao gerar</label>`:''}
+ <label class="hint"><b>Filtro macro/ilha:</b> <select class="filter" onchange="window.escalaSetorFilter=this.value;renderEscala()"><option value="todos" ${filter==='todos'?'selected':''}>Todas as áreas</option>${S.macros.map(m=>`<option value="macro:${m.id}" ${filter==='macro:'+m.id?'selected':''}>Macro: ${esc(m.name)}</option>`).join('')}${S.sectors.map(s=>`<option value="area:${s.id}" ${filter==='area:'+s.id?'selected':''}>${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}</select></label>
+ ${window.scaleFocusDay!=='todos'?`<button class="s" onclick="toggleScaleDay('${window.scaleFocusDay}')">Exibir mês todo</button><b>Dia em foco: ${window.scaleFocusDay.split('-').reverse().join('/')}</b>`:'<span class="hint">Clique no cabeçalho de um dia para isolá-lo; clique de novo para voltar ao mês.</span>'}
+ <span class="hint">— = ainda não ativo · F = folga · horário = trabalhando.${admin?' Clique numa célula para editar.':''}</span></div>`;
+ if(!visible.length){h+=`<div class="card">Nenhum colaborador encontrado. Ajuste a busca ou os filtros.</div>`;$('#m').innerHTML=h;return}
+ const stats=dates.map(k=>{let work=0,off=0,active=0;visible.forEach(e=>{if(activeFrom(e)>k)return;active++;const v=(S.days[e.id]||{})[k];if(v==='F')off++;else work++});return{work,off,active}});
+ h+=`<div class="summary"><div class="box"><b>Colaboradores:</b> ${visible.length}</div><div class="box"><b>Regra:</b> semana segunda–domingo / 5x2</div><div class="box"><b>Folgas:</b> distribuídas entre segunda e sábado</div>${holBox(y,m)}</div>`;
+ h+='<div class="scroll scale-scroll"><table id="scaleTable"><thead><tr><th class="nm">Colaborador</th>';
+ dates.forEach(k=>{const d=Number(k.slice(8)),w=new Date(y,m-1,d).getDay(),hh=holOf(k);h+=`<th class="${(w?'':'sun')+(hh?' hol':'')}" title="Clique para ${window.scaleFocusDay===k?'exibir o mês todo':'focar neste dia'}${hh?' · '+esc(hh.n):''}" onclick="toggleScaleDay('${k}')" style="cursor:pointer">${d}<br><small>${WD[w]}${hh?' ★':''}</small></th>`});
+ h+='<th class="check">5x2</th></tr><tr class="cov"><th class="nm">ATIVOS</th>';stats.forEach(x=>h+=`<th>${x.active}</th>`);h+='<th class="check">—</th></tr><tr class="cov"><th class="nm">TRABALHANDO</th>';stats.forEach(x=>h+=`<th class="stat work">${x.work}<br><small>${x.active?Math.round(x.work/x.active*100):0}%</small></th>`);h+='<th class="check">—</th></tr><tr class="cov"><th class="nm">FOLGA</th>';stats.forEach(x=>h+=`<th class="stat off">${x.off}<br><small>${x.active?Math.round(x.off/x.active*100):0}%</small></th>`);h+='<th class="check">—</th></tr></thead><tbody>';
+ S.macros.forEach(macro=>{const areas=S.sectors.filter(s=>s.macro===macro.id),macroCount=areas.reduce((sum,s)=>sum+visible.filter(e=>e.sector===s.id).length,0);if(!macroCount)return;
+  h+=`<tr class="sec"><td colspan="${colspan}">${esc(macro.name)}</td></tr>`;
+  areas.forEach(sec=>{const emps=sortEmps(visible.filter(e=>e.sector===sec.id));if(!emps.length)return;
+   h+=`<tr class="subsec"><td colspan="${colspan}">${esc(sec.name)} — ${emps.length} colaborador(es)</td></tr>`;const cnt=Array(dates.length).fill(0);
+   emps.forEach(e=>{h+=`<tr><td class="nm">${esc(e.name)}${activeFrom(e)!=='0000-00-00'?`<br><small class="hint">Admissão ${activeFrom(e).split('-').reverse().join('/')}</small>`:''}</td>`;
+    dates.forEach((k,i)=>{const d=Number(k.slice(8)),v=(S.days[e.id]||{})[k],sun=(new Date(y,m-1,d).getDay()?'':' sun')+(isHol(k)?' hol':'');
+     if(activeFrom(e)>k)h+=`<td class="inactive" title="Ainda não ativo — admissão em ${activeFrom(e).split('-').reverse().join('/')}">—</td>`;
+     else if(!v)h+=`<td class="c${sun}" ${admin?`onclick="edit('${e.id}','${k}')"`:''}></td>`;
+     else if(v==='F')h+=`<td class="f${sun}" ${admin?`onclick="edit('${e.id}','${k}')"`:''}>F</td>`;
+     else{const sh=shiftOn(e,k);cnt[i]++;h+=`<td class="c t${sec.shifts.indexOf(sh)%4}" title="${esc(sh.name)} ${sh.start}–${endOf(sh.start)}" ${admin?`onclick="edit('${e.id}','${k}')"`:''}>${sh.start}</td>`}
+    });h+=`<td class="check">${weekCheck(e,y,m)}</td></tr>`});
+   h+=`<tr class="cov"><td class="nm">Trabalhando</td>${cnt.map(c=>`<td>${c}</td>`).join('')}<td class="check">—</td></tr>`
+  })
  });
- $('#m').innerHTML=h+'</tbody></table></div>';
+ $('#m').innerHTML=h+'</tbody></table></div>';stickScaleHead();
 }
 let cur;
-function edit(eid,k){const e=S.emps.find(x=>x.id===eid),sec=secOf(e.sector);cur={e,k};
+function edit(eid,k){if(!isAdmin())return denyWrite();const e=S.emps.find(x=>x.id===eid),sec=secOf(e.sector);cur={e,k};
  $('#dlgT').textContent=e.name+' — '+k.split('-').reverse().join('/');
  $('#dSt').value=(S.days[e.id]||{})[k]||'T';
  $('#dSh').innerHTML=sec.shifts.map(s=>`<option value="${s.id}">${esc(s.name)} ${s.start}–${endOf(s.start)}</option>`).join('');
  $('#dSh').value=shiftOn(e,k).id;$('#dlg').showModal()}
-function applyEdit(){const{e,k}=cur;(S.days[e.id]??={})[k]=$('#dSt').value;const sid=$('#dSh').value;
+function applyEdit(){if(!isAdmin())return denyWrite();const{e,k}=cur;(S.days[e.id]??={})[k]=$('#dSt').value;const sid=$('#dSh').value;
  if(sid!==shiftOn(e,k).id){e.shifts=e.shifts.filter(c=>c.from<k);e.shifts.push({from:k,shift:sid})}
  save();$('#dlg').close();render()}
 function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));a.download='escala-backup.json';a.click()}
 
 /* ---------- COLABORADORES ---------- */
-function sample(){const q={s1:8,s2:4,s3:3};S.sectors.forEach(sec=>{for(let i=0;i<q[sec.id];i++)S.emps.push(newEmp(sec.name.split(' ')[0]+' '+(i+1),sec.id,sec.shifts[i%sec.shifts.length].id,'0000-00-00'))});save();render()}
+function sample(){if(!isAdmin())return denyWrite();const q={s1:8,s2:4,s3:3};S.sectors.forEach(sec=>{for(let i=0;i<q[sec.id];i++)S.emps.push(newEmp(sec.name.split(' ')[0]+' '+(i+1),sec.id,sec.shifts[i%sec.shifts.length].id,'0000-00-00'))});save();render()}
 function renderColab(){
- let h=`<div class=card><h3>Novo colaborador</h3><div class=row><input id=nN placeholder="Nome"><select id=nS>${S.sectors.map(s=>`<option value="${s.id}">${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}</select><label class=hint>Data de admissão <input id=nD type=date value="${fmt(new Date())}"></label>
+ const admin=isAdmin();let h=admin?`<div class=card><h3>Novo colaborador</h3><div class=row><input id=nN placeholder="Nome"><select id=nS>${S.sectors.map(s=>`<option value="${s.id}">${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}</select><label class=hint>Data de admissão <input id=nD type=date value="${fmt(new Date())}"></label>
  <button class=p onclick="addEmp()">Adicionar</button></div><span class=hint>Escolha a ilha/sub-setor. A escala será criada somente da admissão em diante; dias anteriores e a escala da equipe não serão alterados. O turno inicial será equilibrado com os turnos atuais.</span></div>
- <div class=card><h3>Colaboradores (${S.emps.length})</h3>
+ `:`<div class=card><h3>Novo colaborador</h3><span class=hint>Somente o perfil administrativo pode cadastrar ou alterar colaboradores.</span></div>`;
+ h+=`<div class=card><h3>Colaboradores (${S.emps.length})</h3>
  <div class="filters"><input id="colabSearch" type="text" placeholder="Pesquisar colaborador" value="${esc(window.colabNameFilter||'')}" onkeydown="if(event.key==='Enter')searchColabs()">
  <button class=p onclick="searchColabs()">Pesquisar colaborador</button>
  <button class=s onclick="clearColabSearch()">Limpar</button>
@@ -245,25 +241,27 @@ function renderColab(){
   h+=`<h3 style="margin:16px 0 6px">${esc(macro.name)}</h3>`;
   S.sectors.filter(s=>s.macro===macro.id).forEach(sec=>{const emps=sortEmps(macroEmps.filter(e=>e.sector===sec.id));if(!emps.length)return;
   h+=`<h4 style="margin:8px 0 4px">${esc(sec.name)} <span class=hint>(${emps.length})</span></h4>`;
-  emps.forEach(e=>{const currentSec=secOf(e.sector);
-   h+=`<div class="colab-list"><div class=row><input type=text aria-label="Nome do colaborador" value="${esc(e.name)}" onchange="setE('${e.id}','name',this.value)"><span class=hint>Admissão: ${activeFrom(e)==='0000-00-00'?'não informada':activeFrom(e).split('-').reverse().join('/')}</span>
+  emps.forEach(e=>{const currentSec=secOf(e.sector),sh=shiftOn(e,fmt(new Date(S.ym+'-01')));
+   h+=admin?`<div class="colab-list"><div class=row><input type=text aria-label="Nome do colaborador" value="${esc(e.name)}" onchange="setE('${e.id}','name',this.value)"><span class=hint>Admissão: ${activeFrom(e)==='0000-00-00'?'não informada':activeFrom(e).split('-').reverse().join('/')}</span>
    <select aria-label="Sub-setor ou ilha" onchange="setE('${e.id}','sector',this.value)">${S.sectors.map(s=>`<option value="${s.id}" ${s.id===e.sector?'selected':''}>${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}</select>
    <select aria-label="Turno" onchange="setE('${e.id}','shift',this.value)">${currentSec.shifts.map(s=>`<option value="${s.id}" ${s.id===e.shifts[0].shift?'selected':''}>${esc(s.name)} ${s.start}–${endOf(s.start)}</option>`).join('')}</select>
-   <button class=x onclick="delE('${e.id}')">Excluir</button></div></div>`});
+   <button class=x onclick="delE('${e.id}')">Excluir</button></div></div>`:`<div class="colab-list"><div class=row><b>${esc(e.name)}</b><span class=hint>${esc(macroOf(currentSec?.macro)?.name||'')} › ${esc(currentSec?.name||'')}</span><span class=hint>Admissão: ${activeFrom(e)==='0000-00-00'?'não informada':activeFrom(e).split('-').reverse().join('/')}</span><span class=hint>Turno atual: ${sh?esc(sh.name)+' '+sh.start+'–'+endOf(sh.start):'—'}</span></div></div>`});
   });
  });
  $('#m').innerHTML=h+'</div>'}
 function searchColabs(){window.colabNameFilter=$('#colabSearch').value.trim();render()}
 function setColabMacroFilter(id){window.colabMacroFilter=id;window.colabAreaFilter='todos';render()}
 function clearColabSearch(){window.colabNameFilter='';window.colabMacroFilter='todos';window.colabAreaFilter='todos';render()}
-function addEmp(){const n=$('#nN').value.trim(),s=$('#nS').value,d=$('#nD').value;if(!n)return alert('Informe o nome do colaborador.');if(!s)return alert('Cadastre um sub-setor/ilha antes de adicionar colaboradores.');if(!d)return alert('Informe a data de admissão.');const sec=secOf(s),shift=leastUsedShift(sec,d);const e=newEmp(n,s,shift.id,d);S.emps.push(e);generateNewHire(e);save();render()}
-function setE(id,f,v){const e=S.emps.find(x=>x.id===id);
+function addEmp(){if(!isAdmin())return denyWrite();const n=$('#nN').value.trim(),s=$('#nS').value,d=$('#nD').value;if(!n)return alert('Informe o nome do colaborador.');if(!s)return alert('Cadastre um sub-setor/ilha antes de adicionar colaboradores.');if(!d)return alert('Informe a data de admissão.');const sec=secOf(s),shift=leastUsedShift(sec,d);const e=newEmp(n,s,shift.id,d);S.emps.push(e);generateNewHire(e);save();render()}
+function setE(id,f,v){if(!isAdmin())return denyWrite();const e=S.emps.find(x=>x.id===id);
  if(f==='name')e.name=v;else if(f==='sector'){e.sector=v;e.shifts=[{from:activeFrom(e),shift:secOf(v).shifts[0].id}]}else e.shifts[0].shift=v;
  save();render()}
-function delE(id){if(!confirm('Excluir colaborador?'))return;S.emps=S.emps.filter(e=>e.id!==id);delete S.days[id];save();render()}
+function delE(id){if(!isAdmin())return denyWrite();if(!confirm('Excluir colaborador?'))return;S.emps=S.emps.filter(e=>e.id!==id);delete S.days[id];save();render()}
 
 /* ---------- SETORES E HORÁRIOS ---------- */
 function renderSetores(){
+ if(!isAdmin()){let ro=`<div class=card><h3>Jornada</h3><p>Horas trabalhadas: <b>${toHM(S.cfg.work)}</b> · Almoço: <b>${toHM(S.cfg.lunch)}</b></p><span class=hint>Perfil consulta — configurações disponíveis apenas para o administrador.</span></div>`;
+  S.macros.forEach(m=>{ro+=`<div class=card><h3>${esc(m.name)}</h3>`;S.sectors.filter(s=>s.macro===m.id).forEach(sec=>{ro+=`<h4>${esc(sec.name)}</h4>${sec.shifts.map(s=>`<div class=row><b>${esc(s.name)}</b><span>${s.start}–${endOf(s.start)}</span></div>`).join('')}`});ro+='</div>'});$('#m').innerHTML=ro;return}
  let h=`<div class=card><h3>Jornada</h3><div class=row><label>Horas trabalhadas <input type=time value="${toHM(S.cfg.work)}" onchange="S.cfg.work=toMin(this.value);save();render()"></label>
  <label>Almoço <input type=time value="${toHM(S.cfg.lunch)}" onchange="S.cfg.lunch=toMin(this.value);save();render()"></label></div>
  <span class=hint>Loja 08:00–21:00, com cobertura até 21:58. A saída é calculada: entrada + trabalhadas + almoço. Em vermelho: passa de 21:58.</span></div>`;
@@ -286,24 +284,24 @@ function renderSetores(){
  });
  $('#m').innerHTML=h}
 const shOf=(sid,id)=>secOf(sid).shifts.find(x=>x.id===id);
-function addMacro(){const name=$('#newMacro').value.trim();if(!name)return;if(S.macros.some(m=>m.name.trim().toLocaleLowerCase('pt-BR')===name.toLocaleLowerCase('pt-BR')))return alert('Já existe um setor macro com esse nome.');S.macros.push({id:'m'+uid(),name});save();render()}
-function addSector(macroId){const input=$('#newArea-'+macroId),name=input.value.trim();if(!name)return;
+function addMacro(){if(!isAdmin())return denyWrite();const name=$('#newMacro').value.trim();if(!name)return;if(S.macros.some(m=>m.name.trim().toLocaleLowerCase('pt-BR')===name.toLocaleLowerCase('pt-BR')))return alert('Já existe um setor macro com esse nome.');S.macros.push({id:'m'+uid(),name});save();render()}
+function addSector(macroId){if(!isAdmin())return denyWrite();const input=$('#newArea-'+macroId),name=input.value.trim();if(!name)return;
  if(S.sectors.some(s=>s.macro===macroId&&s.name.trim().toLocaleLowerCase('pt-BR')===name.toLocaleLowerCase('pt-BR')))return alert('Já existe uma ilha/sub-setor com esse nome neste macro.');
  const p=uid();S.sectors.push({id:'s'+uid(),macro:macroId,name,shifts:[{id:p+'0',name:'Abertura',start:'08:00'},{id:p+'1',name:'Intermediário',start:'10:00'},{id:p+'2',name:'Fechamento',start:'11:50'}]});save();render()}
 let delId;
-function delSector(id){const sec=secOf(id);if(!sec)return;const emps=S.emps.filter(e=>e.sector===id);delId=id;
+function delSector(id){if(!isAdmin())return denyWrite();const sec=secOf(id);if(!sec)return;const emps=S.emps.filter(e=>e.sector===id);delId=id;
  if(!emps.length){if(!confirm(`Excluir o sub-setor "${sec.name}" e seus turnos?`))return;return doDelSector()}
  $('#delT').textContent=`Excluir "${sec.name}"`;$('#delP').textContent=`Há ${emps.length} colaborador(es) neste sub-setor.`;
  $('#delDest').innerHTML=S.sectors.filter(s=>s.id!==id).map(s=>`<option value="${s.id}">Mover para ${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')+'<option value="__del">Excluir também os colaboradores</option>';
  $('#dlgDel').showModal()}
-function confirmDelSector(){const d=$('#delDest').value,emps=S.emps.filter(e=>e.sector===delId);
+function confirmDelSector(){if(!isAdmin())return denyWrite();const d=$('#delDest').value,emps=S.emps.filter(e=>e.sector===delId);
  if(d==='__del'){if(!confirm(`Excluir ${emps.length} colaborador(es) junto com o sub-setor? Isso não pode ser desfeito.`))return;const ids=emps.map(e=>e.id);S.emps=S.emps.filter(e=>!ids.includes(e.id));ids.forEach(x=>delete S.days[x])}
  else emps.forEach(e=>{e.sector=d;e.shifts=[{from:'0000-00-00',shift:secOf(d).shifts[0].id}]});
  $('#dlgDel').close();doDelSector()}
-function doDelSector(){const id=delId;S.sectors=S.sectors.filter(s=>s.id!==id);
+function doDelSector(){if(!isAdmin())return denyWrite();const id=delId;S.sectors=S.sectors.filter(s=>s.id!==id);
  if(window.escalaSetorFilter==='area:'+id)window.escalaSetorFilter='todos';if(window.colabAreaFilter===id)window.colabAreaFilter='todos';if(window.dSec===id)window.dSec='todos';save();render()}
-function addSh(sid){secOf(sid).shifts.push({id:uid(),name:'Novo turno',start:'09:00'});save();render()}
-function delSh(sid,id){const sec=secOf(sid);sec.shifts=sec.shifts.filter(s=>s.id!==id);save();render()}
+function addSh(sid){if(!isAdmin())return denyWrite();secOf(sid).shifts.push({id:uid(),name:'Novo turno',start:'09:00'});save();render()}
+function delSh(sid,id){if(!isAdmin())return denyWrite();const sec=secOf(sid);sec.shifts=sec.shifts.filter(s=>s.id!==id);save();render()}
 
 
 /* ---------- FERIADOS ---------- */
@@ -314,13 +312,14 @@ const holOf=k=>S.hol.find(h=>h.d===k),isHol=k=>!!holOf(k);
 function holBox(y,m){const p=y+'-'+pad(m),l=S.hol.filter(h=>h.d.startsWith(p)).sort((a,b)=>a.d.localeCompare(b.d));
  return l.length?`<div class="box hol"><b>Feriados:</b> ${l.map(h=>h.d.slice(8)+' '+esc(h.n)).join(' · ')}</div>`:''}
 function renderFeriados(){const hs=[...S.hol].sort((a,b)=>a.d.localeCompare(b.d));
+ if(!isAdmin()){$('#m').innerHTML=`<div class=card><h3>Feriados (${hs.length})</h3><span class=hint>Perfil consulta — somente o administrador pode alterar a lista.</span>${hs.map(x=>`<div class=row><b>${x.d.split('-').reverse().join('/')}</b><span>${esc(x.n)}</span></div>`).join('')}</div>`;return}
  let h=`<div class=card><h3>Novo feriado</h3><div class=row><input type=date id=hD><input id=hN placeholder="Nome do feriado" style="min-width:220px"><button class=p onclick="addHol()">Adicionar</button></div>
  <span class=hint>Feriados ficam destacados (★) na escala mensal e na diária. Inclua também os municipais.</span></div><div class=card><h3>Feriados (${hs.length})</h3>`;
  hs.forEach(x=>{h+=`<div class=row><input type=date value="${x.d}" onchange="editHol('${x.id}','d',this.value)"><input value="${esc(x.n)}" style="min-width:220px" onchange="editHol('${x.id}','n',this.value)"><button class=x onclick="delHol('${x.id}')">Excluir</button></div>`});
  $('#m').innerHTML=h+'</div>'}
-function addHol(){const d=$('#hD').value,n=$('#hN').value.trim();if(!d||!n)return alert('Informe data e nome.');S.hol.push({id:uid(),d,n});save();render()}
-function editHol(id,f,v){const x=S.hol.find(h=>h.id===id);if(v)x[f]=v;save();render()}
-function delHol(id){S.hol=S.hol.filter(h=>h.id!==id);save();render()}
+function addHol(){if(!isAdmin())return denyWrite();const d=$('#hD').value,n=$('#hN').value.trim();if(!d||!n)return alert('Informe data e nome.');S.hol.push({id:uid(),d,n});save();render()}
+function editHol(id,f,v){if(!isAdmin())return denyWrite();const x=S.hol.find(h=>h.id===id);if(v)x[f]=v;save();render()}
+function delHol(id){if(!isAdmin())return denyWrite();S.hol=S.hol.filter(h=>h.id!==id);save();render()}
 
 /* ---------- ESCALA DIÁRIA ---------- */
 const pc=(a,t)=>t?Math.round(a/t*100):0;
@@ -328,13 +327,15 @@ function pctBoxes(t,o,a,c){return `<div class=box><b>Folga:</b> ${pc(o,t)}% <sma
 window.dDay=fmt(new Date());window.dSec='todos';
 const DN=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const dg=(id,k)=>(S.daily[k]||{})[id]||{};
-function setD(id,f,v){const k=window.dDay,o=((S.daily[k]??={})[id]??={});o[f]=v;if(f==='st'&&v!=='P'){o.brk='';o.pdv='';o.pdv2=''}save();renderDiario()}
+function applyDailySearch(){window.dailyNameFilter=$('#dailyNameFilter').value.trim();renderDiario()}
+function clearDailySearch(){window.dailyNameFilter='';renderDiario()}
+function setD(id,f,v){if(!isAdmin())return denyWrite();const k=window.dDay,o=((S.daily[k]??={})[id]??={});o[f]=v;if(f==='st'&&v!=='P'){o.brk='';o.pdv='';o.pdv2=''}save();renderDiario()}
 function goDay(v){if(v){window.dDay=v;renderDiario()}}
 function moveDay(n){window.dDay=fmt(addD(new Date(window.dDay+'T12:00'),n));renderDiario()}
 function renderDiario(){
- const k=window.dDay,dt=new Date(k+'T12:00'),hh=holOf(k);let nP=0,nF=0,nA=0,nL=0,nJ=0,body='',any=false,tot=0,nOff=0,nOpen=0,nClose=0;
+ const k=window.dDay,dt=new Date(k+'T12:00'),hh=holOf(k),admin=isAdmin(),q=(window.dailyNameFilter||'').trim().toLocaleLowerCase('pt-BR');let nP=0,nF=0,nA=0,nL=0,nJ=0,body='',any=false,tot=0,nOff=0,nOpen=0,nClose=0;
  S.sectors.filter(s=>window.dSec==='todos'||s.id===window.dSec).forEach(sec=>{
-  const es=S.emps.filter(e=>e.sector===sec.id);if(!es.length)return;
+  const es=S.emps.filter(e=>e.sector===sec.id&&activeFrom(e)<=k&&(!q||e.name.toLocaleLowerCase('pt-BR').includes(q)));if(!es.length)return;
   es.forEach(e=>{if((S.days[e.id]||{})[k])any=true});
   const work=es.filter(e=>(S.days[e.id]||{})[k]==='T'),off=es.filter(e=>(S.days[e.id]||{})[k]!=='T');tot+=es.length;nOff+=off.length;
   body+=`<h3 style="margin:10px 0 2px;font-size:14px">${esc(macroOf(sec.macro)?.name||'')} › ${esc(sec.name)}</h3>`;
@@ -343,37 +344,37 @@ function renderDiario(){
    
    ps.forEach(e=>{const o=dg(e.id,k),st=o.st||'P',br=o.brk||'';
     if(st==='F')nF++;else if(st==='A')nA++;else{nP++;if(br==='L')nL++;if(br==='J')nJ++}
-    body+=`<div class="drow ${st!=='P'?st:br?'brk':''}"><span class=n>${esc(e.name)}</span>
+    body+=`<div class="drow ${st!=='P'?st:br?'brk':''}"><span class=n>${esc(e.name)}</span>${admin?`
     <select onchange="setD('${e.id}','st',this.value)"><option value=P ${st==='P'?'selected':''}>Presente</option><option value=F ${st==='F'?'selected':''}>Faltou</option><option value=A ${st==='A'?'selected':''}>Atestado</option></select>
     ${st==='P'?`<select onchange="setD('${e.id}','brk',this.value)"><option value="">—</option><option value=L ${br==='L'?'selected':''}>Almoço</option><option value=J ${br==='J'?'selected':''}>Janta</option></select>
     <input class=pdv placeholder="PDV 1" value="${esc(o.pdv||'')}" onchange="setD('${e.id}','pdv',this.value)">
     <input class=pdv placeholder="PDV 2" value="${esc(o.pdv2||'')}" onchange="setD('${e.id}','pdv2',this.value)">
-    ${br?`<span class=tag>${br==='L'?'em almoço':'em janta'}</span>`:''}`:`<span class="tag r">${st==='F'?'faltou':'atestado'}</span>`}</div>`});
+    ${br?`<span class=tag>${br==='L'?'em almoço':'em janta'}</span>`:''}`:`<span class="tag r">${st==='F'?'faltou':'atestado'}</span>`}`:`<span class="tag ${st==='P'?'':'r'}">${st==='P'?'Presente':st==='F'?'Faltou':'Atestado'}</span>${st==='P'&&br?`<span class=tag>${br==='L'?'Almoço':'Janta'}</span>`:''}${o.pdv?`<span class=hint>PDV 1: ${esc(o.pdv)}</span>`:''}${o.pdv2?`<span class=hint>PDV 2: ${esc(o.pdv2)}</span>`:''}`}</div>`});
   });
   if(off.length)body+=`<div class=hint style="margin-top:6px">Folga: ${off.map(e=>esc(e.name)).join(', ')}</div>`});
  const dsel=`<select onchange="window.dSec=this.value;renderDiario()"><option value=todos>Todos os setores</option>${S.sectors.map(s=>`<option value="${s.id}" ${window.dSec===s.id?'selected':''}>${esc(macroOf(s.macro)?.name||'')} › ${esc(s.name)}</option>`).join('')}</select>`;
  let h=`<div class=bar><button class=s onclick="moveDay(-1)">◀</button><input type=date value="${k}" onchange="goDay(this.value)"><button class=s onclick="moveDay(1)">▶</button>
- <button class=s onclick="goDay(fmt(new Date()))">Hoje</button>${dsel}<button class=s onclick="doExp('d','xlsx')">Excel</button><button class=s onclick="doExp('d','ods')">LibreOffice</button><button class=s onclick="doExp('d','pdf')">PDF</button><b>${DN[dt.getDay()]}</b>${hh?`<span class=hbadge>★ ${esc(hh.n)}</span>`:''}</div>
+ <button class=s onclick="goDay(fmt(new Date()))">Hoje</button>${dsel}<input id=dailyNameFilter type=search placeholder="Pesquisar colaborador" value="${esc(window.dailyNameFilter||'')}" onkeydown="if(event.key==='Enter')applyDailySearch()"><button class=s onclick="applyDailySearch()">Buscar</button><button class=s onclick="clearDailySearch()">Limpar</button><button class=s onclick="doExp('d','xlsx')">Excel</button><button class=s onclick="doExp('d','ods')">LibreOffice</button><button class=s onclick="doExp('d','pdf')">PDF</button><b>${DN[dt.getDay()]}</b>${hh?`<span class=hbadge>★ ${esc(hh.n)}</span>`:''}</div>
  <div class=summary><div class=box><b>Presentes:</b> ${nP}</div><div class=box><b>Faltas:</b> ${nF}</div><div class=box><b>Atestados:</b> ${nA}</div><div class=box><b>Em almoço:</b> ${nL}</div><div class=box><b>Em janta:</b> ${nJ}</div>${pctBoxes(tot,nOff,nOpen,nClose)}</div>`;
- if(!any)h+=`<div class=card>A escala mensal deste dia ainda não foi gerada. Vá em Escala mensal e clique em Reorganizar folgas.</div>`;
+ if(!any&&q)h+=`<div class=card>Nenhum colaborador encontrado para “${esc(q)}” neste dia.</div>`;else if(!any)h+=`<div class=card>A escala mensal deste dia ainda não foi gerada. Vá em Escala mensal e clique em Reorganizar folgas.</div>`;
  $('#m').innerHTML=h+body}
 
 /* ---------- EXPORTAÇÃO ---------- */
-function visEmps(){const f=window.escalaSetorFilter||'todos';return S.emps.filter(e=>{if(f==='todos')return true;if(f.startsWith('macro:'))return secOf(e.sector)?.macro===f.slice(6);if(f.startsWith('area:'))return e.sector===f.slice(5);return e.sector===f})}
-function monthData(){const[y,m]=S.ym.split('-').map(Number),n=new Date(y,m,0).getDate(),vis=visEmps(),cols=['Colaborador'],rows=[];
- for(let d=1;d<=n;d++){const dt=new Date(y,m-1,d);cols.push(d+' '+WD[dt.getDay()]+(holOf(fmt(dt))?'★':''))}
+function visEmps(){const f=window.escalaSetorFilter||'todos',q=(window.scaleNameFilter||'').trim().toLocaleLowerCase('pt-BR');return S.emps.filter(e=>{const area=secOf(e.sector),areaOk=f==='todos'||(f.startsWith('macro:')?area?.macro===f.slice(6):f.startsWith('area:')?e.sector===f.slice(5):e.sector===f);return areaOk&&(!q||e.name.toLocaleLowerCase('pt-BR').includes(q))})}
+function monthData(){const[y,m]=S.ym.split('-').map(Number),n=new Date(y,m,0).getDate(),vis=visEmps(),days=Array.from({length:n},(_,i)=>i+1).filter(d=>window.scaleFocusDay==='todos'||window.scaleFocusDay===fmt(new Date(y,m-1,d))),cols=['Colaborador'],rows=[];
+ for(const d of days){const dt=new Date(y,m-1,d);cols.push(d+' '+WD[dt.getDay()]+(holOf(fmt(dt))?'★':''))}
  cols.push('5x2');
  S.macros.forEach(ma=>S.sectors.filter(s=>s.macro===ma.id).forEach(sec=>sortEmps(vis.filter(e=>e.sector===sec.id)).forEach(e=>{
-  const c=[e.name];for(let d=1;d<=n;d++){const k=fmt(new Date(y,m-1,d)),v=(S.days[e.id]||{})[k];c.push(!v?'':v==='F'?'F':shiftOn(e,k).start)}
+  const c=[e.name];for(const d of days){const k=fmt(new Date(y,m-1,d)),v=(S.days[e.id]||{})[k];c.push(activeFrom(e)>k?'—':!v?'':v==='F'?'F':shiftOn(e,k).start)}
   c.push(weekCheck(e,y,m).includes('⚠')?'REVISAR':'OK');rows.push({macro:ma.name,sub:sec.name,cells:c})})));
  const T=vis.length,foot=[['TOTAL'],['TRABALHANDO'],['FOLGA']];
- for(let d=1;d<=n;d++){const k=fmt(new Date(y,m-1,d));let off=0;vis.forEach(e=>{if((S.days[e.id]||{})[k]==='F')off++});
-  foot[0].push(T);foot[1].push((T-off)+' ('+pc(T-off,T)+'%)');foot[2].push(off+' ('+pc(off,T)+'%)')}
+ for(const d of days){const k=fmt(new Date(y,m-1,d));let off=0,active=0;vis.forEach(e=>{if(activeFrom(e)>k)return;active++;if((S.days[e.id]||{})[k]==='F')off++});
+  foot[0].push(active);foot[1].push((active-off)+' ('+pc(active-off,active)+'%)');foot[2].push(off+' ('+pc(off,active)+'%)')}
  foot.forEach(f=>f.push(''));
  const hs=S.hol.filter(h=>h.d.startsWith(y+'-'+pad(m))).map(h=>h.d.slice(8)+'/'+pad(m)+' '+h.n).join(' · ');
  return{file:'escala_'+S.ym,title:'Escala '+pad(m)+'/'+y,sub:hs?'Feriados (★): '+hs:'',cols,rows,foot,orient:'l'}}
-function dayData(){const k=window.dDay,rows=[],cols=['Colaborador','Turno','Status','Pausa','PDV 1','PDV 2'],stl={P:'Presente',F:'Faltou',A:'Atestado'};
- S.sectors.filter(s=>window.dSec==='todos'||s.id===window.dSec).forEach(sec=>{const ma=macroOf(sec.macro)?.name||'',es=S.emps.filter(e=>e.sector===sec.id);
+function dayData(){const k=window.dDay,rows=[],q=(window.dailyNameFilter||'').trim().toLocaleLowerCase('pt-BR'),cols=['Colaborador','Turno','Status','Pausa','PDV 1','PDV 2'],stl={P:'Presente',F:'Faltou',A:'Atestado'};
+ S.sectors.filter(s=>window.dSec==='todos'||s.id===window.dSec).forEach(sec=>{const ma=macroOf(sec.macro)?.name||'',es=S.emps.filter(e=>e.sector===sec.id&&activeFrom(e)<=k&&(!q||e.name.toLocaleLowerCase('pt-BR').includes(q)));
   sec.shifts.forEach(s=>sortEmps(es.filter(e=>(S.days[e.id]||{})[k]==='T'&&shiftOn(e,k).id===s.id)).forEach(e=>{const o=((S.daily[k]||{})[e.id])||{};
    rows.push({macro:ma,sub:sec.name,cells:[e.name,s.name+' '+s.start+'–'+endOf(s.start),stl[o.st||'P'],o.brk==='L'?'Almoço':o.brk==='J'?'Janta':'',o.pdv||'',o.pdv2||'']})}));
   sortEmps(es.filter(e=>(S.days[e.id]||{})[k]!=='T')).forEach(e=>rows.push({macro:ma,sub:sec.name,cells:[e.name,'Folga','','','','']}))});
@@ -402,22 +403,29 @@ const lss=(k,v)=>{try{if(v==null)localStorage.removeItem(k);else localStorage.se
 const sget=()=>lsj(SES_K,null);
 function cfgGet(){const c=lsj(CFG_K,{});return{url:(SUPA_URL||c.url||'').trim().replace(/\/+$/,''),key:(SUPA_KEY||c.key||'').trim()}}
 window.SYNC={dirty:false,ver:0,timer:null,busy:false,loading:false,msg:''};
-function setSt(m,err){SYNC.msg=m;SYNC.err=!!err;const el=document.querySelector('#syncSt');if(el){el.textContent=m;el.style.color=err?'#e3101a':''}const h=document.querySelector('#hSt');if(h){h.textContent=m;h.style.color=err?'#e3101a':''}}
-function markDirty(){const Y=window.SYNC;if(!Y||Y.loading||!sget())return;Y.dirty=true;Y.ver++;setSt('Alterações pendentes…');clearTimeout(Y.timer);Y.timer=setTimeout(syncNow,1200)}
+function setSt(m,err){SYNC.msg=m;SYNC.err=!!err;const color=err?'#b91c1c':(/Supabase confirmou|carregados? do Supabase/.test(m)?'#15803d':(/enviando|pendente|não confirmado/i.test(m)?'#a16207':''));const el=document.querySelector('#syncSt');if(el){el.textContent=m;el.style.color=color}const h=document.querySelector('#hSt');if(h){h.textContent=m;h.style.color=color}}
+function markDirty(){const Y=window.SYNC;if(!Y||Y.loading||!sget())return;Y.dirty=true;Y.ver++;setSt('Salvo neste aparelho; enviando alterações para o Supabase…');clearTimeout(Y.timer);Y.timer=setTimeout(syncNow,1200)}
 function normalize(){S.hol??=defHol();S.daily??={};S.days??={};S.emps??=[];S.macros??=[];S.sectors??=[];S.emps.forEach(e=>{e.shifts??=[];e.startDate??='0000-00-00'});ensureHierarchy()}
 const hhmm=()=>{const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())};
 async function token(){let s=sget();if(!s)throw new Error('sem sessão');
  if(s.expires_at*1000-Date.now()<60000){const c=cfgGet(),r=await fetch(c.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:c.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:s.refresh_token})}),j=await r.json();
   if(!r.ok){lss(SES_K,null);throw new Error('Sessão expirou. Entre novamente.')}s=saveSess(j,s.email)}
  return s.access_token}
-function saveSess(j,email){const s={access_token:j.access_token,refresh_token:j.refresh_token,expires_at:j.expires_at||Math.floor(Date.now()/1000)+(j.expires_in||3600),email};lss(SES_K,s);return s}
+function saveSess(j,email){const u=j.user||{};const s={access_token:j.access_token,refresh_token:j.refresh_token,expires_at:j.expires_at||Math.floor(Date.now()/1000)+(j.expires_in||3600),email,userId:u.id||''};lss(SES_K,s);return s}
 async function api(path,opt={}){const c=cfgGet(),t=await token(),r=await fetch(c.url+path,{...opt,headers:{apikey:c.key,Authorization:'Bearer '+t,'Content-Type':'application/json',...(opt.headers||{})}});
  if(!r.ok){const x=await r.text();throw new Error(r.status+' '+x.slice(0,160))}
  try{return await r.json()}catch(e){return null}}
+async function loadAccess(){ACCESS={ready:false,role:'consulta',userId:'',note:'Verificando perfil…'};try{
+ const user=await api('/auth/v1/user');if(!user?.id)throw new Error('Não foi possível identificar a conta autenticada.');
+ ACCESS.userId=user.id;const rows=await api('/rest/v1/escala_roles?user_id=eq.'+encodeURIComponent(user.id)+'&select=role&limit=1');
+ ACCESS.role=rows?.[0]?.role==='admin'?'admin':'consulta';ACCESS.note=ACCESS.role==='admin'?'Acesso administrativo.':'Acesso de consulta — alterações bloqueadas. Se você deveria ser admin, atribua o perfil na tabela escala_roles do Supabase.';
+ }catch(e){ACCESS.role='consulta';ACCESS.note='Acesso de consulta por segurança. Perfil não carregado: '+e.message}
+ ACCESS.ready=true;document.body.classList.toggle('readonly',!isAdmin());const b=$('#profileBadge');if(b)b.textContent='Perfil: '+(isAdmin()?'Administrativo':'Consulta');return ACCESS}
 async function pull(){const r=await api('/rest/v1/escala_state?id=eq.main&select=data,updated_at');return r&&r[0]||null}
 async function doPush(){const Y=SYNC,v=Y.ver,snapshot=JSON.parse(JSON.stringify(S)),r=await api('/rest/v1/escala_state?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id:'main',data:snapshot,updated_at:new Date().toISOString()})});
+ if(!Array.isArray(r)||!r[0]?.updated_at)throw new Error('O banco não confirmou a gravação. Verifique as permissões da tabela.');
  lss(BASE_K,r[0].updated_at);lss(BASE_DATA_K,snapshot);Y.dirty=Y.ver!==v}
-function applyRemote(rem){const Y=SYNC,original=JSON.stringify(rem.data);Y.loading=true;S=rem.data;normalize();const migrated=JSON.stringify(S)!==original;try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}Y.loading=false;Y.dirty=migrated;if(migrated)Y.ver++;lss(BASE_K,rem.updated_at);lss(BASE_DATA_K,rem.data)}
+function applyRemote(rem){const Y=SYNC,original=JSON.stringify(rem.data);Y.loading=true;S=rem.data;normalize();const migrated=JSON.stringify(S)!==original;try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}Y.loading=false;Y.dirty=migrated&&isAdmin();if(Y.dirty)Y.ver++;lss(BASE_K,rem.updated_at);lss(BASE_DATA_K,rem.data)}
 const sameJSON=(a,b)=>JSON.stringify(a)===JSON.stringify(b),isObj=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 function mergeNode(base,local,cloud,hb=true,hl=true,hc=true){
  if(hl&&hc&&sameJSON(local,cloud))return local;
@@ -436,15 +444,22 @@ function mergeNode(base,local,cloud,hb=true,hl=true,hc=true){
  return cloud;
 }
 function mergeStates(base,local,cloud){return mergeNode(base,local,cloud,!!base,true,true)||cloud}
-async function syncNow(){const Y=SYNC;if(!sget()||Y.busy)return;const cached=lsj(BASE_DATA_K,null);if(!Y.dirty&&cached&&!sameJSON(S,cached)){Y.dirty=true;Y.ver++}Y.busy=true;let ok=false;setSt('Sincronizando…');
- try{const rem=await pull(),base=localStorage.getItem(BASE_K)||'',baseData=lsj(BASE_DATA_K,null);
-  if(!rem)await doPush();
-  else if(rem.updated_at===base){if(Y.dirty)await doPush();else lss(BASE_DATA_K,rem.data)}
-  else if(!Y.dirty&&(base||!HAD_LOCAL_STATE)){applyRemote(rem);render()}
-  else{const merged=mergeStates(baseData,S,rem.data);Y.loading=true;S=merged;normalize();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}Y.loading=false;Y.dirty=true;Y.ver++;
-   if(!sameJSON(S,rem.data))await doPush();else applyRemote(rem);render()}
-  ok=true;setSt('☁ Salvo na nuvem às '+hhmm())}
- catch(e){setSt('Sem sincronizar: '+e.message,true)}
+async function syncNow(){const Y=SYNC;if(!sget()||Y.busy)return;if(!ACCESS.ready)await loadAccess();Y.busy=true;let ok=false;setSt('Consultando o Supabase…');
+ try{const rem=await pull();
+  if(!isAdmin()){
+   if(!rem){Y.dirty=false;setSt('Sem escala publicada no banco. Perfil consulta: nada foi enviado.',true)}
+   else{applyRemote(rem);render();Y.dirty=false;ok=true;setSt('Dados carregados do Supabase às '+hhmm()+' — perfil consulta; nenhuma alteração enviada.')}
+  }else{
+   const cached=lsj(BASE_DATA_K,null);if(!Y.dirty&&cached&&!sameJSON(S,cached)){Y.dirty=true;Y.ver++}
+   const base=localStorage.getItem(BASE_K)||'',baseData=lsj(BASE_DATA_K,null);
+   if(!rem)await doPush();
+   else if(rem.updated_at===base){if(Y.dirty)await doPush();else lss(BASE_DATA_K,rem.data)}
+   else if(!Y.dirty&&(base||!HAD_LOCAL_STATE)){applyRemote(rem);render()}
+   else{const merged=mergeStates(baseData,S,rem.data);Y.loading=true;S=merged;normalize();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}Y.loading=false;Y.dirty=true;Y.ver++;
+    if(!sameJSON(S,rem.data))await doPush();else applyRemote(rem);render()}
+   ok=true;setSt('Supabase confirmou a sincronização às '+hhmm()+'.')
+  }
+ }catch(e){setSt('Não confirmado no Supabase. A cópia deste aparelho foi mantida. Erro: '+e.message,true)}
  finally{Y.busy=false;if(ok&&Y.dirty){clearTimeout(Y.timer);Y.timer=setTimeout(syncNow,800)}}}
 async function doLogin(){const c=cfgGet(),email=$('#lE').value.trim(),pw=$('#lP').value,msg=$('#lMsg');if(!email||!pw){msg.textContent='Informe e-mail e senha.';return}
  msg.textContent='Entrando…';
@@ -453,13 +468,13 @@ async function doLogin(){const c=cfgGet(),email=$('#lE').value.trim(),pw=$('#lP'
  catch(e){msg.textContent=e.message}}
 function saveCfg(){const u=$('#cU').value.trim(),k=$('#cK').value.trim();if(!u||!k)return alert('Informe a URL e a chave.');lss(CFG_K,{url:u,key:k});boot()}
 function resetCfg(){lss(CFG_K,null);boot()}
-function useLocal(){lss(LOC_K,'1');boot()}
+function useLocal(){lss(LOC_K,'1');ACCESS={ready:true,role:'consulta',userId:'local',note:'Modo local sem nuvem — somente consulta.'};boot()}
 async function sair(){const Y=SYNC;if(Y.dirty&&sget()){await syncNow()}
  const pend=Y.dirty;if(pend&&!confirm('Há alterações que não foram enviadas para a nuvem. Sair mesmo assim?'))return;
  lss(SES_K,null);lss(LOC_K,null);
  if(!pend&&S.emps.length&&confirm('Sair concluído. Apagar também os dados guardados neste navegador? (continuam seguros na nuvem)')){lss(LS,null);lss(BASE_K,null);lss(BASE_DATA_K,null);S=def();normalize()}
  boot()}
-function impFile(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();
+function impFile(inp){if(!isAdmin())return denyWrite();const f=inp.files[0];if(!f)return;const r=new FileReader();
  r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.sectors)||!Array.isArray(d.emps))throw 0;if(!confirm('Importar este backup e substituir os dados atuais?'))return;
   S=d;normalize();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}markDirty();render()}catch(e){alert('Arquivo de backup inválido.')}};r.readAsText(f);inp.value=''}
 function goTab(t){tab=t;document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x.dataset.t===t));render()}
@@ -469,21 +484,25 @@ function renderLogin(){const c=cfgGet(),need=!c.url||!c.key;
  `<div class=row><input id=lE type=email placeholder="E-mail" style="width:100%" autocomplete=username></div><div class=row><input id=lP type=password placeholder="Senha" style="width:100%" autocomplete=current-password onkeydown="if(event.key==='Enter')doLogin()"></div><button class=p onclick="doLogin()">Entrar</button> <span id=lMsg class=bad></span><p class=hint>O login fica salvo neste navegador até você clicar em Sair.</p>`)+
  `<hr style="border:0;border-top:1px solid #e2e8f0;margin:14px 0"><button class=s onclick="useLocal()">Usar só neste navegador (sem nuvem)</button> ${need?'':'<button class=x onclick="resetCfg()">Alterar configuração</button>'}</div>`}
 function renderHome(){const s=sget(),cards=[['escala','Escala mensal','Gerar e editar a escala do mês'],['diario','Escala diária','Presença, almoço/janta e PDV'],['colab','Colaboradores','Cadastro e turnos'],['setores','Setores e horários','Macros, sub-setores e jornada'],['feriados','Feriados','Calendário de feriados']];
- $('#m').innerHTML=`<div class=card><h3>${s?'Olá, '+esc(s.email):'Modo local (sem nuvem)'}</h3>
+ $('#m').innerHTML=`<div class=card><h3>${s?'Olá, '+esc(s.email):'Modo local (sem nuvem)'} <span class="tag">Perfil: ${ACCESS.role==='admin'?'Administrativo':'Consulta'}</span></h3>
+ <div class=row><span class=hint>${esc(ACCESS.note||'')}</span></div>
  <div class=row><span id=hSt class=hint>${esc(SYNC.msg||(s?'':'Os dados ficam só neste navegador.'))}</span></div>
  <div class=row>${s?`<button class=s onclick="syncNow()">Sincronizar agora</button>`:`<button class=s onclick="lss(LOC_K,null);boot()">Entrar na nuvem</button>`}
- <button class=s onclick="exp()">Exportar backup</button><label class=s style="cursor:pointer;display:inline-block;padding:7px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#fff">Importar backup<input type=file accept=".json,application/json" style="display:none" onchange="impFile(this)"></label>
+ <button class=s onclick="exp()">Exportar backup</button><label class="s admin-only" style="cursor:pointer;display:inline-block;padding:7px 12px;border:1px solid #cbd5e1;border-radius:6px;background:#fff">Importar backup<input type=file accept=".json,application/json" style="display:none" onchange="impFile(this)"></label>
  <button class=x onclick="sair()">Sair</button></div></div>
  <div class=hgrid>${cards.map(c=>`<button class=hcard onclick="goTab('${c[0]}')"><b>${c[1]}</b><span class=hint>${c[2]}</span></button>`).join('')}</div>`}
 function boot(){const s=sget(),loc=localStorage.getItem(LOC_K)==='1',on=!!(s||loc);
  document.body.classList.toggle('nolog',!on);const bo=document.querySelector('#btnOut');if(bo)bo.style.display=on?'':'none';
- if(!on){tab='login';renderLogin();return}
- setSt(s?'':'Modo local');goTab('home');if(s)syncNow()}
+ if(!on){ACCESS={ready:true,role:'consulta',userId:'',note:'Entre para consultar os dados.'};document.body.classList.toggle('readonly',true);const b=$('#profileBadge');if(b)b.textContent='Consulta';tab='login';renderLogin();return}
+ goTab('home');
+ if(s){ACCESS={ready:false,role:'consulta',userId:'',note:'Carregando perfil…'};document.body.classList.toggle('readonly',true);setSt('Carregando perfil e consultando o Supabase…');loadAccess().then(()=>{render();syncNow()})}
+ else{ACCESS={ready:true,role:'consulta',userId:'local',note:'Modo local sem nuvem — somente consulta; nada é enviado ao banco.'};document.body.classList.toggle('readonly',true);const b=$('#profileBadge');if(b)b.textContent='Perfil: Consulta';setSt('Modo local — somente consulta; alterações não são permitidas.')}
+}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sget()&&!SYNC.dirty)syncNow()});
 window.addEventListener('online',()=>{if(sget())syncNow()});
 window.addEventListener('beforeunload',e=>{if(SYNC.dirty){e.preventDefault();e.returnValue=''}});
 
-let tab='home';window.escalaSetorFilter='todos';window.colabMacroFilter='todos';window.colabAreaFilter='todos';window.colabNameFilter='';
+let tab='home';window.escalaSetorFilter='todos';window.colabMacroFilter='todos';window.colabAreaFilter='todos';window.colabNameFilter='';window.scaleNameFilter='';window.scaleFocusDay='todos';
 function render(){({login:renderLogin,home:renderHome,escala:renderEscala,diario:renderDiario,colab:renderColab,setores:renderSetores,feriados:renderFeriados})[tab]()}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));render()});
 boot();
