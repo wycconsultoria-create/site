@@ -407,7 +407,7 @@ function listaColab() {
   document.querySelectorAll('[data-rs]').forEach(b => b.onclick = async () => {
     if (!confirm(`Redefinir a senha de ${b.dataset.nome} para 1234?`)) return;
     b.disabled = true;
-    const { error: er } = await sb.rpc('resetar_senha', { p_chapa: b.dataset.rs });
+   const { error: er } = await sb.functions.invoke('resetar-senha', {body: { chapa: b.dataset.rs }});
     if (er) { b.disabled = false; return ($('#msg').innerHTML = `<div class="erro">${esc(er.message)}</div>`); }
     try { await carregarBase(); } catch (e) {}
     listaColab();
