@@ -40,6 +40,7 @@
   .grow{flex:1}
   .mut{color:var(--mut);font-size:14px}
   .erro{background:var(--verm-cl);color:#8f1018;border-radius:10px;padding:10px 12px;margin-top:12px}
+  .aviso{background:var(--amar-cl);color:var(--amar);border-radius:10px;padding:10px 12px}
   .sucesso{background:var(--ok-cl);color:#0f5c36;border-radius:10px;padding:10px 12px;margin-top:12px}
   .tag{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:700}
   .t-nova{background:var(--verm);color:#fff}.t-vista{background:var(--amar-cl);color:var(--amar)}.t-resolvida{background:var(--ok-cl);color:var(--ok)}
@@ -72,6 +73,9 @@
   #toasts{position:fixed;right:14px;bottom:14px;display:flex;flex-direction:column;gap:8px;z-index:50;max-width:min(92vw,380px)}
   .toast{background:var(--azul-esc);color:#fff;border-left:6px solid var(--verm);border-radius:10px;padding:12px 14px;box-shadow:0 6px 20px #0004;cursor:pointer}
   .oculto{display:none!important}
+  .login-marca{text-align:center;margin-bottom:8px}
+  .login-marca img{display:block;margin:0 auto 6px;width:230px;max-width:80%;height:auto}
+  .login-marca h1{margin:0;font-size:30px;color:var(--azul);letter-spacing:.5px}
   @media print{
     header,nav.tabs,.noprint,#toasts{display:none!important}
     body{background:#fff} main{max-width:none;padding:0} .card{border:0;padding:0}
@@ -157,8 +161,8 @@
 </head>
 <body>
 <header>
-  <img src="logo.png" alt="" onerror="this.remove()">
-  <h1>Integrador · Loja 313</h1>
+  <img src="data:image/png;base64,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" alt="" onerror="this.remove()">
+  <h1>Integrador · Loja 313 - Paulistão 14 - Indaiatuba</h1>
   <div class="quem oculto" id="quem"></div>
   <button id="sair" class="oculto">Sair</button>
 </header>
@@ -194,7 +198,10 @@ const fHora = ts => new Date(ts).toLocaleString('pt-BR', { timeZone: 'America/Sa
 const somaDias = (iso, n) => { const d = pData(iso); d.setDate(d.getDate() + n); return d.toLocaleDateString('en-CA'); };
 
 let me = null, aba = 'escala', canal = null, novas = 0, somLigado = false, filtro = 'pendentes';
-const ehFiscal = () => me && (me.perfil === 'fiscal' || me.perfil === 'admin');
+const ehFiscal = () => me && (me.perfil === 'fiscal' || me.perfil === 'admin');           // edita PDV, redefine senha
+const ehRH = () => me && me.perfil === 'rh';                                                // so ve atestados
+const veTudo = () => me && ['fiscal', 'admin', 'consulta'].includes(me.perfil);            // painel, escala do dia, geral, colaboradores
+const comPainel = () => veTudo() || ehRH();
 
 /* ---------- login ---------- */
 function emailDaChapa(txt) {
@@ -209,7 +216,7 @@ function telaLogin(msg) {
   $('#bnav').classList.add('oculto'); $('#sheet').classList.remove('aberto'); document.body.classList.remove('logado'); maisAberto = false;
   $('#app').innerHTML = `
     <form class="card login" id="f-login">
-      <h2>Entrar</h2>
+      <div class="login-marca"><img src="data:image/png;base64,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" alt="Paulistão" onerror="this.remove()"><h1>Integrador</h1><div class="mut">Loja 313 - Paulistão 14 - Indaiatuba</div></div>
       <label for="chapa">Chapa</label>
       <input id="chapa" inputmode="numeric" autocomplete="username" placeholder="ex.: 3130025" required>
       <label for="senha">Senha</label>
@@ -279,9 +286,9 @@ function montarShell() {
   montarQuem();
   $('#quem').classList.remove('oculto'); $('#sair').classList.remove('oculto'); $('#tabs').classList.remove('oculto');
   $('#bnav').classList.remove('oculto'); document.body.classList.add('logado');
-  aba = ehFiscal() ? 'painel' : 'escala';
+  aba = comPainel() ? 'painel' : 'escala';
   desenharTabs(); abrir();
-  if (ehFiscal()) ligarTempoReal();
+  if (comPainel()) ligarTempoReal();
 }
 
 const ICO = {
@@ -292,24 +299,26 @@ const ICO = {
   escala: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
   avisar: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
   meus: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  importar: '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
   mais: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>'
 };
 const ico = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>`;
-const NOMES = { painel: 'Painel ao vivo', dia: 'Escala do dia', geral: 'Escala geral', colab: 'Colaboradores', escala: 'Minha escala', avisar: 'Enviar aviso', meus: 'Meus avisos' };
+const NOMES = { painel: 'Painel ao vivo', dia: 'Escala do dia', geral: 'Escala geral', colab: 'Colaboradores', importar: 'Importar escala', escala: 'Minha escala', avisar: 'Enviar aviso', meus: 'Meus avisos' };
 const CURTO = { painel: 'Painel', dia: 'Dia', geral: 'Geral', avisar: 'Avisar', escala: 'Minha escala', meus: 'Meus avisos' };
 let maisAberto = false;
 
 function desenharTabs() {
-  const ordem = ehFiscal() ? ['painel', 'dia', 'geral', 'colab', 'escala', 'avisar', 'meus'] : ['escala', 'avisar', 'meus'];
+  const ordem = veTudo() ? ['painel', 'dia', 'geral', 'colab', ...(me.perfil === 'admin' ? ['importar'] : []), 'escala', 'avisar', 'meus'] : ehRH() ? ['painel', 'escala', 'avisar', 'meus'] : ['escala', 'avisar', 'meus'];
+  const nome = k => (k === 'painel' && ehRH()) ? 'Atestados' : NOMES[k], curto = k => (k === 'painel' && ehRH()) ? 'Atestados' : CURTO[k];
   const badge = k => (k === 'painel' && novas) ? `<span class="badge">${novas}</span>` : '';
-  const principais = ehFiscal() ? ['painel', 'dia', 'geral', 'avisar'] : ordem;
+  const principais = veTudo() ? ['painel', 'dia', 'geral', 'avisar'] : ordem;
   const extras = ordem.filter(k => !principais.includes(k));
   // topo (computador)
-  $('#tabs').innerHTML = ordem.map(k => `<button class="${k === aba ? 'on' : ''}" data-k="${k}">${NOMES[k]}${badge(k)}</button>`).join('');
+  $('#tabs').innerHTML = ordem.map(k => `<button class="${k === aba ? 'on' : ''}" data-k="${k}">${nome(k)}${badge(k)}</button>`).join('');
   // rodape (celular)
-  $('#bnav').innerHTML = principais.map(k => `<button class="${k === aba ? 'on' : ''}" data-k="${k}">${ico(k)}<span>${CURTO[k]}</span>${badge(k)}</button>`).join('')
+  $('#bnav').innerHTML = principais.map(k => `<button class="${k === aba ? 'on' : ''}" data-k="${k}">${ico(k)}<span>${curto(k)}</span>${badge(k)}</button>`).join('')
     + (extras.length ? `<button id="b-mais" class="${extras.includes(aba) ? 'on' : ''}">${ico('mais')}<span>Mais</span></button>` : '');
-  $('#sheet').innerHTML = extras.map(k => `<button class="${k === aba ? 'on' : ''}" data-k="${k}">${ico(k)}<span>${NOMES[k]}</span></button>`).join('');
+  $('#sheet').innerHTML = extras.map(k => `<button class="${k === aba ? 'on' : ''}" data-k="${k}">${ico(k)}<span>${nome(k)}</span></button>`).join('');
   $('#sheet').classList.toggle('aberto', maisAberto && extras.length > 0);
   document.querySelectorAll('#tabs [data-k],#bnav [data-k],#sheet [data-k]').forEach(b => b.onclick = () => { aba = b.dataset.k; maisAberto = false; desenharTabs(); abrir(); window.scrollTo(0, 0); });
   const mais = $('#b-mais'); if (mais) mais.onclick = () => { maisAberto = !maisAberto; desenharTabs(); };
@@ -317,7 +326,7 @@ function desenharTabs() {
 document.addEventListener('click', e => { if (maisAberto && !e.target.closest('#sheet,#b-mais')) { maisAberto = false; $('#sheet').classList.remove('aberto'); } });
 
 function abrir() {
-  ({ painel: vPainel, dia: vDia, geral: vGeral, colab: vColab, escala: vMinhaEscala, avisar: vAvisar, meus: vMeus }[aba])();
+  ({ painel: vPainel, dia: vDia, geral: vGeral, colab: vColab, importar: vImportar, escala: vMinhaEscala, avisar: vAvisar, meus: vMeus }[aba])();
 }
 
 /* ---------- dados compartilhados ---------- */
@@ -367,7 +376,7 @@ function porSetor(lista) {
 const chipsHtml = (opcoes, atual) => opcoes.map(([v, l]) => `<button type="button" class="chip ${v === atual ? 'on' : ''}" data-s="${esc(v)}">${esc(l)}</button>`).join('');
 
 /* ---------- colaboradores (fiscais veem; o lider edita) ---------- */
-const NOME_PERFIL = { admin: 'Líder', fiscal: 'Fiscal', colaborador: 'Colaborador' };
+const NOME_PERFIL = { admin: 'Líder', fiscal: 'Fiscal', colaborador: 'Colaborador', consulta: 'Consulta (só visualiza)', rh: 'RH (só atestados)' };
 let cfSetor = 'todos', cfBusca = '';
 
 async function vColab() {
@@ -376,10 +385,11 @@ async function vColab() {
   const adm = me.perfil === 'admin';
   $('#app').innerHTML = `<h2>Colaboradores</h2>
     <p class="mut">${adm ? 'Use "Editar" para corrigir nome, cargo, setor ou perfil. ' : ''}Se alguém esquecer a senha, use "Redefinir senha": ela volta a ser <b>1234</b> e a pessoa cria uma nova ao entrar.</p>
-    <div class="linha noprint" style="margin-bottom:10px"><input id="busca" class="grow" placeholder="Buscar por nome ou chapa" value="${esc(cfBusca)}" style="min-width:200px" autocomplete="off"></div>
+    <div class="linha noprint" style="margin-bottom:10px"><input id="busca" class="grow" placeholder="Buscar por nome ou chapa" value="${esc(cfBusca)}" style="min-width:200px" autocomplete="off">${adm ? '<button class="btn" id="b-novo">Novo colaborador</button>' : ''}</div>
     <div class="chips noprint" id="chips" style="margin-bottom:10px"></div>
     <div id="msg"></div><div id="lista"></div>`;
   $('#busca').oninput = e => { cfBusca = e.target.value; listaColab(); };
+  if (adm) $('#b-novo').onclick = novoColab;
   listaColab();
 }
 
@@ -392,7 +402,7 @@ function listaColab() {
   const ordem = grupos.flatMap(g => g.subs.flatMap(s => s.itens.map(x => x.c).sort((a, b) => a.nome.localeCompare(b.nome))));
   const lista = ordem.filter(c => (cfSetor === 'todos' || setorDe(c) === cfSetor) &&
     (!q || c.nome.toLowerCase().includes(q) || (qd && c.chapa.replace(/\D/g, '').includes(qd))));
-  const pode = c => c.chapa !== me.chapa && (adm || c.perfil === 'colaborador');
+  const pode = c => c.chapa !== me.chapa && (adm || (me.perfil === 'fiscal' && c.perfil === 'colaborador'));
   $('#lista').innerHTML = `<p class="mut">${lista.length} colaborador(es)</p>
     <div class="card" style="padding:0;overflow:auto"><table class="cards">
     <thead><tr><th>Chapa</th><th>Nome</th><th>Cargo</th><th>Setor</th><th>Perfil</th><th>Senha</th><th></th></tr></thead>
@@ -402,12 +412,22 @@ function listaColab() {
       <td data-l="Setor">${esc(setorDe(c))}${c.subsetor ? ` › ${esc(c.subsetor)}` : ''}</td>
       <td data-l="Perfil">${esc(NOME_PERFIL[c.perfil])}</td>
       <td data-l="Senha">${c.trocar_senha ? '<span class="tag t-vista">1234 (pendente)</span>' : '<span class="tag t-resolvida">Própria</span>'}</td>
-      <td data-l="">${adm ? `<button class="btn peq" data-ed="${esc(c.chapa)}">Editar</button> ` : ''}${pode(c) ? `<button class="btn sec peq" data-rs="${esc(c.chapa)}" data-nome="${esc(c.nome)}">Redefinir senha</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
+      <td data-l="">${adm ? `<button class="btn sec peq" data-ed="${esc(c.chapa)}">Editar</button> ` : ''}${adm && c.chapa !== me.chapa ? `<button class="btn sec peq" data-xc="${esc(c.chapa)}">Excluir</button> ` : ''}${pode(c) ? `<button class="btn sec peq" data-rs="${esc(c.chapa)}" data-nome="${esc(c.nome)}">Redefinir senha</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
   document.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => editarColab(colabs.find(c => c.chapa === b.dataset.ed)));
+  document.querySelectorAll('[data-xc]').forEach(b => b.onclick = async () => {
+    const c = colabs.find(x => x.chapa === b.dataset.xc);
+    if (!confirm(`Excluir ${c.nome} (${c.chapa}) de vez?\n\nSão apagados também a escala e os avisos dessa pessoa. Não dá para desfazer.\nSe ela só saiu da loja, use "Editar" e desmarque "Acesso ativo".`)) return;
+    b.disabled = true;
+    const { data: d, error: er } = await sb.from('colaboradores').delete().eq('id', c.id).select('id');
+    if (er || !d || !d.length) { b.disabled = false; return ($('#msg').innerHTML = `<div class="erro">${esc(er ? er.message : 'Não foi possível excluir. Só o líder pode.')}</div>`); }
+    try { await carregarBase(); } catch (e) {}
+    listaColab();
+    $('#msg').innerHTML = `<div class="sucesso">${esc(c.nome)} excluído(a).</div>`;
+  });
   document.querySelectorAll('[data-rs]').forEach(b => b.onclick = async () => {
     if (!confirm(`Redefinir a senha de ${b.dataset.nome} para 1234?`)) return;
     b.disabled = true;
-   const { error: er } = await sb.functions.invoke('resetar-senha', {body: { chapa: b.dataset.rs }});
+    const { error: er } = await sb.rpc('resetar_senha', { p_chapa: b.dataset.rs });
     if (er) { b.disabled = false; return ($('#msg').innerHTML = `<div class="erro">${esc(er.message)}</div>`); }
     try { await carregarBase(); } catch (e) {}
     listaColab();
@@ -459,6 +479,304 @@ function editarColab(c) {
   };
 }
 
+/* ===== leitura do PDF "Visão Mensal" (Escala Inteligente) ===== */
+/* pages: [{items:[{s,x,y,w}]}]  (texto + posição, vindo do pdf.js). Devolve {inicio,fim,dias,pessoas:[{chapa,nome,cargo,rows:{ent,si,ret,sai}}],avisos:[]} */
+function lerVisaoMensal(pages) {
+  const avisos = [];
+  const PUA = /[\ue000-\uf8ff]/;
+  const linhaTxt = (its) => its.slice().sort((a, b) => a.x - b.x).map(i => i.s).join(' ');
+  /* período */
+  let inicio = null, fim = null;
+  for (const pg of pages) {
+    const topo = pg.items.filter(i => i.y > 520), ysT = [...new Set(topo.map(i => i.y))];
+    for (const y of ysT) {
+      const t = linhaTxt(topo.filter(i => Math.abs(i.y - y) < 1.5));
+      const m = t.match(/Per[ií]odo:?\s*(\d{2})\/(\d{2})\/(\d{4})\s*a\s*(\d{2})\/(\d{2})\/(\d{4})/);
+      if (m) { inicio = `${m[3]}-${m[2]}-${m[1]}`; fim = `${m[6]}-${m[5]}-${m[4]}`; break; }
+    }
+    if (inicio) break;
+  }
+  const out = { inicio, fim, dias: 0, pessoas: [], avisos };
+  if (!inicio) { avisos.push('Não consegui ler o período no cabeçalho do PDF.'); return out; }
+  const d0 = new Date(inicio + 'T12:00:00Z'), d1 = new Date(fim + 'T12:00:00Z');
+  const N = Math.round((d1 - d0) / 864e5) + 1;
+  out.dias = N;
+  const diaDe = k => new Date(d0.getTime() + k * 864e5).getUTCDate();
+
+  /* expande itens em caracteres com posição */
+  const chars = (its) => {
+    const r = [];
+    for (const i of its) {
+      const s = [...i.s]; if (!s.length) continue;
+      const w = i.w || s.length * 4;
+      s.forEach((c, k) => { if (c.trim() !== '') r.push({ c, x: i.x + (k + .5) * w / s.length, y: i.y }); });
+    }
+    return r;
+  };
+
+  for (const pg of pages) {
+    const its = pg.items;
+    /* cabeçalhos de funcionário: linha com "Ass." */
+    const heads = [];
+    const ys = [...new Set(its.filter(i => /Ass\./.test(i.s)).map(i => i.y))];
+    for (const y of ys) {
+      const t = linhaTxt(its.filter(i => Math.abs(i.y - y) < 1.5)).replace(/[\ue000-\uf8ff]/g, ' ').replace(/\s+/g, ' ');
+      const m = t.match(/^\s*(.+?)\s*(\d{3}\.\d{4})\s+(.+?)\s*Ass\./);
+      if (m) heads.push({ y, nome: m[1].trim(), chapa: m[2], cargo: m[3].trim() });
+      else avisos.push('Cabeçalho de funcionário não reconhecido: "' + t.slice(0, 60) + '"');
+    }
+    heads.sort((a, b) => b.y - a.y);
+    /* mapa glifo -> dígito, calibrado pela linha "Data" (dias do mês conhecidos) */
+    const mapa = {};
+    const calibrar = (linhaY, colx) => {
+      const cs = chars(its.filter(i => Math.abs(i.y - linhaY) < 1.5 && i.x > colx[0] - 12));
+      const por = colx.map(() => []);
+      for (const c of cs) { let b = 0, bd = 1e9; colx.forEach((cx, k) => { const d = Math.abs(cx - c.x); if (d < bd) { bd = d; b = k; } }); if (bd < 10.5) por[b].push(c); }
+      for (let k = 0; k < colx.length && k < N; k++) {
+        const ds = por[k].sort((a, b) => a.x - b.x).map(c => c.c);
+        const esp = String(diaDe(k)).padStart(2, '0');
+        if (ds.length !== 2) continue;
+        for (let j = 0; j < 2; j++) { if (mapa[ds[j]] === undefined) mapa[ds[j]] = esp[j]; else if (mapa[ds[j]] !== esp[j]) mapa.__conflito = true; }
+      }
+    };
+    heads.forEach((h, bi) => {
+      const topo = h.y, base = bi + 1 < heads.length ? heads[bi + 1].y : -1e9;
+      const blk = its.filter(i => i.y < topo - 1 && i.y > base + 1);
+      /* colunas: itens dos dias da semana na linha "Dia" */
+      const dia = blk.find(i => i.s.trim() === 'Dia');
+      if (!dia) { avisos.push('Sem linha de dias para ' + h.nome); return; }
+      const wd = blk.filter(i => Math.abs(i.y - dia.y) < 1.5 && i.x > dia.x + 10).sort((a, b) => a.x - b.x);
+      const colx = wd.map(i => i.x + (i.w || 8) / 2);
+      if (colx.length !== N) { avisos.push(`${h.nome}: ${colx.length} colunas de dias (esperado ${N}).`); }
+      h.colx = colx; h.blk = blk;
+    });
+    /* calibra com todos os blocos da página */
+    for (const h of heads) {
+      if (!h.colx) continue;
+      const dl = h.blk.find(i => i.s.trim() === 'Data');
+      if (dl) calibrar(dl.y, h.colx);
+    }
+    const dig = c => (/\d/.test(c) ? c : (c === ':' ? ':' : mapa[c]));
+    for (const h of heads) {
+      if (!h.colx) continue;
+      const rows = { ent: [], si: [], ret: [], sai: [] };
+      const rotulos = [['ent', /^Entrada$/], ['si', /^Sa[ií]da intervalo$/], ['ret', /^Retorno$/], ['sai', /^Sa[ií]da$/]];
+      let falhou = false;
+      for (const [k, re] of rotulos) {
+        const lab = h.blk.find(i => re.test(i.s.trim()) && i.x < h.colx[0] - 10);
+        if (!lab) { avisos.push(`${h.nome}: linha "${k}" não encontrada.`); falhou = true; continue; }
+        const cs = chars(h.blk.filter(i => Math.abs(i.y - lab.y) < 4.2 && i.x + (i.w || 0) > h.colx[0] - 11 && i.x > h.colx[0] - 14));
+        const por = h.colx.map(() => []);
+        for (const c of cs) { let b = 0, bd = 1e9; h.colx.forEach((cx, j) => { const d = Math.abs(cx - c.x); if (d < bd) { bd = d; b = j; } }); if (bd < 11) por[b].push(c); }
+        rows[k] = por.map(lst => {
+          const s = lst.sort((a, b) => a.x - b.x).map(c => c.c).join('');
+          if (!s) return '–';
+          if (/^[A-Za-zÀ-ú]+$/.test(s)) return s.toUpperCase();
+          if (PUA.test(s) || /^\d/.test(s)) {
+            if (lst.length === 5) { const t = lst.map((c, j) => j === 2 ? ':' : dig(c.c)).join(''); if (/^\d\d:\d\d$/.test(t)) return t; }
+            avisos.push(`${h.nome}: célula ilegível (${k}).`); return '?';
+          }
+          return s;
+        });
+      }
+      if (!falhou) out.pessoas.push({ chapa: h.chapa, nome: h.nome, cargo: h.cargo, rows });
+    }
+    if (mapa.__conflito) avisos.push('Conflito ao decodificar números do PDF (página).');
+  }
+  /* valida */
+  const vistos = new Set();
+  for (const p of out.pessoas) {
+    if (vistos.has(p.chapa)) avisos.push('Chapa repetida no PDF: ' + p.chapa);
+    vistos.add(p.chapa);
+    for (const k of ['ent', 'si', 'ret', 'sai']) if (p.rows[k].length !== N) avisos.push(`${p.nome}: ${p.rows[k].length} colunas em "${k}" (esperado ${N}).`);
+  }
+  return out;
+}
+
+/* converte as 4 linhas de um funcionário em dias do banco: null | ["F"] | ["A"] | ["T",ent,si,ret,sai] */
+function diasDoBanco(p, N) {
+  const r = [];
+  for (let k = 0; k < N; k++) {
+    const e = p.rows.ent[k], si = p.rows.si[k], rt = p.rows.ret[k], sa = p.rows.sai[k];
+    const hh = x => /^\d\d:\d\d$/.test(x || '');
+    if (hh(e) && hh(si) && hh(rt) && hh(sa)) r.push(['T', e, si, rt, sa]);
+    else if (e === 'FOLGA') r.push(['F']);
+    else if (/^(AFA|AFAST|AFASTADO|FERIAS|FÉRIAS|ATESTADO|LICENCA|LICENÇA|INSS)/.test(e || '')) r.push(['A']);
+    else r.push(null);
+  }
+  return r;
+}
+
+/* ---------- importar escala (so o lider) ---------- */
+const PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const fDataBR = iso => String(iso).split('-').reverse().join('/');
+const setorDoCargo = c => /FISCAL|LIDER|LÍDER|GERENTE|SUPERVIS/i.test(c || '') ? 'Fiscais' : /PORTEIR|SEGURAN|VIGIA/i.test(c || '') ? 'Portaria' : 'Frente de Caixa';
+let imp = null;      // leitura do PDF em andamento
+let listaEsc = [];
+
+function carregarPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return new Promise((ok, no) => {
+    const s = document.createElement('script'); s.src = PDFJS_URL;
+    s.onload = () => { try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; ok(window.pdfjsLib); } catch (e) { no(e); } };
+    s.onerror = () => no(new Error('Não consegui carregar o leitor de PDF (cdnjs). Verifique a internet e tente de novo.'));
+    document.head.appendChild(s);
+  });
+}
+async function itensDoPdf(file) {
+  const lib = await carregarPdfJs();
+  const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const pages = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const tc = await (await doc.getPage(p)).getTextContent();
+    pages.push({ items: tc.items.filter(i => i.str && i.str.trim() !== '').map(i => ({ s: i.str, x: i.transform[4], y: i.transform[5], w: i.width })) });
+  }
+  return pages;
+}
+
+async function vImportar() {
+  if (me.perfil !== 'admin') return erroTela('Só o líder pode importar a escala.');
+  imp = null;
+  $('#app').innerHTML = `<h2>Importar escala</h2>
+    <p class="mut">Todo mês: gere no sistema da loja o PDF <b>"Visão Mensal"</b> e envie aqui. Você confere o resumo antes de publicar. PDVs e observações já lançados são mantidos.</p>
+    <div class="card"><label for="pdf">Arquivo PDF da escala</label>
+      <input id="pdf" type="file" accept="application/pdf,.pdf">
+      <div id="imp-st" class="mut" style="margin-top:8px"></div></div>
+    <div id="imp-prev"></div>
+    <h3 style="margin-top:22px">Escalas cadastradas</h3><div id="imp-msg"></div><div id="imp-lista"><p class="mut">Carregando…</p></div>`;
+  $('#pdf').onchange = async ev => {
+    const f = ev.target.files[0]; if (!f) return;
+    $('#imp-prev').innerHTML = ''; $('#imp-st').textContent = 'Lendo o PDF…';
+    try {
+      await carregarBase();
+      const r = lerVisaoMensal(await itensDoPdf(f));
+      if (!r.pessoas.length) throw new Error('Não encontrei colaboradores neste PDF. Ele é o relatório "Visão Mensal" (uma folha por 4 funcionários)?');
+      imp = { r, nome: f.name };
+      $('#imp-st').textContent = f.name;
+      await prevImport();
+    } catch (e) { imp = null; $('#imp-st').innerHTML = `<div class="erro">${esc(e.message || e)}</div>`; }
+  };
+  await listaEscalas();
+}
+
+async function listaEscalas() {
+  const { data, error } = await sb.from('escalas').select('id,titulo,periodo_inicio,periodo_fim,status,origem').order('periodo_inicio', { ascending: false });
+  if (error) return ($('#imp-lista').innerHTML = `<div class="erro">${esc(error.message)}</div>`);
+  listaEsc = data;
+  $('#imp-lista').innerHTML = data.length ? data.map(e => `<div class="card linha" style="justify-content:space-between;margin-bottom:8px">
+      <div><b>${esc(e.titulo || 'Escala')}</b><br><span class="mut">${fDataBR(e.periodo_inicio)} a ${fDataBR(e.periodo_fim)}${e.origem ? ' · ' + esc(e.origem) : ''}</span></div>
+      <div class="linha"><span class="tag ${e.status === 'publicada' ? 't-resolvida' : 't-outro'}">${e.status === 'publicada' ? 'Publicada' : 'Rascunho'}</span>
+      <button class="btn sec peq" data-pub="${e.id}">${e.status === 'publicada' ? 'Despublicar' : 'Publicar'}</button>
+      <button class="btn sec peq" data-del="${e.id}">Excluir</button></div></div>`).join('')
+    : '<p class="mut">Nenhuma escala ainda.</p>';
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    const e = listaEsc.find(x => x.id === b.dataset.del);
+    if (!confirm(`Excluir a escala "${e.titulo || ''}" (${fDataBR(e.periodo_inicio)} a ${fDataBR(e.periodo_fim)})?\n\nTodos os horários e PDVs dela serão apagados. Não dá para desfazer.`)) return;
+    b.disabled = true;
+    const { data: d, error: er } = await sb.from('escalas').delete().eq('id', e.id).select('id');
+    if (er || !d || !d.length) { b.disabled = false; return ($('#imp-msg').innerHTML = `<div class="erro">${esc(er ? er.message : 'Não foi possível excluir. Só o líder pode.')}</div>`); }
+    $('#imp-msg').innerHTML = '<div class="sucesso">Escala excluída.</div>';
+    listaEscalas();
+  });
+  document.querySelectorAll('[data-pub]').forEach(b => b.onclick = async () => {
+    const e = listaEsc.find(x => x.id === b.dataset.pub), novo = e.status === 'publicada' ? 'rascunho' : 'publicada';
+    if (novo === 'publicada') {
+      const sob = listaEsc.find(x => x.id !== e.id && x.status === 'publicada' && x.periodo_inicio <= e.periodo_fim && x.periodo_fim >= e.periodo_inicio);
+      if (sob) return ($('#imp-msg').innerHTML = `<div class="erro">O período coincide com a escala publicada "${esc(sob.titulo || '')}". Despublique-a antes.</div>`);
+    } else if (!confirm('Despublicar? Os colaboradores deixam de ver esta escala.')) return;
+    b.disabled = true;
+    const { data: d, error: er } = await sb.from('escalas').update({ status: novo }).eq('id', e.id).select('id');
+    if (er || !d || !d.length) { b.disabled = false; return ($('#imp-msg').innerHTML = `<div class="erro">${esc(er ? er.message : 'Não foi possível alterar.')}</div>`); }
+    $('#imp-msg').innerHTML = `<div class="sucesso">Escala ${novo === 'publicada' ? 'publicada' : 'voltou para rascunho'}.</div>`;
+    listaEscalas();
+  });
+}
+
+async function prevImport() {
+  const { r } = imp, N = r.dias, pessoas = r.pessoas;
+  const dias = pessoas.map(p => diasDoBanco(p, N));
+  let nT = 0, nF = 0, nA = 0, nV = 0;
+  dias.forEach(l => l.forEach(d => { if (!d) nV++; else if (d[0] === 'T') nT++; else if (d[0] === 'F') nF++; else nA++; }));
+  const conhecidos = new Map(colabs.map(c => [c.chapa, c]));
+  const novos = pessoas.filter(p => !conhecidos.has(p.chapa));
+  const naoVieram = colabs.filter(c => c.ativo && !pessoas.some(p => p.chapa === c.chapa) && c.perfil !== 'admin');
+  const trocaNome = pessoas.filter(p => conhecidos.has(p.chapa) && conhecidos.get(p.chapa).nome !== p.nome);
+  const { data: ex } = await sb.from('escalas').select('id,titulo,status').eq('periodo_inicio', r.inicio);
+  const existe = ex && ex[0];
+  const titulo = `Escala ${fDataBR(r.inicio).slice(0, 5)} a ${fDataBR(r.fim)}`;
+  const setores = [...new Set([...SETORES_PADRAO, ...colabs.map(setorDe)])];
+  const graves = r.avisos.length;
+  $('#imp-prev').innerHTML = `<div class="card" style="margin-top:12px">
+    <h3 style="margin-top:0">Confira antes de importar</h3>
+    <p><b>${fDataBR(r.inicio)} a ${fDataBR(r.fim)}</b> · ${N} dias · <b>${pessoas.length}</b> colaboradores<br>
+    <span class="mut">${nT} dias de trabalho · ${nF} folgas · ${nA} afastamentos${nV ? ` · ${nV} dias sem escala ("–")` : ''}</span></p>
+    ${graves ? `<div class="erro"><b>O PDF tem ${graves} ponto(s) de atenção; não é possível importar até resolver:</b><br>${r.avisos.slice(0, 6).map(esc).join('<br>')}${graves > 6 ? '<br>…' : ''}</div>` : ''}
+    ${novos.length ? `<h4>${novos.length} colaborador(es) novo(s) — serão cadastrados com a senha 1234</h4>
+      ${novos.map((p, i) => `<div class="linha" style="padding:6px 0;border-bottom:1px solid var(--bor)"><span class="grow"><b>${esc(p.nome)}</b><br><span class="mut">${esc(p.chapa)} · ${esc(p.cargo)}</span></span>
+        <select data-nv="${i}" aria-label="Setor de ${esc(p.nome)}">${setores.map(s => `<option ${s === setorDoCargo(p.cargo) ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></div>`).join('')}` : '<p class="mut">Nenhum colaborador novo: todos já estão cadastrados.</p>'}
+    ${naoVieram.length ? `<h4>${naoVieram.length} cadastrado(s) que não estão neste PDF</h4><p class="mut">${naoVieram.map(c => esc(c.nome)).join(' · ')}<br>Se saíram da loja, desative o acesso em Colaboradores › Editar.</p>` : ''}
+    ${trocaNome.length ? `<p class="mut">${trocaNome.length} nome(s) no PDF diferem do cadastro. O cadastro (que você pode editar) é mantido.</p>` : ''}
+    <label for="i-tit">Título</label><input id="i-tit" value="${esc(existe ? existe.titulo || titulo : titulo)}" maxlength="80">
+    <label style="display:flex;gap:8px;align-items:center;font-weight:400;margin-top:12px"><input id="i-pub" type="checkbox" style="width:auto" checked> Publicar agora (os colaboradores já veem a escala)</label>
+    ${existe ? `<div class="aviso" style="margin-top:12px">Já existe a escala <b>${esc(existe.titulo || '')}</b> começando em ${fDataBR(r.inicio)}.
+      <label style="display:flex;gap:8px;align-items:center;font-weight:400;margin-top:6px"><input id="i-sub" type="checkbox" style="width:auto"> Substituir (horários são atualizados; PDVs e observações são mantidos)</label></div>` : ''}
+    <div id="i-msg"></div>
+    <div class="linha" style="margin-top:14px"><button class="btn" id="i-ok" ${graves ? 'disabled' : ''}>Importar escala</button></div></div>`;
+  $('#i-ok').onclick = async () => {
+    const sub = $('#i-sub') ? $('#i-sub').checked : false;
+    if (existe && !sub) return ($('#i-msg').innerHTML = '<div class="erro">Marque "Substituir" para atualizar a escala existente.</div>');
+    const setorNovo = {}; novos.forEach((p, i) => { setorNovo[p.chapa] = document.querySelector(`[data-nv="${i}"]`).value; });
+    const payload = pessoas.map((p, i) => ({ chapa: p.chapa, nome: p.nome, cargo: p.cargo, setor: setorNovo[p.chapa] || setorDoCargo(p.cargo), dias: dias[i] }));
+    $('#i-ok').disabled = true; $('#i-msg').innerHTML = '<p class="mut">Importando…</p>';
+    const { data, error } = await sb.rpc('importar_escala', { p_inicio: r.inicio, p_fim: r.fim, p_titulo: $('#i-tit').value.trim(),
+      p_origem: imp.nome, p_status: $('#i-pub').checked ? 'publicada' : 'rascunho', p_substituir: sub, p_pessoas: payload });
+    if (error) { $('#i-ok').disabled = false; return ($('#i-msg').innerHTML = `<div class="erro">${esc(error.message)}</div>`); }
+    const pub = $('#i-pub').checked;
+    imp = null; $('#pdf').value = ''; $('#imp-st').textContent = ''; $('#imp-prev').innerHTML = '';
+    $('#imp-msg').innerHTML = `<div class="sucesso">Escala importada: ${data.pessoas} colaboradores, ${data.dias} dias${data.criados.length ? `, ${data.criados.length} cadastrado(s) novo(s) com senha 1234` : ''}. ${pub ? 'Já está publicada.' : 'Salva como rascunho: publique abaixo quando quiser.'}</div>`;
+    window.scrollTo(0, 0); listaEscalas();
+  };
+}
+
+/* ---------- novo colaborador (so o lider) ---------- */
+function novoColab() {
+  const setores = [...new Set([...SETORES_PADRAO, ...colabs.map(setorDe)])];
+  const subs = [...new Set(colabs.map(x => x.subsetor).filter(Boolean))];
+  const antigo = $('#dlg'); if (antigo) antigo.remove();
+  const d = document.createElement('dialog'); d.id = 'dlg';
+  d.innerHTML = `<form method="dialog" id="f-nv">
+    <h3>Novo colaborador</h3>
+    <p class="mut" style="margin:0">O acesso começa com a senha <b>1234</b>; a pessoa cria a própria senha no primeiro login.</p>
+    <label for="n-chapa">Chapa (7 números, sem ponto)</label><input id="n-chapa" inputmode="numeric" maxlength="8" placeholder="3130123" required autocomplete="off">
+    <label for="n-nome">Nome</label><input id="n-nome" maxlength="80" required>
+    <label for="n-cargo">Cargo</label><input id="n-cargo" maxlength="80" placeholder="OPERADOR DE CAIXA">
+    <label for="n-setor">Setor</label><input id="n-setor" list="l-setor2" value="Frente de Caixa" maxlength="40" required autocomplete="off">
+    <datalist id="l-setor2">${setores.map(s => `<option value="${esc(s)}">`).join('')}</datalist>
+    <label for="n-sub">Subsetor / ilha (opcional)</label><input id="n-sub" list="l-sub2" maxlength="40" autocomplete="off">
+    <datalist id="l-sub2">${subs.map(s => `<option value="${esc(s)}">`).join('')}</datalist>
+    <label for="n-perfil">Perfil de acesso</label><select id="n-perfil"><option value="auto">Automático (setor Fiscais = Fiscal; demais = Colaborador)</option><option value="consulta">Consulta (só visualiza e registra avisos)</option><option value="rh">RH (só atestados)</option></select>
+    <div id="n-msg"></div>
+    <div class="linha" style="margin-top:14px;justify-content:flex-end"><button type="button" class="btn sec" id="n-cancel">Cancelar</button><button class="btn" id="n-ok">Cadastrar</button></div>
+  </form>`;
+  document.body.appendChild(d); d.showModal();
+  $('#n-cancel').onclick = () => d.close();
+  d.addEventListener('close', () => d.remove());
+  $('#f-nv').onsubmit = async ev => {
+    ev.preventDefault();
+    $('#n-ok').disabled = true;
+    const { data: novoId, error } = await sb.rpc('criar_colaborador', { p_chapa: $('#n-chapa').value.replace(/\D/g, ''), p_nome: $('#n-nome').value.trim().replace(/\s+/g, ' '),
+      p_cargo: $('#n-cargo').value.trim(), p_setor: $('#n-setor').value.trim(), p_subsetor: $('#n-sub').value.trim() });
+    if (error) { $('#n-ok').disabled = false; return ($('#n-msg').innerHTML = `<div class="erro">${esc(error.message)}</div>`); }
+    const perf = $('#n-perfil').value; if (perf !== 'auto') await sb.from('colaboradores').update({ perfil: perf }).eq('id', novoId);
+    const nome = $('#n-nome').value.trim().toUpperCase();
+    d.close();
+    try { await carregarBase(); } catch (e) {}
+    listaColab();
+    $('#msg').innerHTML = `<div class="sucesso">${esc(nome)} cadastrado(a) com a senha 1234. Para aparecer na escala, importe um PDF que contenha essa chapa.</div>`;
+  };
+}
+
 /* ---------- minha escala ---------- */
 async function vMinhaEscala() {
   $('#app').innerHTML = '<p class="mut">Carregando…</p>';
@@ -487,6 +805,49 @@ async function vMinhaEscala() {
 }
 
 /* ---------- enviar aviso ---------- */
+let anexosSel = [];
+function listaArq() {
+  const el = $('#lista-arq'); if (!el) return;
+  el.innerHTML = anexosSel.map((f, i) => `<div class="linha" style="padding:6px 0"><span class="grow">${f.type.startsWith('image/') ? '🖼' : '📄'} ${esc(f.name)} <span class="mut">(${(f.size / 1048576).toFixed(1)} MB)</span></span><button type="button" class="btn sec peq" data-rm="${i}" aria-label="Remover ${esc(f.name)}">✕</button></div>`).join('');
+  el.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { anexosSel.splice(+b.dataset.rm, 1); listaArq(); });
+}
+async function reduzir(f) {      // foto de celular costuma ter 5+ MB: reduz para ~1800 px mantendo legibilidade
+  if (!f.type.startsWith('image/') || f.size < 1.5 * 1048576) return f;
+  try {
+    const bmp = await createImageBitmap(f), k = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+    const cv = document.createElement('canvas'); cv.width = Math.round(bmp.width * k); cv.height = Math.round(bmp.height * k);
+    cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', .85));
+    return blob && blob.size < f.size ? new File([blob], f.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }) : f;
+  } catch (e) { return f; }
+}
+async function addAnexo(f) {
+  const msg = $('#msg');
+  if (anexosSel.length >= 3) return (msg.innerHTML = '<div class="erro">Envie no máximo 3 arquivos.</div>');
+  f = await reduzir(f);
+  if (f.size > 10 * 1024 * 1024) return (msg.innerHTML = '<div class="erro">Cada arquivo pode ter no máximo 10 MB.</div>');
+  msg.innerHTML = ''; anexosSel.push(f); listaArq();
+}
+function abrirCamera() {            // computador com webcam: janela com a imagem ao vivo
+  const antigo = $('#dlg'); if (antigo) antigo.remove();
+  const d = document.createElement('dialog'); d.id = 'dlg';
+  d.innerHTML = `<h3>Tirar foto</h3><video id="cam-v" autoplay playsinline muted style="width:100%;border-radius:10px;background:#000"></video><div id="cam-m" class="mut"></div>
+    <div class="linha" style="margin-top:12px;justify-content:flex-end"><button type="button" class="btn sec" id="cam-x">Cancelar</button><button type="button" class="btn" id="cam-ok" disabled>Capturar</button></div>`;
+  document.body.appendChild(d); d.showModal();
+  let stream = null;
+  const fechar = () => { if (stream) stream.getTracks().forEach(t => t.stop()); d.close(); };
+  d.addEventListener('close', () => { if (stream) stream.getTracks().forEach(t => t.stop()); d.remove(); });
+  $('#cam-x').onclick = fechar;
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false }).then(s => {
+    stream = s; $('#cam-v').srcObject = s; $('#cam-ok').disabled = false;
+  }).catch(() => { d.remove(); $('#cam').click(); });          // sem camera/permissao: abre o seletor de arquivos
+  $('#cam-ok').onclick = () => {
+    const v = $('#cam-v'), cv = document.createElement('canvas'); cv.width = v.videoWidth; cv.height = v.videoHeight;
+    cv.getContext('2d').drawImage(v, 0, 0);
+    cv.toBlob(async b => { fechar(); if (b) await addAnexo(new File([b], `foto-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.jpg`, { type: 'image/jpeg' })); }, 'image/jpeg', .9);
+  };
+}
+
 function vAvisar() {
   $('#app').innerHTML = `<h2>Enviar aviso</h2>
   <form class="card" id="f-av">
@@ -495,16 +856,23 @@ function vAvisar() {
     <label for="dref">Para qual dia?</label><input id="dref" type="date" value="${hoje()}" required>
     <div id="bl-prev" class="oculto"><label for="prev">Que horas você deve chegar?</label><input id="prev" type="time"></div>
     <label for="mens">Mensagem</label><textarea id="mens" maxlength="2000" placeholder="Conte rapidamente o que houve"></textarea>
-    <label for="arq">Atestado ou foto (PDF/imagem, até 10 MB cada, máx. 3)</label>
-    <input id="arq" type="file" accept="image/*,application/pdf" multiple>
+    <label>Atestado ou foto (PDF/imagem, até 10 MB cada, máx. 3)</label>
+    <div class="linha"><button type="button" class="btn sec" id="b-cam">📷 Tirar foto</button><button type="button" class="btn sec" id="b-arq">📎 Escolher arquivo</button></div>
+    <input id="arq" type="file" accept="image/*,application/pdf" multiple class="oculto">
+    <input id="cam" type="file" accept="image/*" capture="environment" class="oculto">
+    <div id="lista-arq"></div>
     <div id="msg"></div>
     <p><button class="btn verm">Enviar aviso</button></p>
   </form>`;
   const mostra = () => $('#bl-prev').classList.toggle('oculto', $('#tipo').value !== 'atraso');
   $('#tipo').onchange = mostra; mostra();
+  anexosSel = []; listaArq();
+  $('#b-arq').onclick = () => $('#arq').click();
+  $('#b-cam').onclick = () => (window.matchMedia('(pointer:coarse)').matches || !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) ? $('#cam').click() : abrirCamera();
+  ['arq', 'cam'].forEach(id => $('#' + id).onchange = async ev => { const fs = [...ev.target.files]; ev.target.value = ''; for (const f of fs) await addAnexo(f); });
   $('#f-av').onsubmit = async e => {
     e.preventDefault();
-    const btn = e.submitter, msg = $('#msg'), arqs = [...$('#arq').files];
+    const btn = e.submitter, msg = $('#msg'), arqs = anexosSel.slice();
     if (arqs.length > 3) return (msg.innerHTML = '<div class="erro">Envie no máximo 3 arquivos.</div>');
     if (arqs.some(f => f.size > 10 * 1024 * 1024)) return (msg.innerHTML = '<div class="erro">Cada arquivo pode ter no máximo 10 MB.</div>');
     if ($('#tipo').value === 'atestado' && !arqs.length && !$('#mens').value.trim()) return (msg.innerHTML = '<div class="erro">Anexe o atestado ou escreva uma mensagem.</div>');
@@ -525,7 +893,7 @@ function vAvisar() {
       if (ins.error) falhas++;
     }
     btn.disabled = false;
-    $('#f-av').reset(); mostra();
+    $('#f-av').reset(); mostra(); anexosSel = []; listaArq();
     msg.innerHTML = falhas
       ? `<div class="erro">Aviso enviado, mas ${falhas} arquivo(s) não subiram. Avise o líder por outro meio.</div>`
       : '<div class="sucesso">Aviso enviado! Os fiscais já podem ver.</div>';
@@ -548,8 +916,8 @@ async function vMeus() {
 const SEL_OC = '*, colaborador:colaboradores!colaborador_id(nome,chapa,cargo), anexos(id,storage_path,nome_original,mime_type)';
 
 async function vPainel() {
-  $('#app').innerHTML = `<div class="linha noprint head-painel" style="margin-bottom:10px"><h2 class="grow" style="margin:0">Painel ao vivo</h2>
-    <select id="flt" style="width:auto"><option value="pendentes">Pendentes</option><option value="todas">Últimos 7 dias</option></select>
+  $('#app').innerHTML = `<div class="linha noprint head-painel" style="margin-bottom:10px"><h2 class="grow" style="margin:0">${ehRH() ? 'Atestados' : 'Painel ao vivo'}</h2>
+    <select id="flt" style="width:auto"><option value="pendentes">${ehRH() ? 'A receber' : 'Pendentes'}</option><option value="todas">${ehRH() ? 'Últimos 30 dias' : 'Últimos 7 dias'}</option></select>
     <button class="btn sec peq" id="som">${somLigado ? 'Som ligado' : 'Ativar som'}</button></div><div id="feed"><p class="mut">Carregando…</p></div>`;
   $('#flt').value = filtro; $('#flt').onchange = () => { filtro = $('#flt').value; carregarFeed(); };
   $('#som').onclick = () => { somLigado = !somLigado; $('#som').textContent = somLigado ? 'Som ligado' : 'Ativar som'; if (somLigado) beep(); };
@@ -558,9 +926,11 @@ async function vPainel() {
 
 async function carregarFeed() {
   let q = sb.from('ocorrencias').select(SEL_OC).order('criado_em', { ascending: false }).limit(100);
-  q = filtro === 'pendentes' ? q.neq('status', 'resolvida') : q.gte('criado_em', new Date(Date.now() - 7 * 864e5).toISOString());
+  if (ehRH()) q = (filtro === 'pendentes' ? q.is('rh_recebido_em', null) : q.gte('criado_em', new Date(Date.now() - 30 * 864e5).toISOString())).eq('tipo', 'atestado');
+  else q = filtro === 'pendentes' ? q.neq('status', 'resolvida') : q.gte('criado_em', new Date(Date.now() - 7 * 864e5).toISOString());
   const { data, error } = await q;
-  const { count } = await sb.from('ocorrencias').select('id', { count: 'exact', head: true }).eq('status', 'nova');
+  const cq = sb.from('ocorrencias').select('id', { count: 'exact', head: true });
+  const { count } = await (ehRH() ? cq.eq('tipo', 'atestado').is('rh_recebido_em', null) : cq.eq('status', 'nova'));
   novas = count || 0; atualizarBadge();
   if (aba !== 'painel') return;
   const feed = $('#feed'); if (!feed) return;
@@ -572,18 +942,39 @@ async function carregarFeed() {
     carregarFeed();
   });
   feed.querySelectorAll('[data-nota]').forEach(t => t.onchange = () => sb.from('ocorrencias').update({ nota_interna: t.value.trim() || null }).eq('id', t.dataset.nota));
-  feed.querySelectorAll('[data-anexo]').forEach(b => b.onclick = async () => {
-    const { data: u, error: er } = await sb.storage.from(BUCKET).createSignedUrl(b.dataset.anexo, 300);
-    if (er) return alert('Não foi possível abrir o anexo.');
-    window.open(u.signedUrl, '_blank', 'noopener');
+  feed.querySelectorAll('[data-rh]').forEach(b => b.onclick = async () => {
+    b.disabled = true;
+    const { error: er } = await sb.rpc('marcar_atestado_recebido', { p_id: b.dataset.id, p_recebido: b.dataset.rh === '1' });
+    if (er) { b.disabled = false; return alert('Não foi possível registrar: ' + er.message); }
+    carregarFeed();
   });
+  feed.querySelectorAll('[data-anexo]').forEach(b => b.onclick = async () => {
+    const baixar = b.dataset.baixar;
+    const { data: u, error: er } = await sb.storage.from(BUCKET).createSignedUrl(b.dataset.anexo, 300, baixar ? { download: baixar } : undefined);
+    if (er) return alert('Não foi possível abrir o anexo.');
+    if (baixar) { const a = document.createElement('a'); a.href = u.signedUrl; a.download = baixar; document.body.appendChild(a); a.click(); a.remove(); }
+    else window.open(u.signedUrl, '_blank', 'noopener');
+  });
+}
+
+function cartaoRH(o, c) {
+  return `<div class="card oc ${o.rh_recebido_em ? 'resolvida' : 'nova'}">
+    <div class="linha"><span class="tag t-atestado">Atestado</span>${o.rh_recebido_em ? '<span class="tag t-resolvida">Recebido</span>' : '<span class="tag t-nova">A receber</span>'}
+      <b class="grow">${esc(c.nome)}</b><span class="mut">${esc(fHora(o.criado_em))}</span></div>
+    <div class="mut">${esc(c.chapa)} · ${esc(c.cargo)} · Dia ${esc(fData(o.data_referencia))}</div>
+    ${o.mensagem ? `<div class="msg">${esc(o.mensagem)}</div>` : ''}
+    ${o.anexos.length ? `<div class="linha">${o.anexos.map(a => `<button class="btn sec peq" data-anexo="${esc(a.storage_path)}" data-baixar="${esc(a.nome_original || 'atestado')}">⬇ ${esc(a.nome_original || 'Baixar atestado')}</button>`).join('')}</div>` : '<p class="mut">Sem arquivo anexado (veja a mensagem).</p>'}
+    <div class="linha" style="margin-top:10px">${o.rh_recebido_em
+      ? `<span class="mut">Recebido em ${esc(fHora(o.rh_recebido_em))}</span><button class="btn sec peq" data-rh="0" data-id="${o.id}">Desmarcar</button>`
+      : `<button class="btn peq" style="background:var(--ok)" data-rh="1" data-id="${o.id}">Marcar como recebido</button>`}</div></div>`;
 }
 
 function cartaoOc(o) {
   const c = o.colaborador || {};
+  if (ehRH()) return cartaoRH(o, c);
   return `<div class="card oc ${o.status}">
     <div class="linha"><span class="tag t-${o.tipo}">${esc(TIPOS[o.tipo])}</span><span class="tag t-${o.status}">${esc(STATUS[o.status])}</span>
-      <b class="grow">${esc(c.nome)}</b><span class="mut">${esc(fHora(o.criado_em))}</span></div>
+      ${o.tipo === 'atestado' && o.rh_recebido_em ? '<span class="tag t-resolvida">RH recebeu</span>' : ''}<b class="grow">${esc(c.nome)}</b><span class="mut">${esc(fHora(o.criado_em))}</span></div>
     <div class="mut">${esc(c.chapa)} · ${esc(c.cargo)} · Dia ${esc(fData(o.data_referencia))}${o.previsao_chegada ? ` · chega ${hhmm(o.previsao_chegada)}` : ''}</div>
     ${o.mensagem ? `<div class="msg">${esc(o.mensagem)}</div>` : ''}
     ${o.anexos.length ? `<div class="linha">${o.anexos.map(a => `<button class="btn sec peq" data-anexo="${esc(a.storage_path)}">📎 ${esc(a.nome_original || 'anexo')}</button>`).join('')}</div>` : ''}
@@ -658,7 +1049,7 @@ function desenharDia() {
       <button class="btn sec peq" id="ant">◀</button><input type="date" id="dsel" value="${diaSel}" style="width:auto"><button class="btn sec peq" id="prox">▶</button>
       <button class="btn sec peq" id="hj">Hoje</button><span class="grow"></span><button class="btn peq" id="imp">Imprimir</button>
     </div>
-    <h2>Escala de ${esc(fData(diaSel))}/${pData(diaSel).getFullYear()} · Loja ${LOJA}</h2>
+    <h2>Escala de ${esc(fData(diaSel))}/${pData(diaSel).getFullYear()} · Loja 313 - Paulistão 14 - Indaiatuba</h2>
     ${itens.length
       ? `<div class="chips noprint" id="chips" style="margin-bottom:6px">${chipsHtml([['todos', 'Todos os setores'], ...grupos.map(g => [g.setor, g.setor])], ddSetor)}</div>${mostra.map(blocoSetor).join('')}`
       : '<div class="card">Não há escala publicada para este dia.</div>'}`;
@@ -704,7 +1095,7 @@ function linhaDia(d) {
     <td data-l=""><span class="tag tu-${t}">${TURNOS[t]}</span></td>
     <td class="i2" data-l="Intervalo">${hhmm(d.saida_intervalo)}–${hhmm(d.retorno)}</td>
     <td class="i2" data-l="Saída">${hhmm(d.saida)}</td>
-    <td data-l="PDV"><input data-pdv="${d.id}" value="${esc(d.pdv || '')}" maxlength="20" aria-label="PDV de ${esc(d.c.nome)}"></td>
+    <td data-l="PDV">${ehFiscal() ? `<input data-pdv="${d.id}" value="${esc(d.pdv || '')}" maxlength="20" aria-label="PDV de ${esc(d.c.nome)}">` : (d.pdv ? `<span class="pdv">${esc(d.pdv)}</span>` : '–')}</td>
     <td data-l="">${(dadosDia.avisos[d.colaborador_id] || []).map(t => `<span class="tag t-${t}">${esc(TIPOS[t])}</span>`).join(' ')}</td></tr>`;
 }
 
