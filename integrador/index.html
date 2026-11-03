@@ -1082,7 +1082,7 @@ function blocoSub(s, temSub) {
   const nomes = l => l.map(x => x.c.nome).sort((a, b) => a.localeCompare(b)).map(esc).join(', ');
   return `${temSub ? `<h4 class="sub">${esc(s.sub || 'Sem subsetor')}</h4>` : ''}
     ${trab.length ? `<div class="card" style="padding:0;overflow:auto"><table class="cards">
-      <thead><tr><th>Entrada</th><th>Nome</th><th>Turno</th><th>Intervalo</th><th>Saída</th><th>PDV</th><th>Avisos</th></tr></thead>
+      <thead><tr><th>Nome</th><th>Entrada</th><th>Turno</th><th>Intervalo</th><th>Saída</th><th>PDV</th><th>Avisos</th></tr></thead>
       <tbody>${trab.map(linhaDia).join('')}</tbody></table></div>` : ''}
     ${fol.length ? `<p class="mut"><b>Folga (${fol.length}):</b> ${nomes(fol)}</p>` : ''}
     ${afa.length ? `<p class="mut"><b>Afastados (${afa.length}):</b> ${nomes(afa)}</p>` : ''}`;
@@ -1090,8 +1090,8 @@ function blocoSub(s, temSub) {
 
 function linhaDia(d) {
   const t = turnoDe(d.horario_entrada);
-  return `<tr><td class="c-hora" data-l=""><b>${hhmm(d.horario_entrada)}</b></td>
-    <td class="c-nome" data-l="">${esc(d.c.nome)}<div class="mut" style="font-weight:400">${esc(d.c.cargo)}</div></td>
+  return `<tr><td class="c-nome" data-l="">${esc(d.c.nome)}<div class="mut" style="font-weight:400">${esc(d.c.cargo)}</div></td>
+    <td class="c-hora" data-l=""><b>${hhmm(d.horario_entrada)}</b></td>
     <td data-l=""><span class="tag tu-${t}">${TURNOS[t]}</span></td>
     <td class="i2" data-l="Intervalo">${hhmm(d.saida_intervalo)}–${hhmm(d.retorno)}</td>
     <td class="i2" data-l="Saída">${hhmm(d.saida)}</td>
