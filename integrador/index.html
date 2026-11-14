@@ -60,6 +60,8 @@
   .hora{font-size:20px;font-weight:800;color:var(--azul)}
   .pdv{background:var(--verm);color:#fff;border-radius:8px;padding:3px 10px;font-weight:700}
   table{border-collapse:collapse;width:100%}
+  table.lib td.c,table.lib th{text-align:center}table.lib td:first-child,table.lib th:first-child{text-align:left}
+  .lib-cb{width:24px;height:24px;padding:0;accent-color:var(--azul)}
   th,td{border:1px solid var(--bor);padding:7px 8px;text-align:left}
   th{background:var(--azul-cl);color:var(--azul)}
   td input{padding:6px 8px;min-width:90px}
@@ -154,6 +156,7 @@
   }
   .matriz tr.grp td:first-child{position:static;z-index:auto;min-width:0;max-width:none;white-space:nowrap;padding:6px 0}
   .gl{position:sticky;left:10px;display:inline-block}
+  @media (max-width:720px){ table.lib th,table.lib td{padding:8px 3px;font-size:12px} table.lib td:first-child{min-width:112px} table.lib .mut{font-size:11px;line-height:1.25} .lib-cb{width:22px;height:22px} }
   @media (max-width:720px){ table.cards td.i2{display:inline-block;width:49%;vertical-align:top} }
   @media print{ .chips,dialog{display:none!important} .setor-h{background:#fff;color:#000;border:1px solid #999;border-left:6px solid #999} }
 
@@ -276,19 +279,21 @@ function telaTrocarSenha(msg) {
   };
 }
 
-$('#sair').onclick = async () => { if (canal) sb.removeChannel(canal); canal = null; await sb.auth.signOut(); me = null; document.title = 'Integrador · Paulistão'; telaLogin(); };
+$('#sair').onclick = async () => { if (canal) sb.removeChannel(canal); canal = null; if (canalLib) sb.removeChannel(canalLib); canalLib = null; await sb.auth.signOut(); me = null; document.title = 'Integrador · Paulistão'; telaLogin(); };
 
 /* ---------- estrutura ---------- */
 function montarQuem() {
   $('#quem').innerHTML = `<b>${esc(me.nome.split(' ')[0])}</b><br><span style="opacity:.8">${esc(me.chapa)}</span>`;
 }
-function montarShell() {
+async function montarShell() {
   montarQuem();
   $('#quem').classList.remove('oculto'); $('#sair').classList.remove('oculto'); $('#tabs').classList.remove('oculto');
   $('#bnav').classList.remove('oculto'); document.body.classList.add('logado');
-  aba = comPainel() ? 'painel' : 'escala';
+  await carregarLib();
+  const ab = abasLiberadas(); aba = ab.includes('painel') ? 'painel' : (ab[0] || 'avisar');
   desenharTabs(); abrir();
-  if (comPainel()) ligarTempoReal();
+  if (comPainel() && liberado('painel')) ligarTempoReal();
+  ligarLiberacoes();
 }
 
 const ICO = {
@@ -299,19 +304,20 @@ const ICO = {
   escala: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
   avisar: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
   meus: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  liberacoes: '<rect x="1" y="7" width="22" height="10" rx="5"/><circle cx="16" cy="12" r="3"/>',
   importar: '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
   mais: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>'
 };
 const ico = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>`;
-const NOMES = { painel: 'Painel ao vivo', dia: 'Escala do dia', geral: 'Escala geral', colab: 'Colaboradores', importar: 'Importar escala', escala: 'Minha escala', avisar: 'Enviar aviso', meus: 'Meus avisos' };
+const NOMES = { liberacoes: 'Liberações', painel: 'Painel ao vivo', dia: 'Escala do dia', geral: 'Escala geral', colab: 'Colaboradores', importar: 'Importar escala', escala: 'Minha escala', avisar: 'Enviar aviso', meus: 'Meus avisos' };
 const CURTO = { painel: 'Painel', dia: 'Dia', geral: 'Geral', avisar: 'Avisar', escala: 'Minha escala', meus: 'Meus avisos' };
 let maisAberto = false;
 
 function desenharTabs() {
-  const ordem = veTudo() ? ['painel', 'dia', 'geral', 'colab', ...(me.perfil === 'admin' ? ['importar'] : []), 'escala', 'avisar', 'meus'] : ehRH() ? ['painel', 'escala', 'avisar', 'meus'] : ['escala', 'avisar', 'meus'];
+  const ordem = abasLiberadas();
   const nome = k => (k === 'painel' && ehRH()) ? 'Atestados' : NOMES[k], curto = k => (k === 'painel' && ehRH()) ? 'Atestados' : CURTO[k];
   const badge = k => (k === 'painel' && novas) ? `<span class="badge">${novas}</span>` : '';
-  const principais = veTudo() ? ['painel', 'dia', 'geral', 'avisar'] : ordem;
+  const principais = ordem.length <= 5 ? ordem : ['painel', 'dia', 'geral', 'avisar'].filter(k => ordem.includes(k));
   const extras = ordem.filter(k => !principais.includes(k));
   // topo (computador)
   $('#tabs').innerHTML = ordem.map(k => `<button class="${k === aba ? 'on' : ''}" data-k="${k}">${nome(k)}${badge(k)}</button>`).join('');
@@ -325,8 +331,80 @@ function desenharTabs() {
 }
 document.addEventListener('click', e => { if (maisAberto && !e.target.closest('#sheet,#b-mais')) { maisAberto = false; $('#sheet').classList.remove('aberto'); } });
 
+/* ---------- liberacao de modulos por perfil (o lider libera item a item) ---------- */
+const MODULOS = [
+  ['avisar', 'Enviar aviso', 'Atestado, atraso, falta ou outro aviso, com foto/arquivo'],
+  ['meus', 'Meus avisos', 'O colaborador acompanha os avisos que já enviou'],
+  ['painel', 'Painel ao vivo / Atestados', 'Quem recebe os avisos (o RH vê só atestados)'],
+  ['escala', 'Minha escala', 'Cada um vê a própria escala do mês'],
+  ['dia', 'Escala do dia', 'Quem trabalha hoje, por setor, com PDV'],
+  ['geral', 'Escala geral', 'Quadro do mês com todos'],
+  ['colab', 'Colaboradores', 'Lista de colaboradores (fiscal redefine senha)']];
+const PERFIS_LIB = [['colaborador', 'Colaborador'], ['fiscal', 'Fiscal'], ['consulta', 'Consulta'], ['rh', 'RH']];
+const APLICA = { colaborador: ['avisar', 'meus', 'escala'], rh: ['avisar', 'meus', 'painel', 'escala'], fiscal: MODULOS.map(m => m[0]), consulta: MODULOS.map(m => m[0]) };
+let lib = {}, libOk = false, canalLib = null;
+async function carregarLib() {
+  const { data, error } = await sb.from('liberacoes').select('modulo,perfil,liberado,atualizado_em');
+  libOk = !error; lib = {};
+  (data || []).forEach(r => (lib[r.modulo] ||= {})[r.perfil] = r);
+}
+// o lider (admin) sempre ve tudo; se a lista nao carregar, sobra so o "avisar" (fase 1)
+const liberado = k => me.perfil === 'admin' || (libOk ? !!(lib[k] && lib[k][me.perfil] && lib[k][me.perfil].liberado) : k === 'avisar');
+const baseAbas = () => me.perfil === 'admin' ? ['painel', 'dia', 'geral', 'colab', 'importar', 'liberacoes', 'escala', 'avisar', 'meus']
+  : veTudo() ? ['painel', 'dia', 'geral', 'colab', 'escala', 'avisar', 'meus'] : ehRH() ? ['painel', 'escala', 'avisar', 'meus'] : ['escala', 'avisar', 'meus'];
+const abasLiberadas = () => baseAbas().filter(liberado);
+async function atualizarLib() {
+  if (!me) return;
+  await carregarLib();
+  if (comPainel() && liberado('painel') && !canal) ligarTempoReal();
+  if (!liberado('painel') && canal) { sb.removeChannel(canal); canal = null; }
+  desenharTabs();
+  if (!abasLiberadas().includes(aba)) abrir();
+}
+function ligarLiberacoes() {
+  if (canalLib) sb.removeChannel(canalLib);
+  canalLib = sb.channel('integrador-liberacoes').on('postgres_changes', { event: '*', schema: 'integrador', table: 'liberacoes' }, () => { if (aba !== 'liberacoes') atualizarLib(); }).subscribe();
+}
+window.addEventListener('focus', () => { if (me && aba !== 'liberacoes') atualizarLib(); });
+
+async function vLiberacoes() {
+  if (me.perfil !== 'admin') return erroTela('Só o líder libera módulos.');
+  $('#app').innerHTML = '<p class="mut">Carregando…</p>';
+  await carregarLib();
+  if (!libOk) return erroTela('Não consegui carregar as liberações.');
+  const marc = (m, p) => !!(lib[m] && lib[m][p] && lib[m][p].liberado);
+  const quando = Object.values(lib).flatMap(o => Object.values(o)).map(r => r.atualizado_em).sort().pop();
+  $('#app').innerHTML = `<h2>Liberação de módulos</h2>
+    <p class="mut">Marque o que cada perfil já pode usar. A mudança vale na hora, sem a pessoa precisar sair do site. O líder sempre vê tudo.</p>
+    <div class="linha noprint" style="margin-bottom:10px"><button class="btn sec peq" id="l-f1">Voltar à Fase 1 (só avisar)</button><button class="btn sec peq" id="l-tudo">Liberar tudo</button></div>
+    <div id="l-msg"></div>
+    <div class="card" style="padding:0;overflow:auto"><table class="lib"><thead><tr><th>Módulo</th>${PERFIS_LIB.map(([, n]) => `<th>${n}</th>`).join('')}</tr></thead>
+    <tbody>${MODULOS.map(([m, nome, desc]) => `<tr><td><b>${esc(nome)}</b><div class="mut">${esc(desc)}</div></td>${PERFIS_LIB.map(([p]) => APLICA[p].includes(m)
+      ? `<td class="c"><input type="checkbox" class="lib-cb" data-m="${m}" data-p="${p}" ${marc(m, p) ? 'checked' : ''} aria-label="${esc(nome)} para ${p}"></td>`
+      : '<td class="c mut" title="Não se aplica a este perfil">—</td>').join('')}</tr>`).join('')}</tbody></table></div>
+    <p class="mut">${quando ? 'Última alteração: ' + esc(fHora(quando)) + '. ' : ''}Importar escala e esta tela são sempre só do líder. Este controle esconde os módulos no site; ele organiza a implantação por fases e não substitui as permissões de segurança do banco.</p>`;
+  const salvar = async (linhas, ok) => {
+    const agora = new Date().toISOString();
+    const { error } = await sb.from('liberacoes').upsert(linhas.map(l => ({ ...l, atualizado_por: me.id, atualizado_em: agora })), { onConflict: 'modulo,perfil' });
+    if (error) { $('#l-msg').innerHTML = `<div class="erro">Não foi possível salvar: ${esc(error.message)}</div>`; return false; }
+    $('#l-msg').innerHTML = `<div class="sucesso">${ok}</div>`; return true;
+  };
+  document.querySelectorAll('.lib-cb').forEach(c => c.onchange = async () => {
+    c.disabled = true;
+    const okk = await salvar([{ modulo: c.dataset.m, perfil: c.dataset.p, liberado: c.checked }], 'Salvo. Já vale para quem está usando o site.');
+    if (!okk) c.checked = !c.checked;
+    c.disabled = false;
+  });
+  const todos = f => MODULOS.flatMap(([m]) => PERFIS_LIB.map(([p]) => ({ modulo: m, perfil: p, liberado: f(m, p) })));
+  $('#l-f1').onclick = async () => { if (confirm('Fechar tudo e voltar para a Fase 1 (só avisar)?') && await salvar(todos((m, p) => m === 'avisar' || (m === 'painel' && p !== 'colaborador')), 'Voltou para a Fase 1.')) vLiberacoes(); };
+  $('#l-tudo').onclick = async () => { if (confirm('Liberar todos os módulos para todos os perfis?') && await salvar(todos((m, p) => APLICA[p].includes(m)), 'Tudo liberado.')) vLiberacoes(); };
+}
+
 function abrir() {
-  ({ painel: vPainel, dia: vDia, geral: vGeral, colab: vColab, importar: vImportar, escala: vMinhaEscala, avisar: vAvisar, meus: vMeus }[aba])();
+  const ab = abasLiberadas();
+  if (!ab.length) return ($('#app').innerHTML = '<div class="card">Nenhum módulo liberado para o seu perfil ainda. Aguarde a liberação do líder.</div>');
+  if (!ab.includes(aba)) { aba = ab[0]; desenharTabs(); }
+  ({ liberacoes: vLiberacoes, painel: vPainel, dia: vDia, geral: vGeral, colab: vColab, importar: vImportar, escala: vMinhaEscala, avisar: vAvisar, meus: vMeus }[aba])();
 }
 
 /* ---------- dados compartilhados ---------- */
