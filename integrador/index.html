@@ -60,6 +60,8 @@
   .hora{font-size:20px;font-weight:800;color:var(--azul)}
   .pdv{background:var(--verm);color:#fff;border-radius:8px;padding:3px 10px;font-weight:700}
   table{border-collapse:collapse;width:100%}
+  .kpis{gap:10px}.kpi{flex:1;min-width:96px;background:var(--card);border:1px solid var(--bor);border-radius:12px;padding:8px 12px;color:var(--mut);font-size:13px}.kpi b{display:block;font-size:24px;color:var(--azul);line-height:1.1}
+  tr.det td{border-top:0}
   table.lib td.c,table.lib th{text-align:center}table.lib td:first-child,table.lib th:first-child{text-align:left}
   .lib-cb{width:24px;height:24px;padding:0;accent-color:var(--azul)}
   th,td{border:1px solid var(--bor);padding:7px 8px;text-align:left}
@@ -304,12 +306,13 @@ const ICO = {
   escala: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
   avisar: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
   meus: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  resumo: '<path d="M3 3v18h18"/><path d="M7 15v3M12 9v9M17 5v13"/>',
   liberacoes: '<rect x="1" y="7" width="22" height="10" rx="5"/><circle cx="16" cy="12" r="3"/>',
   importar: '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
   mais: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>'
 };
 const ico = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>`;
-const NOMES = { liberacoes: 'Liberações', painel: 'Painel ao vivo', dia: 'Escala do dia', geral: 'Escala geral', colab: 'Colaboradores', importar: 'Importar escala', escala: 'Minha escala', avisar: 'Enviar aviso', meus: 'Meus avisos' };
+const NOMES = { resumo: 'Resumo por operador', liberacoes: 'Liberações', painel: 'Painel ao vivo', dia: 'Escala do dia', geral: 'Escala geral', colab: 'Colaboradores', importar: 'Importar escala', escala: 'Minha escala', avisar: 'Enviar aviso', meus: 'Meus avisos' };
 const CURTO = { painel: 'Painel', dia: 'Dia', geral: 'Geral', avisar: 'Avisar', escala: 'Minha escala', meus: 'Meus avisos' };
 let maisAberto = false;
 
@@ -339,7 +342,8 @@ const MODULOS = [
   ['escala', 'Minha escala', 'Cada um vê a própria escala do mês'],
   ['dia', 'Escala do dia', 'Quem trabalha hoje, por setor, com PDV'],
   ['geral', 'Escala geral', 'Quadro do mês com todos'],
-  ['colab', 'Colaboradores', 'Lista de colaboradores (fiscal redefine senha)']];
+  ['colab', 'Colaboradores', 'Lista de colaboradores (fiscal redefine senha)'],
+  ['resumo', 'Resumo por operador', 'Avisos de cada operador no mês: atestados, atrasos, faltas']];
 const PERFIS_LIB = [['colaborador', 'Colaborador'], ['fiscal', 'Fiscal'], ['consulta', 'Consulta'], ['rh', 'RH']];
 const APLICA = { colaborador: ['avisar', 'meus', 'escala'], rh: ['avisar', 'meus', 'painel', 'escala'], fiscal: MODULOS.map(m => m[0]), consulta: MODULOS.map(m => m[0]) };
 let lib = {}, libOk = false, canalLib = null;
@@ -350,8 +354,8 @@ async function carregarLib() {
 }
 // o lider (admin) sempre ve tudo; se a lista nao carregar, sobra so o "avisar" (fase 1)
 const liberado = k => me.perfil === 'admin' || (libOk ? !!(lib[k] && lib[k][me.perfil] && lib[k][me.perfil].liberado) : k === 'avisar');
-const baseAbas = () => me.perfil === 'admin' ? ['painel', 'dia', 'geral', 'colab', 'importar', 'liberacoes', 'escala', 'avisar', 'meus']
-  : veTudo() ? ['painel', 'dia', 'geral', 'colab', 'escala', 'avisar', 'meus'] : ehRH() ? ['painel', 'escala', 'avisar', 'meus'] : ['escala', 'avisar', 'meus'];
+const baseAbas = () => me.perfil === 'admin' ? ['painel', 'dia', 'geral', 'colab', 'resumo', 'importar', 'liberacoes', 'escala', 'avisar', 'meus']
+  : veTudo() ? ['painel', 'dia', 'geral', 'colab', 'resumo', 'escala', 'avisar', 'meus'] : ehRH() ? ['painel', 'escala', 'avisar', 'meus'] : ['escala', 'avisar', 'meus'];
 const abasLiberadas = () => baseAbas().filter(liberado);
 async function atualizarLib() {
   if (!me) return;
@@ -404,7 +408,7 @@ function abrir() {
   const ab = abasLiberadas();
   if (!ab.length) return ($('#app').innerHTML = '<div class="card">Nenhum módulo liberado para o seu perfil ainda. Aguarde a liberação do líder.</div>');
   if (!ab.includes(aba)) { aba = ab[0]; desenharTabs(); }
-  ({ liberacoes: vLiberacoes, painel: vPainel, dia: vDia, geral: vGeral, colab: vColab, importar: vImportar, escala: vMinhaEscala, avisar: vAvisar, meus: vMeus }[aba])();
+  ({ resumo: vResumo, liberacoes: vLiberacoes, painel: vPainel, dia: vDia, geral: vGeral, colab: vColab, importar: vImportar, escala: vMinhaEscala, avisar: vAvisar, meus: vMeus }[aba])();
 }
 
 /* ---------- dados compartilhados ---------- */
@@ -883,6 +887,64 @@ async function vMinhaEscala() {
 }
 
 /* ---------- enviar aviso ---------- */
+const nomeMes = ym => { const [y, m] = ym.split('-').map(Number); const s = new Date(y, m - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); return s.charAt(0).toUpperCase() + s.slice(1); };
+async function meuResumo() {          // mural do colaborador: o que ele ja enviou, por mes
+  const el = $('#meu-resumo'); if (!el) return;
+  const { data, error } = await sb.from('ocorrencias').select('id,tipo,status,data_referencia,criado_em').eq('colaborador_id', me.id).order('data_referencia', { ascending: false }).limit(300);
+  if (!$('#meu-resumo')) return;
+  if (error) return (el.innerHTML = '');
+  if (!data.length) return (el.innerHTML = '<h3 style="margin-top:22px">Meus avisos enviados</h3><p class="mut">Você ainda não enviou nenhum aviso.</p>');
+  const meses = {}; data.forEach(o => (meses[o.data_referencia.slice(0, 7)] ||= []).push(o));
+  el.innerHTML = `<h3 style="margin-top:22px">Meus avisos enviados</h3>` + Object.keys(meses).sort().reverse().map((ym, i) => {
+    const l = meses[ym], cont = Object.entries(TIPOS).map(([k, v]) => [v, l.filter(o => o.tipo === k).length, k]).filter(x => x[1]);
+    return `<details class="card" ${i === 0 ? 'open' : ''} style="padding:10px 14px"><summary style="cursor:pointer;font-weight:700">${esc(nomeMes(ym))} · ${l.length} aviso${l.length > 1 ? 's' : ''}
+      <span class="mut" style="font-weight:400"> — ${cont.map(([v, n]) => `${n} ${esc(v.toLowerCase())}`).join(', ')}</span></summary>
+      ${l.map(o => `<div class="linha" style="padding:6px 0;border-top:1px solid var(--bor)"><b style="width:78px">${esc(fData(o.data_referencia))}</b><span class="tag t-${o.tipo}">${esc(TIPOS[o.tipo])}</span><span class="grow"></span><span class="tag t-${o.status}">${esc(STATUS[o.status])}</span></div>`).join('')}</details>`;
+  }).join('');
+}
+
+/* ---------- resumo por operador (fiscal / consulta) ---------- */
+let rsMes = hoje().slice(0, 7), rsTodos = false, rsSetor = 'todos', rsDados = [];
+async function vResumo() {
+  $('#app').innerHTML = '<p class="mut">Carregando…</p>';
+  try { await carregarBase(); } catch (e) { return erroTela(e.message); }
+  const [y, m] = rsMes.split('-').map(Number), ini = rsMes + '-01', fim = rsMes + '-' + String(new Date(y, m, 0).getDate()).padStart(2, '0');
+  const { data, error } = await paginar((a, b) => sb.from('ocorrencias').select('id,colaborador_id,tipo,status,data_referencia').gte('data_referencia', ini).lte('data_referencia', fim).order('data_referencia').order('id').range(a, b));
+  if (error) return erroTela(error.message);
+  rsDados = data; desenharResumo();
+}
+function desenharResumo() {
+  const por = {}; rsDados.forEach(o => (por[o.colaborador_id] ||= []).push(o));
+  const pes = colabs.filter(c => c.ativo || por[c.id]).map(c => ({ c, l: por[c.id] || [] }));
+  const grupos = porSetor(pes);
+  if (rsSetor !== 'todos' && !grupos.some(g => g.setor === rsSetor)) rsSetor = 'todos';
+  const lista = grupos.filter(g => rsSetor === 'todos' || g.setor === rsSetor).flatMap(g => g.subs.flatMap(s => s.itens))
+    .filter(x => rsTodos || x.l.length).sort((a, b) => b.l.length - a.l.length || a.c.nome.localeCompare(b.c.nome));
+  const n = (l, t) => l.filter(o => o.tipo === t).length, todos = lista.flatMap(x => x.l);
+  $('#app').innerHTML = `<div class="linha noprint" style="margin-bottom:8px"><h2 class="grow" style="margin:0">Resumo por operador</h2>
+      <input type="month" id="r-mes" value="${rsMes}" style="width:auto"><button class="btn peq" id="imp">Imprimir</button></div>
+    <p class="mut">Avisos por operador no mês (pelo dia a que o aviso se refere). Toque num operador para ver os avisos dele.</p>
+    <div class="chips noprint" id="chips" style="margin:6px 0 10px">${chipsHtml([['todos', 'Todos os setores'], ...grupos.map(g => [g.setor, g.setor])], rsSetor)}</div>
+    <div class="linha kpis" style="margin-bottom:10px">${[['Avisos', todos.length], ['Atestados', n(todos, 'atestado')], ['Atrasos', n(todos, 'atraso')], ['Faltas', n(todos, 'falta')], ['Outros', n(todos, 'outro')]].map(([t, v]) => `<div class="kpi"><b>${v}</b>${t}</div>`).join('')}</div>
+    <label class="noprint" style="display:flex;gap:8px;align-items:center;font-weight:400"><input id="r-todos" type="checkbox" style="width:auto" ${rsTodos ? 'checked' : ''}> Incluir quem não enviou aviso</label>
+    ${lista.length ? `<div class="card" style="padding:0;overflow:auto;margin-top:10px"><table class="cards"><thead><tr><th>Operador</th><th>Setor</th><th>Atestado</th><th>Atraso</th><th>Falta</th><th>Outro</th><th>Total</th></tr></thead>
+    <tbody>${lista.map(({ c, l }) => `<tr data-op="${c.id}" style="cursor:pointer"><td class="c-nome" data-l="">${esc(c.nome)}${c.ativo ? '' : ' <span class="tag t-outro">Inativo</span>'}<div class="mut" style="font-weight:400">${esc(c.cargo)}</div></td>
+      <td class="i2" data-l="Setor">${esc(setorDe(c))}</td><td class="i2" data-l="Atestado">${n(l, 'atestado') || '–'}</td><td class="i2" data-l="Atraso">${n(l, 'atraso') || '–'}</td>
+      <td class="i2" data-l="Falta">${n(l, 'falta') || '–'}</td><td class="i2" data-l="Outro">${n(l, 'outro') || '–'}</td><td class="i2" data-l="Total"><b>${l.length || '–'}</b></td></tr>`).join('')}</tbody></table></div>`
+      : `<div class="card" style="margin-top:10px">Nenhum aviso em ${esc(nomeMes(rsMes))}.</div>`}`;
+  $('#r-mes').onchange = e => { if (e.target.value) { rsMes = e.target.value; vResumo(); } };
+  $('#r-todos').onchange = e => { rsTodos = e.target.checked; desenharResumo(); };
+  $('#imp').onclick = () => window.print();
+  $('#chips').querySelectorAll('.chip').forEach(b => b.onclick = () => { rsSetor = b.dataset.s; desenharResumo(); });
+  document.querySelectorAll('[data-op]').forEach(tr => tr.onclick = () => {
+    const nx = tr.nextElementSibling; if (nx && nx.classList.contains('det')) return nx.remove();
+    const l = (por[tr.dataset.op] || []).slice().sort((a, b) => a.data_referencia.localeCompare(b.data_referencia));
+    const d = document.createElement('tr'); d.className = 'det';
+    d.innerHTML = `<td colspan="7" style="background:var(--azul-cl)">${l.length ? l.map(o => `<div class="linha" style="padding:3px 0"><b style="width:78px">${esc(fData(o.data_referencia))}</b><span class="tag t-${o.tipo}">${esc(TIPOS[o.tipo])}</span><span class="tag t-${o.status}">${esc(STATUS[o.status])}</span></div>`).join('') : '<span class="mut">Nenhum aviso neste mês.</span>'}</td>`;
+    tr.after(d);
+  });
+}
+
 let anexosSel = [];
 function listaArq() {
   const el = $('#lista-arq'); if (!el) return;
@@ -932,7 +994,7 @@ function vAvisar() {
     <label for="tipo">O que aconteceu?</label>
     <select id="tipo">${Object.entries(TIPOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
     <label for="dref">Para qual dia?</label><input id="dref" type="date" value="${hoje()}" required>
-    <div id="bl-prev" class="oculto"><label for="prev">Que horas você deve chegar?</label><input id="prev" type="time"></div>
+    <div id="bl-prev" class="oculto"><label for="prev-h">Que horas você deve chegar?</label><div class="linha" style="gap:8px"><select id="prev-h" style="width:auto;flex:1"><option value="">Hora</option>${Array.from({length:24},(_,i)=>`<option>${String(i).padStart(2,'0')}</option>`).join('')}</select><b>:</b><select id="prev-m" style="width:auto;flex:1"><option value="">Min</option>${['00','05','10','15','20','25','30','35','40','45','50','55'].map(m=>`<option>${m}</option>`).join('')}</select></div></div>
     <label for="mens">Mensagem</label><textarea id="mens" maxlength="2000" placeholder="Conte rapidamente o que houve"></textarea>
     <label>Atestado ou foto (PDF/imagem, até 10 MB cada, máx. 3)</label>
     <div class="linha"><button type="button" class="btn sec" id="b-cam">📷 Tirar foto</button><button type="button" class="btn sec" id="b-arq">📎 Escolher arquivo</button></div>
@@ -941,7 +1003,9 @@ function vAvisar() {
     <div id="lista-arq"></div>
     <div id="msg"></div>
     <p><button class="btn verm">Enviar aviso</button></p>
-  </form>`;
+  </form>
+  <div id="meu-resumo"></div>`;
+  meuResumo();
   const mostra = () => $('#bl-prev').classList.toggle('oculto', $('#tipo').value !== 'atraso');
   $('#tipo').onchange = mostra; mostra();
   anexosSel = []; listaArq();
@@ -958,7 +1022,7 @@ function vAvisar() {
     const id = crypto.randomUUID();
     const { error } = await sb.from('ocorrencias').insert({
       id, colaborador_id: me.id, tipo: $('#tipo').value, data_referencia: $('#dref').value,
-      previsao_chegada: $('#tipo').value === 'atraso' && $('#prev').value ? $('#prev').value : null,
+      previsao_chegada: $('#tipo').value === 'atraso' && $('#prev-h').value ? $('#prev-h').value + ':' + ($('#prev-m').value || '00') : null,
       mensagem: $('#mens').value.trim() || null });
     if (error) { btn.disabled = false; return (msg.innerHTML = `<div class="erro">Não foi possível enviar: ${esc(error.message)}</div>`); }
     let falhas = 0;
@@ -971,7 +1035,7 @@ function vAvisar() {
       if (ins.error) falhas++;
     }
     btn.disabled = false;
-    $('#f-av').reset(); mostra(); anexosSel = []; listaArq();
+    $('#f-av').reset(); mostra(); anexosSel = []; listaArq(); meuResumo();
     msg.innerHTML = falhas
       ? `<div class="erro">Aviso enviado, mas ${falhas} arquivo(s) não subiram. Avise o líder por outro meio.</div>`
       : '<div class="sucesso">Aviso enviado! Os fiscais já podem ver.</div>';
