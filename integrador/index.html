@@ -202,7 +202,7 @@ const fData = iso => { const d = pData(iso); return `${DIAS[d.getDay()]} ${Strin
 const fHora = ts => new Date(ts).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
 const somaDias = (iso, n) => { const d = pData(iso); d.setDate(d.getDate() + n); return d.toLocaleDateString('en-CA'); };
 
-let me = null, aba = 'escala', canal = null, novas = 0, somLigado = false, filtro = 'pendentes';
+let novasMural = 0, me = null, aba = 'escala', canal = null, novas = 0, somLigado = false, filtro = 'pendentes';
 const ehFiscal = () => me && (me.perfil === 'fiscal' || me.perfil === 'admin');           // edita PDV, redefine senha
 const ehRH = () => me && me.perfil === 'rh';                                                // so ve atestados
 const veTudo = () => me && ['fiscal', 'admin', 'consulta'].includes(me.perfil);            // painel, escala do dia, geral, colaboradores
@@ -262,9 +262,9 @@ function telaTrocarSenha(msg) {
   $('#app').innerHTML = `
     <form class="card login" id="f-troca">
       <h2>Crie sua senha</h2>
-      <p class="mut">Escolha uma senha nova com pelo menos 6 caracteres (não pode ser 1234).</p>
-      <label for="n1">Nova senha</label><input id="n1" type="password" autocomplete="new-password" minlength="6" required>
-      <label for="n2">Repita a senha</label><input id="n2" type="password" autocomplete="new-password" minlength="6" required>
+      <p class="mut">Escolha uma senha nova com pelo menos 4 caracteres (não pode ser 1234).</p>
+      <label for="n1">Nova senha</label><input id="n1" type="password" autocomplete="new-password" minlength="4" required>
+      <label for="n2">Repita a senha</label><input id="n2" type="password" autocomplete="new-password" minlength="4" required>
       <div id="msg">${msg ? `<div class="erro">${esc(msg)}</div>` : ''}</div>
       <p><button class="btn" style="width:100%">Salvar e entrar</button></p>
     </form>`;
@@ -273,9 +273,9 @@ function telaTrocarSenha(msg) {
     if ($('#n1').value !== $('#n2').value) return ($('#msg').innerHTML = '<div class="erro">As senhas não são iguais.</div>');
     if ($('#n1').value === '1234' || $('#n1').value.replace(/\D/g, '') === me.chapa.replace(/\D/g, '')) return ($('#msg').innerHTML = '<div class="erro">Escolha uma senha diferente de 1234 e da sua chapa.</div>');
     const btn = e.submitter; btn.disabled = true;
-    const { error } = await sb.auth.updateUser({ password: $('#n1').value });
+    if ($('#n1').value.length < 4) { btn.disabled = false; return ($('#msg').innerHTML = '<div class="erro">Use pelo menos 4 caracteres.</div>'); }
+    const { error } = await sb.rpc('trocar_minha_senha', { p_nova: $('#n1').value });
     if (error) { btn.disabled = false; return ($('#msg').innerHTML = `<div class="erro">${esc(error.message)}</div>`); }
-    await sb.rpc('senha_trocada');
     me.trocar_senha = false; btn.disabled = false;
     montarShell();
   };
@@ -295,7 +295,7 @@ async function montarShell() {
   const ab = abasLiberadas(); aba = ab.includes('painel') ? 'painel' : (ab[0] || 'avisar');
   desenharTabs(); abrir();
   if (comPainel() && liberado('painel')) ligarTempoReal();
-  ligarLiberacoes();
+  ligarLiberacoes(); contarMural();
 }
 
 const ICO = {
@@ -307,20 +307,24 @@ const ICO = {
   avisar: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
   meus: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
   resumo: '<path d="M3 3v18h18"/><path d="M7 15v3M12 9v9M17 5v13"/>',
+  mural: '<path d="M3 11l18-8v18L3 13z"/><path d="M11.6 16.8a3 3 0 11-5.8-1.6"/>',
+  links: '<path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/>',
+  cadastro: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M5.5 17c.8-2 2.2-3 3.5-3s2.7 1 3.5 3M15 9h3M15 13h3"/>',
   liberacoes: '<rect x="1" y="7" width="22" height="10" rx="5"/><circle cx="16" cy="12" r="3"/>',
   importar: '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
   mais: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>'
 };
 const ico = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICO[k]}</svg>`;
-const NOMES = { resumo: 'Resumo por operador', liberacoes: 'Liberações', painel: 'Painel ao vivo', dia: 'Escala do dia', geral: 'Escala geral', colab: 'Colaboradores', importar: 'Importar escala', escala: 'Minha escala', avisar: 'Enviar aviso', meus: 'Meus avisos' };
-const CURTO = { painel: 'Painel', dia: 'Dia', geral: 'Geral', avisar: 'Avisar', escala: 'Minha escala', meus: 'Meus avisos' };
+const NOMES = { mural: 'Mural', links: 'Links', cadastro: 'Meu cadastro', resumo: 'Resumo por operador', liberacoes: 'Liberações', painel: 'Painel ao vivo', dia: 'Escala do dia', geral: 'Escala geral', colab: 'Colaboradores', importar: 'Importar escala', escala: 'Minha escala', avisar: 'Enviar aviso', meus: 'Meus avisos' };
+const CURTO = { mural: 'Mural', links: 'Links', cadastro: 'Cadastro', painel: 'Painel', dia: 'Dia', geral: 'Geral', avisar: 'Avisar', escala: 'Minha escala', meus: 'Meus avisos' };
 let maisAberto = false;
 
 function desenharTabs() {
   const ordem = abasLiberadas();
   const nome = k => (k === 'painel' && ehRH()) ? 'Atestados' : NOMES[k], curto = k => (k === 'painel' && ehRH()) ? 'Atestados' : CURTO[k];
-  const badge = k => (k === 'painel' && novas) ? `<span class="badge">${novas}</span>` : '';
-  const principais = ordem.length <= 5 ? ordem : ['painel', 'dia', 'geral', 'avisar'].filter(k => ordem.includes(k));
+  const badge = k => (k === 'painel' && novas) ? `<span class="badge">${novas}</span>` : (k === 'mural' && novasMural && aba !== 'mural') ? `<span class="badge">${novasMural}</span>` : '';
+  const pref = ['painel', 'dia', 'geral', 'avisar'].filter(k => ordem.includes(k)); ['mural', 'escala'].forEach(k => { if (pref.length < 4 && ordem.includes(k)) pref.push(k); });
+  const principais = ordem.length <= 5 ? ordem : ordem.filter(k => pref.includes(k));
   const extras = ordem.filter(k => !principais.includes(k));
   // topo (computador)
   $('#tabs').innerHTML = ordem.map(k => `<button class="${k === aba ? 'on' : ''}" data-k="${k}">${nome(k)}${badge(k)}</button>`).join('');
@@ -343,9 +347,12 @@ const MODULOS = [
   ['dia', 'Escala do dia', 'Quem trabalha hoje, por setor, com PDV'],
   ['geral', 'Escala geral', 'Quadro do mês com todos'],
   ['colab', 'Colaboradores', 'Lista de colaboradores (fiscal redefine senha)'],
-  ['resumo', 'Resumo por operador', 'Avisos de cada operador no mês: atestados, atrasos, faltas']];
+  ['resumo', 'Resumo por operador', 'Avisos de cada operador no mês: atestados, atrasos, faltas'],
+  ['mural', 'Mural de avisos', 'Comunicados do líder para a equipe (só o líder publica)'],
+  ['links', 'Links', 'Atalhos da empresa, como holerite (só o líder cadastra)'],
+  ['cadastro', 'Meu cadastro', 'Cada um preenche nome completo, endereço, celular e código do PDV']];
 const PERFIS_LIB = [['colaborador', 'Colaborador'], ['fiscal', 'Fiscal'], ['consulta', 'Consulta'], ['rh', 'RH']];
-const APLICA = { colaborador: ['avisar', 'meus', 'escala'], rh: ['avisar', 'meus', 'painel', 'escala'], fiscal: MODULOS.map(m => m[0]), consulta: MODULOS.map(m => m[0]) };
+const APLICA = { colaborador: ['avisar', 'meus', 'escala', 'mural', 'links', 'cadastro'], rh: ['avisar', 'meus', 'painel', 'escala', 'mural', 'links', 'cadastro'], fiscal: MODULOS.map(m => m[0]), consulta: MODULOS.map(m => m[0]) };
 let lib = {}, libOk = false, canalLib = null;
 async function carregarLib() {
   const { data, error } = await sb.from('liberacoes').select('modulo,perfil,liberado,atualizado_em');
@@ -354,12 +361,12 @@ async function carregarLib() {
 }
 // o lider (admin) sempre ve tudo; se a lista nao carregar, sobra so o "avisar" (fase 1)
 const liberado = k => me.perfil === 'admin' || (libOk ? !!(lib[k] && lib[k][me.perfil] && lib[k][me.perfil].liberado) : k === 'avisar');
-const baseAbas = () => me.perfil === 'admin' ? ['painel', 'dia', 'geral', 'colab', 'resumo', 'importar', 'liberacoes', 'escala', 'avisar', 'meus']
-  : veTudo() ? ['painel', 'dia', 'geral', 'colab', 'resumo', 'escala', 'avisar', 'meus'] : ehRH() ? ['painel', 'escala', 'avisar', 'meus'] : ['escala', 'avisar', 'meus'];
+const baseAbas = () => me.perfil === 'admin' ? ['mural', 'painel', 'dia', 'geral', 'colab', 'resumo', 'importar', 'liberacoes', 'escala', 'avisar', 'meus', 'links', 'cadastro']
+  : veTudo() ? ['mural', 'painel', 'dia', 'geral', 'colab', 'resumo', 'escala', 'avisar', 'meus', 'links', 'cadastro'] : ehRH() ? ['mural', 'painel', 'escala', 'avisar', 'meus', 'links', 'cadastro'] : ['mural', 'escala', 'avisar', 'meus', 'links', 'cadastro'];
 const abasLiberadas = () => baseAbas().filter(liberado);
 async function atualizarLib() {
   if (!me) return;
-  await carregarLib();
+  await carregarLib(); contarMural();
   if (comPainel() && liberado('painel') && !canal) ligarTempoReal();
   if (!liberado('painel') && canal) { sb.removeChannel(canal); canal = null; }
   desenharTabs();
@@ -367,7 +374,8 @@ async function atualizarLib() {
 }
 function ligarLiberacoes() {
   if (canalLib) sb.removeChannel(canalLib);
-  canalLib = sb.channel('integrador-liberacoes').on('postgres_changes', { event: '*', schema: 'integrador', table: 'liberacoes' }, () => { if (aba !== 'liberacoes') atualizarLib(); }).subscribe();
+  canalLib = sb.channel('integrador-liberacoes').on('postgres_changes', { event: '*', schema: 'integrador', table: 'liberacoes' }, () => { if (aba !== 'liberacoes') atualizarLib(); })
+    .on('postgres_changes', { event: '*', schema: 'integrador', table: 'mural' }, () => { if (aba === 'mural') vMural(); else contarMural(); }).subscribe();
 }
 window.addEventListener('focus', () => { if (me && aba !== 'liberacoes') atualizarLib(); });
 
@@ -408,7 +416,7 @@ function abrir() {
   const ab = abasLiberadas();
   if (!ab.length) return ($('#app').innerHTML = '<div class="card">Nenhum módulo liberado para o seu perfil ainda. Aguarde a liberação do líder.</div>');
   if (!ab.includes(aba)) { aba = ab[0]; desenharTabs(); }
-  ({ resumo: vResumo, liberacoes: vLiberacoes, painel: vPainel, dia: vDia, geral: vGeral, colab: vColab, importar: vImportar, escala: vMinhaEscala, avisar: vAvisar, meus: vMeus }[aba])();
+  ({ mural: vMural, links: vLinks, cadastro: vCadastro, resumo: vResumo, liberacoes: vLiberacoes, painel: vPainel, dia: vDia, geral: vGeral, colab: vColab, importar: vImportar, escala: vMinhaEscala, avisar: vAvisar, meus: vMeus }[aba])();
 }
 
 /* ---------- dados compartilhados ---------- */
@@ -494,7 +502,8 @@ function listaColab() {
       <td data-l="Setor">${esc(setorDe(c))}${c.subsetor ? ` › ${esc(c.subsetor)}` : ''}</td>
       <td data-l="Perfil">${esc(NOME_PERFIL[c.perfil])}</td>
       <td data-l="Senha">${c.trocar_senha ? '<span class="tag t-vista">1234 (pendente)</span>' : '<span class="tag t-resolvida">Própria</span>'}</td>
-      <td data-l="">${adm ? `<button class="btn sec peq" data-ed="${esc(c.chapa)}">Editar</button> ` : ''}${adm && c.chapa !== me.chapa ? `<button class="btn sec peq" data-xc="${esc(c.chapa)}">Excluir</button> ` : ''}${pode(c) ? `<button class="btn sec peq" data-rs="${esc(c.chapa)}" data-nome="${esc(c.nome)}">Redefinir senha</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
+      <td data-l="">${(adm || me.perfil === 'fiscal') ? `<button class="btn sec peq" data-fi="${esc(c.chapa)}">Ficha</button> ` : ''}${adm ? `<button class="btn sec peq" data-ed="${esc(c.chapa)}">Editar</button> ` : ''}${adm && c.chapa !== me.chapa ? `<button class="btn sec peq" data-xc="${esc(c.chapa)}">Excluir</button> ` : ''}${pode(c) ? `<button class="btn sec peq" data-rs="${esc(c.chapa)}" data-nome="${esc(c.nome)}">Redefinir senha</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
+  document.querySelectorAll('[data-fi]').forEach(b => b.onclick = () => fichaColab(colabs.find(c => c.chapa === b.dataset.fi)));
   document.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => editarColab(colabs.find(c => c.chapa === b.dataset.ed)));
   document.querySelectorAll('[data-xc]').forEach(b => b.onclick = async () => {
     const c = colabs.find(x => x.chapa === b.dataset.xc);
@@ -901,6 +910,158 @@ async function meuResumo() {          // mural do colaborador: o que ele ja envi
       <span class="mut" style="font-weight:400"> — ${cont.map(([v, n]) => `${n} ${esc(v.toLowerCase())}`).join(', ')}</span></summary>
       ${l.map(o => `<div class="linha" style="padding:6px 0;border-top:1px solid var(--bor)"><b style="width:78px">${esc(fData(o.data_referencia))}</b><span class="tag t-${o.tipo}">${esc(TIPOS[o.tipo])}</span><span class="grow"></span><span class="tag t-${o.status}">${esc(STATUS[o.status])}</span></div>`).join('')}</details>`;
   }).join('');
+}
+
+/* ============ PORTAL: cadastro, mural e links ============ */
+const PERFIS_VIS = [['colaborador', 'Colaboradores'], ['fiscal', 'Fiscais'], ['consulta', 'Consulta'], ['rh', 'RH']];
+const perfisBox = sel => `<fieldset style="border:1px solid var(--bor);border-radius:10px;margin:10px 0 0;padding:6px 10px"><legend class="mut" style="font-size:13px">Quem vê (nenhum marcado = todos)</legend>${PERFIS_VIS.map(([k, n]) => `<label style="display:inline-flex;gap:6px;align-items:center;font-weight:400;margin-right:12px"><input type="checkbox" class="pv" value="${k}" style="width:auto" ${sel.includes(k) ? 'checked' : ''}>${n}</label>`).join('')}</fieldset>`;
+const lerPerfis = () => [...document.querySelectorAll('.pv:checked')].map(i => i.value);
+const nomePerfis = l => !l || !l.length ? 'Todos' : l.map(k => (PERFIS_VIS.find(p => p[0] === k) || [k, k])[1]).join(', ');
+function dialogo(html, aoEnviar) {
+  const antigo = $('#dlg'); if (antigo) antigo.remove();
+  const d = document.createElement('dialog'); d.id = 'dlg';
+  d.innerHTML = `<form method="dialog" id="f-dlg">${html}<div id="d-msg"></div><div class="linha" style="margin-top:14px;justify-content:flex-end"><button type="button" class="btn sec" id="d-cancel">Cancelar</button><button class="btn" id="d-ok">Salvar</button></div></form>`;
+  document.body.appendChild(d); d.showModal();
+  $('#d-cancel').onclick = () => d.close(); d.addEventListener('close', () => d.remove());
+  $('#f-dlg').onsubmit = async ev => { ev.preventDefault(); $('#d-ok').disabled = true; const er = await aoEnviar(d); if (er) { $('#d-ok').disabled = false; $('#d-msg').innerHTML = `<div class="erro">${esc(er)}</div>`; } };
+  return d;
+}
+
+/* ---- cadastro ---- */
+const camposCad = c => `
+  <label for="c-nome">Nome completo</label><input id="c-nome" value="${esc(c.nome_completo || '')}" maxlength="120" autocomplete="name">
+  <label for="c-end">Endereço (rua, número, bairro, cidade)</label><textarea id="c-end" maxlength="250" rows="2" autocomplete="street-address">${esc(c.endereco || '')}</textarea>
+  <label for="c-cel">Celular (com DDD)</label><input id="c-cel" type="tel" inputmode="tel" value="${esc(c.celular || '')}" maxlength="20" placeholder="(19) 90000-0000" autocomplete="tel">
+  <label for="c-cod">Código de operador (para abrir o PDV)</label><input id="c-cod" value="${esc(c.codigo_operador || '')}" maxlength="20" inputmode="numeric" autocomplete="off">`;
+const lerCad = id => ({ colaborador_id: id, nome_completo: $('#c-nome').value.trim().replace(/\s+/g, ' ') || null, endereco: $('#c-end').value.trim() || null,
+  celular: $('#c-cel').value.trim() || null, codigo_operador: $('#c-cod').value.trim() || null, atualizado_em: new Date().toISOString() });
+async function vCadastro() {
+  $('#app').innerHTML = '<p class="mut">Carregando…</p>';
+  const { data, error } = await sb.from('cadastro').select('*').eq('colaborador_id', me.id).maybeSingle();
+  if (error) return erroTela(error.message);
+  const c = data || {}, falta = !c.nome_completo || !c.endereco || !c.celular || !c.codigo_operador;
+  $('#app').innerHTML = `<h2>Meu cadastro</h2>
+    <p class="mut">${falta ? 'Complete seus dados. ' : ''}Só você e a liderança veem estas informações.</p>
+    <form class="card" id="f-cad">
+      <p style="margin:0"><b>${esc(me.nome)}</b><br><span class="mut">Chapa ${esc(me.chapa)} · ${esc(me.cargo || '')} · ${esc(setorDe(me))}</span></p>
+      ${camposCad(c)}<div id="msg"></div><p><button class="btn">Salvar cadastro</button></p>
+    </form>
+    <h3>Alterar minha senha</h3>
+    <form class="card" id="f-sen">
+      <label for="s1">Nova senha (mínimo 4 caracteres)</label><input id="s1" type="password" minlength="4" autocomplete="new-password" required>
+      <label for="s2">Repita a nova senha</label><input id="s2" type="password" minlength="4" autocomplete="new-password" required>
+      <div id="msg2"></div><p><button class="btn sec">Alterar senha</button></p>
+    </form>`;
+  $('#f-cad').onsubmit = async e => {
+    e.preventDefault(); const b = e.submitter; b.disabled = true;
+    const { error: er } = await sb.from('cadastro').upsert(lerCad(me.id), { onConflict: 'colaborador_id' });
+    b.disabled = false;
+    $('#msg').innerHTML = er ? `<div class="erro">${esc(er.message)}</div>` : '<div class="sucesso">Cadastro salvo.</div>';
+  };
+  $('#f-sen').onsubmit = async e => {
+    e.preventDefault(); const b = e.submitter, a = $('#s1').value;
+    if (a !== $('#s2').value) return ($('#msg2').innerHTML = '<div class="erro">As senhas não são iguais.</div>');
+    if (a === '1234' || a.replace(/\D/g, '') === me.chapa.replace(/\D/g, '')) return ($('#msg2').innerHTML = '<div class="erro">Escolha uma senha diferente de 1234 e da sua chapa.</div>');
+    b.disabled = true;
+    const { error: er } = await sb.rpc('trocar_minha_senha', { p_nova: a });
+    b.disabled = false;
+    if (!er) { $('#s1').value = $('#s2').value = ''; }
+    $('#msg2').innerHTML = er ? `<div class="erro">${esc(er.message)}</div>` : '<div class="sucesso">Senha alterada.</div>';
+  };
+}
+async function fichaColab(c) {
+  const { data, error } = await sb.from('cadastro').select('*').eq('colaborador_id', c.id).maybeSingle();
+  if (error) return ($('#msg').innerHTML = `<div class="erro">${esc(error.message)}</div>`);
+  dialogo(`<h3>Ficha de ${esc(c.nome)}</h3><p class="mut" style="margin:0">Chapa ${esc(c.chapa)} · ${esc(c.cargo || '')}</p>${camposCad(data || {})}`, async d => {
+    const { error: er } = await sb.from('cadastro').upsert(lerCad(c.id), { onConflict: 'colaborador_id' });
+    if (er) return er.message; d.close(); $('#msg').innerHTML = `<div class="sucesso">Ficha de ${esc(c.nome)} salva.</div>`;
+  });
+}
+
+/* ---- mural ---- */
+const lerMural = () => { try { return localStorage.getItem('mural_visto_' + me.chapa) || ''; } catch (e) { return ''; } };
+const gravaMural = v => { try { localStorage.setItem('mural_visto_' + me.chapa, v); } catch (e) {} };
+async function contarMural() {
+  if (!me || !liberado('mural')) { if (novasMural) { novasMural = 0; desenharTabs(); } return; }
+  const visto = lerMural(); let q = sb.from('mural').select('id', { count: 'exact', head: true });
+  if (visto) q = q.gt('criado_em', visto);
+  const { count } = await q; const n = aba === 'mural' ? 0 : (count || 0);
+  if (n !== novasMural) { novasMural = n; desenharTabs(); }
+}
+async function vMural() {
+  $('#app').innerHTML = '<p class="mut">Carregando…</p>';
+  const adm = me.perfil === 'admin';
+  const { data, error } = await sb.from('mural').select('*').order('fixado', { ascending: false }).order('criado_em', { ascending: false }).limit(100);
+  if (error) return erroTela(error.message);
+  const visto = lerMural(); gravaMural(new Date().toISOString()); novasMural = 0; desenharTabs();
+  const venc = m => m.expira_em && m.expira_em < hoje();
+  $('#app').innerHTML = `<div class="linha" style="margin-bottom:8px"><h2 class="grow" style="margin:0">Mural de avisos</h2>${adm ? '<button class="btn" id="m-novo">Novo aviso</button>' : ''}</div>
+    ${data.length ? data.map(m => `<div class="card" style="${m.importante ? 'border-left:6px solid var(--verm,#c8102e)' : ''}${visto && m.criado_em > visto ? ';background:var(--azul-cl)' : ''}">
+      <div class="linha"><b class="grow" style="font-size:17px">${m.fixado ? '📌 ' : ''}${esc(m.titulo)}</b>${m.importante ? '<span class="tag t-falta">Importante</span>' : ''}</div>
+      <div class="mut" style="margin:2px 0 6px">${esc(new Date(m.criado_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' }))}${adm ? ` · Para: ${esc(nomePerfis(m.perfis))}${m.expira_em ? ' · até ' + esc(fData(m.expira_em)) : ''}${venc(m) ? ' (expirado)' : ''}` : ''}</div>
+      <div style="white-space:pre-wrap">${esc(m.texto || '')}</div>
+      ${adm ? `<p style="margin:10px 0 0"><button class="btn sec peq" data-me="${m.id}">Editar</button> <button class="btn sec peq" data-mx="${m.id}">Excluir</button></p>` : ''}</div>`).join('')
+      : '<div class="card mut">Nenhum aviso no mural.</div>'}`;
+  if (!adm) return;
+  $('#m-novo').onclick = () => formMural(null);
+  document.querySelectorAll('[data-me]').forEach(b => b.onclick = () => formMural(data.find(m => m.id === b.dataset.me)));
+  document.querySelectorAll('[data-mx]').forEach(b => b.onclick = async () => {
+    if (!confirm('Excluir este aviso do mural?')) return;
+    const { error: er } = await sb.from('mural').delete().eq('id', b.dataset.mx);
+    if (er) return alert(er.message); vMural();
+  });
+}
+function formMural(m) {
+  dialogo(`<h3>${m ? 'Editar aviso' : 'Novo aviso no mural'}</h3>
+    <label for="m-tit">Título</label><input id="m-tit" maxlength="120" required value="${esc(m ? m.titulo : '')}">
+    <label for="m-txt">Mensagem</label><textarea id="m-txt" rows="5" maxlength="4000">${esc(m ? m.texto || '' : '')}</textarea>
+    <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input id="m-imp" type="checkbox" style="width:auto" ${m && m.importante ? 'checked' : ''}> Marcar como importante</label>
+    <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input id="m-fix" type="checkbox" style="width:auto" ${m && m.fixado ? 'checked' : ''}> Fixar no topo</label>
+    <label for="m-exp">Some do mural em (opcional)</label><input id="m-exp" type="date" value="${m && m.expira_em ? m.expira_em : ''}">
+    ${perfisBox(m ? m.perfis : [])}`, async d => {
+    const row = { titulo: $('#m-tit').value.trim(), texto: $('#m-txt').value.trim() || null, importante: $('#m-imp').checked, fixado: $('#m-fix').checked, perfis: lerPerfis(), expira_em: $('#m-exp').value || null };
+    if (!row.titulo) return 'Informe o título.';
+    const r = m ? await sb.from('mural').update(row).eq('id', m.id).select('id') : await sb.from('mural').insert({ ...row, criado_por: me.id }).select('id');
+    if (r.error || !r.data || !r.data.length) return r.error ? r.error.message : 'Não foi possível salvar. Só o líder publica.';
+    d.close(); vMural();
+  });
+}
+
+/* ---- links ---- */
+async function vLinks() {
+  $('#app').innerHTML = '<p class="mut">Carregando…</p>';
+  const adm = me.perfil === 'admin';
+  const { data, error } = await sb.from('links').select('*').order('ordem').order('titulo');
+  if (error) return erroTela(error.message);
+  $('#app').innerHTML = `<div class="linha" style="margin-bottom:8px"><h2 class="grow" style="margin:0">Links</h2>${adm ? '<button class="btn" id="l-novo">Novo link</button>' : ''}</div>
+    <p class="mut">Atalhos importantes da empresa. Abrem em outra aba.</p>
+    ${data.length ? data.map(l => `<div class="card linha"><div class="grow"><a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" style="font-weight:700;font-size:17px">${esc(l.titulo)} ↗</a>
+      ${l.descricao ? `<div class="mut">${esc(l.descricao)}</div>` : ''}${adm ? `<div class="mut">Para: ${esc(nomePerfis(l.perfis))} · ordem ${l.ordem}</div>` : ''}</div>
+      ${adm ? `<button class="btn sec peq" data-le="${l.id}">Editar</button><button class="btn sec peq" data-lx="${l.id}">Excluir</button>` : ''}</div>`).join('')
+      : '<div class="card mut">Nenhum link cadastrado ainda.</div>'}`;
+  if (!adm) return;
+  $('#l-novo').onclick = () => formLink(null);
+  document.querySelectorAll('[data-le]').forEach(b => b.onclick = () => formLink(data.find(l => l.id === b.dataset.le)));
+  document.querySelectorAll('[data-lx]').forEach(b => b.onclick = async () => {
+    if (!confirm('Excluir este link?')) return;
+    const { error: er } = await sb.from('links').delete().eq('id', b.dataset.lx);
+    if (er) return alert(er.message); vLinks();
+  });
+}
+function formLink(l) {
+  dialogo(`<h3>${l ? 'Editar link' : 'Novo link'}</h3>
+    <label for="l-tit">Título (ex.: Holerite)</label><input id="l-tit" maxlength="80" required value="${esc(l ? l.titulo : '')}">
+    <label for="l-url">Endereço (começa com https://)</label><input id="l-url" type="url" maxlength="500" required placeholder="https://" value="${esc(l ? l.url : '')}">
+    <label for="l-des">Descrição (opcional)</label><input id="l-des" maxlength="200" value="${esc(l ? l.descricao || '' : '')}">
+    <label for="l-ord">Ordem na lista (menor aparece primeiro)</label><input id="l-ord" type="number" value="${l ? l.ordem : 0}">
+    ${perfisBox(l ? l.perfis : [])}`, async d => {
+    const row = { titulo: $('#l-tit').value.trim(), url: $('#l-url').value.trim(), descricao: $('#l-des').value.trim() || null, ordem: parseInt($('#l-ord').value, 10) || 0, perfis: lerPerfis() };
+    if (!row.titulo) return 'Informe o título.';
+    if (!/^https?:\/\//i.test(row.url)) return 'O endereço precisa começar com http:// ou https://';
+    const r = l ? await sb.from('links').update(row).eq('id', l.id).select('id') : await sb.from('links').insert(row).select('id');
+    if (r.error || !r.data || !r.data.length) return r.error ? r.error.message : 'Não foi possível salvar. Só o líder cadastra.';
+    d.close(); vLinks();
+  });
 }
 
 /* ---------- resumo por operador (fiscal / consulta) ---------- */
